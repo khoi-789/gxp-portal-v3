@@ -1,0 +1,499 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   GxP PORTAL - Global Design System
+   Phong cách: Healthcare/Pharma premium, Teal dominant
+   ============================================================ */
+
+:root {
+  /* URS §4.1: Màu chuẩn ngành Y tế - Teal */
+  --color-teal-900: #134e4a;
+  --color-teal-800: #155e59;
+  --color-teal-700: #0f766e;
+  --color-teal-600: #0d9488;
+  --color-teal-500: #14b8a6;
+  --color-teal-400: #2dd4bf;
+  --color-teal-100: #ccfbf1;
+  --color-teal-50: #f0fdfa;
+
+  /* Admin Toolbar: §4.1 - màu vàng/kem nhạt */
+  --color-admin-bg: #fefce8;
+  --color-admin-border: #fef08a;
+  --color-admin-text: #713f12;
+
+  /* Semantic */
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  --color-success: #10b981;
+
+  /* Glass */
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 8px 32px rgba(13, 148, 136, 0.12);
+
+  /* Timing */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 400ms ease;
+}
+
+/* ============================================================
+   Base Reset
+   ============================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #f0fdfa 0%, #e8f5e9 50%, #f0f9ff 100%);
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   Portal Layout Components
+   ============================================================ */
+
+/* URS §4.1: Top Header - Background xanh mòng két (Teal) */
+.portal-header {
+  background: linear-gradient(
+    135deg,
+    var(--color-teal-700) 0%,
+    var(--color-teal-600) 60%,
+    var(--color-teal-500) 100%
+  );
+  box-shadow: 0 4px 20px rgba(13, 148, 136, 0.35);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* URS §4.1: Admin Toolbar - background màu vàng/kem nhạt */
+.admin-toolbar {
+  background: var(--color-admin-bg);
+  border-bottom: 1px solid var(--color-admin-border);
+  transition: all var(--transition-normal);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================
+   Global Search Bar
+   ============================================================ */
+.global-search {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 12px;
+  color: white;
+  backdrop-filter: blur(12px);
+  transition: all var(--transition-normal);
+}
+
+.global-search::placeholder {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.global-search:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+}
+
+/* ============================================================
+   AppCard - URS §4.2: Glassmorphism style
+   ============================================================ */
+.app-card {
+  position: relative;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  backdrop-filter: blur(16px);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  transform: translateY(0);
+}
+
+.app-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 48px rgba(13, 148, 136, 0.22),
+    0 4px 16px rgba(0, 0, 0, 0.08);
+  border-color: rgba(20, 184, 166, 0.5);
+}
+
+.app-card:active {
+  transform: translateY(-2px);
+}
+
+.app-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--color-teal-400),
+    var(--color-teal-600)
+  );
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.app-card:hover::before {
+  opacity: 1;
+}
+
+/* Department Tag - góc trái trên §4.2 */
+.dept-tag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(13, 148, 136, 0.12);
+  color: var(--color-teal-700);
+  border: 1px solid rgba(13, 148, 136, 0.25);
+}
+
+/* URS §4.2: Dải ruy-băng đỏ "TESTING MODE" góc phải trên */
+.testing-ribbon {
+  position: absolute;
+  top: 14px;
+  right: -22px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 28px;
+  transform: rotate(45deg);
+  transform-origin: center;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  z-index: 10;
+  width: 90px;
+  text-align: center;
+}
+
+/* Icon Container §4.2 - góc giữa */
+.app-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(
+    135deg,
+    var(--color-teal-100),
+    rgba(20, 184, 166, 0.2)
+  );
+  color: var(--color-teal-700);
+  margin: 0 auto 12px;
+  transition: transform var(--transition-normal);
+}
+
+.app-card:hover .app-card-icon {
+  transform: scale(1.12) rotate(-3deg);
+}
+
+/* Folder card special style */
+.app-card-folder .app-card-icon {
+  background: linear-gradient(135deg, #fef9c3, #fef08a);
+  color: #92400e;
+}
+
+/* ============================================================
+   Folder Modal
+   ============================================================ */
+.folder-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+.folder-modal {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  padding: 32px;
+  max-width: 700px;
+  width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.2),
+    0 8px 32px rgba(13, 148, 136, 0.15);
+  border: 1px solid rgba(20, 184, 166, 0.2);
+  animation: scaleIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ============================================================
+   App Grid
+   ============================================================ */
+.app-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 640px) {
+  .app-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+/* ============================================================
+   Scrollbar Styling
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(13, 148, 136, 0.35);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(13, 148, 136, 0.6);
+}
+
+/* ============================================================
+   Ant Design Token Overrides
+   ============================================================ */
+.ant-btn-primary {
+  background: var(--color-teal-600) !important;
+  border-color: var(--color-teal-600) !important;
+}
+.ant-btn-primary:hover {
+  background: var(--color-teal-700) !important;
+  border-color: var(--color-teal-700) !important;
+}
+
+/* ============================================================
+   Utility Classes
+   ============================================================ */
+.text-teal { color: var(--color-teal-600); }
+.bg-teal { background-color: var(--color-teal-600); }
+.gradient-text {
+  background: linear-gradient(135deg, white 0%, rgba(255,255,255,0.8) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================================
+   Ant Design Tabs Full Height
+   ============================================================ */
+.portal-tabs-full-height {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.portal-tabs-full-height > .ant-tabs-content-holder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.portal-tabs-full-height .ant-tabs-nav {
+  margin-bottom: 4px !important;
+}
+.portal-tabs-full-height .ant-tabs-tab {
+  padding: 8px 0 !important;
+}
+.portal-tabs-full-height .ant-tabs-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.portal-tabs-full-height .ant-tabs-tabpane-active {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.portal-tabs-full-height .ant-tabs-tabpane {
+  height: 100%;
+  padding-top: 4px !important;
+}
+
+/* ============================================================
+   Compact Table Styles
+   ============================================================ */
+.ant-table.ant-table-small .ant-table-thead > tr > th,
+.ant-table.ant-table-small .ant-table-tbody > tr > td {
+  padding: 8px 12px; 
+}
+
+/* Hard override for table padding */
+.ant-table-thead > tr > th,
+.ant-table-tbody > tr > td {
+  padding: 8px 12px !important;
+}
+
+.compact-table .ant-table-thead > tr > th {
+  padding: 6px 12px !important;
+  background: #f8fafc !important;
+  border-radius: 8px !important;
+}
+
+/* Force ellipsis for all table cells content */
+.compact-table .ant-table-cell {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Ensure custom rendered elements inside cells also respect ellipsis */
+.compact-table .ant-table-cell > * {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ant-table-row-striped td {
+  background-color: #f8fafc !important;
+}
+
+.compact-table .ant-table-tbody > tr > td {
+  padding: 6px 12px !important;
+}
+
+/* ============================================================
+   Column Search Header
+   ============================================================ */
+/* Allow header cells to wrap for column search inputs */
+.ant-table-thead > tr > th {
+  vertical-align: top !important;
+}
+
+/* Ensure the search input in the header doesn't cause overflow */
+.ant-table-thead .ant-input-sm {
+  font-size: 11px !important;
+}
+
+/* Style the clear button inside column search */
+.ant-table-thead .ant-input-clear-icon {
+  font-size: 10px !important;
+}
+
+/* Animate active column filter inputs */
+.ant-table-thead .ant-input[value]:not([value=""]) {
+  background-color: #f0fdfa !important;
+  border-color: #0d9488 !important;
+}
+
+/* Ensure the table fills the container and pushes pagination to the bottom */
+.compact-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.compact-table .ant-spin-nested-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.compact-table .ant-spin-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.compact-table .ant-table {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.compact-table .ant-table-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.compact-table .ant-table-pagination {
+  margin: 0 !important;
+  padding: 8px 16px !important;
+  background: #fff;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* ============================================================
+   Pagination Dropdown Fix
+   ============================================================ */
+/* Hide search input and typing cursor in pagination size changer */
+.ant-pagination-options-size-changer .ant-select-selection-search-input {
+  display: none !important;
+}
+
+.ant-pagination-options-size-changer .ant-select-selection-item {
+  user-select: none !important;
+}
+
+/* Ensure the arrow is always visible and clickable */
+.ant-pagination-options-size-changer .ant-select-arrow {
+  display: flex !important;
+}
+
+/* Fix for dropdown selectability - Set extremely high z-index */
+.ant-select-dropdown {
+  z-index: 99999 !important;
+}
+
+/* Ensure the pagination container doesn't block clicks */
+.ant-table-pagination.ant-pagination {
+  z-index: 100 !important;
+}
