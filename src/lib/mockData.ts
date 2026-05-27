@@ -71,6 +71,15 @@ export const MOCK_PORTAL_APPS: PortalApp[] = [
     allowed_depts: ['QA', 'KHO'],
     is_testing: false,
   },
+  {
+    app_id: 'app-import',
+    app_name: 'Quản Lý Nhập Khẩu',
+    type: 'link',
+    target_url: '/apps/import',
+    parent_id: null,
+    allowed_depts: ['QA', 'KHO', 'SCM'],
+    is_testing: false,
+  },
   // App con nằm trong folder "App Công Ty"
   {
     app_id: 'app-child-hr-001',
