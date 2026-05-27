@@ -5,13 +5,14 @@ import { Tabs, Switch, Tag } from 'antd';
 import PortalLayout from '@/components/PortalLayout';
 import AppDashboard from '@/components/AppDashboard';
 import MasterItemManager from '@/components/MasterItemManager';
+import ProductLabelManager from '@/components/ProductLabelManager';
 import { MOCK_CURRENT_USER, MOCK_STAFF_USER } from '@/lib/mockData';
 import { User } from '@/lib/types';
-import { LayoutGrid, Package } from 'lucide-react';
+import { LayoutGrid, Package, Link2 } from 'lucide-react';
 
 /**
  * Trang chủ GxP Portal
- * - Tabs: Dashboard (AppDashboard) + Master Items (MasterItemManager)
+ * - Tabs: Dashboard (AppDashboard) + Master Items (MasterItemManager) + Label Mappings (ProductLabelManager)
  * - PILOT: user switcher để demo RBAC
  */
 export default function HomePage() {
@@ -30,7 +31,7 @@ export default function HomePage() {
       ),
       children: <AppDashboard currentUser={currentUser} />,
     },
-    // MasterItemManager chỉ hiện với Admin (§4.3)
+    // MasterItemManager + ProductLabelManager chỉ hiện với Admin (§4.3)
     ...(isAdmin
       ? [
           {
@@ -42,6 +43,16 @@ export default function HomePage() {
               </span>
             ),
             children: <MasterItemManager userId={currentUser.id} />,
+          },
+          {
+            key: 'label-mappings',
+            label: (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+                <Link2 size={15} />
+                Liên kết SP - Tem
+              </span>
+            ),
+            children: <ProductLabelManager userId={currentUser.id} />,
           },
         ]
       : []),
