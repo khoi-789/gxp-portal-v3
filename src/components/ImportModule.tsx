@@ -155,6 +155,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   // Track original detail items for smart DB updates (deletes, updates, inserts)
   const [originalItems, setOriginalItems] = useState<ShipmentItem[]>([]);
 
+  // Product label mappings from database
+  const [labelMappings, setLabelMappings] = useState<any[]>([]);
+
   const { prefs, save: savePrefs, setColumnWidth } = useTablePreferences(
     'import_shipments_table_v1',
     userId,
@@ -183,6 +186,14 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
         setMasterItems(mItems);
       }
 
+      // Load Product-Label Mappings
+      const { data: mappings, error: mappingError } = await supabase
+        .from('product_label_mappings')
+        .select('*');
+      if (!mappingError && mappings) {
+        setLabelMappings(mappings);
+      }
+
       // Load Shipments joined with items
       const { data: shipments, error: sError } = await supabase
         .from('imp_shipments')
@@ -204,6 +215,21 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Get required stamps/labels for a given product code
+  const getProductLabels = useCallback((productItemCode: string | null) => {
+    if (!productItemCode) return [];
+    return labelMappings
+      .filter(m => m.product_item_code === productItemCode)
+      .map(m => {
+        const labelItem = masterItems.find(item => item.item_code === m.label_item_code);
+        return {
+          code: m.label_item_code,
+          name: labelItem ? labelItem.item_name : 'Không rõ tên nhãn',
+          qty: m.quantity_per_unit
+        };
+      });
+  }, [labelMappings, masterItems]);
 
   // Unique suppliers loaded from shipments list (useful for dropdown select)
   const suppliersList = useMemo(() => {
@@ -1344,6 +1370,38 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                             style={{ borderRadius: 6, paddingRight: 24 }}
                           />
                         </Col>
+
+                        {/* Required Stamps/Labels (Calculated dynamically) */}
+                        {item.item_code && (
+                          <Col span={24}>
+                            {(() => {
+                              const reqLabels = getProductLabels(item.item_code);
+                              if (reqLabels.length === 0) return null;
+                              return (
+                                <div style={{
+                                  background: 'rgba(13,148,136,0.04)',
+                                  border: '1px dashed rgba(13,148,136,0.3)',
+                                  padding: '8px 12px',
+                                  borderRadius: 8,
+                                  marginTop: 4,
+                                  marginBottom: 4
+                                }}>
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: '#0f766e', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                    <span style={{ fontSize: 13 }}>🏷️</span> Tem/Nhãn bắt buộc bổ sung:
+                                  </div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                    {reqLabels.map((lbl, lidx) => (
+                                      <div key={lidx} style={{ fontSize: 11, color: '#334155', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                                        <span>• <strong style={{ color: '#0d9488' }}>{lbl.code}</strong> - {lbl.name}</span>
+                                        <span style={{ whiteSpace: 'nowrap' }}>Tỷ lệ: <strong style={{ color: '#0f766e' }}>{lbl.qty} cái/SP</strong></span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </Col>
+                        )}
 
                         {/* Issue Notes (QA) */}
                         <Col span={12}>
