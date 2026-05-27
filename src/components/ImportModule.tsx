@@ -1353,6 +1353,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                             style={{ width: '100%' }}
                             options={masterItems.map(m => ({ value: m.item_code, label: `[${m.item_code}] ${m.item_name}` }))}
                             dropdownStyle={{ borderRadius: 8 }}
+                            popupMatchSelectWidth={false}
                             allowClear
                           />
                         </Col>

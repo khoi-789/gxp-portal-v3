@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import dayjs from 'dayjs';
 import {
   Table, Button, Drawer, Input, Tag, Space,
-  Popconfirm, message, Tooltip, InputNumber, Row, Col, Select
+  Popconfirm, message, Tooltip, InputNumber, Row, Col, Select, Switch
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -59,6 +59,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('compact');
 
   // Form states
   const [isOpen, setIsOpen] = useState(false);
@@ -144,7 +145,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
     });
   }, [mappings, masterItems]);
 
-  // Apply filters & search
+  // Apply filters & search (sorted by product_item_code so consecutive rows are grouped)
   const filteredMappings = useMemo(() => {
     let result = [...processedMappings];
 
@@ -168,8 +169,76 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
       });
     }
 
+    result.sort((a, b) => a.product_item_code.localeCompare(b.product_item_code));
     return result;
   }, [processedMappings, columnFilters, globalSearch]);
+
+  const displayMappings = useMemo(() => {
+    let productCounter = 0;
+    return filteredMappings.map((item, idx) => {
+      const isDuplicate = idx > 0 && filteredMappings[idx].product_item_code === filteredMappings[idx - 1].product_item_code;
+      if (!isDuplicate) {
+        productCounter++;
+      }
+      return {
+        ...item,
+        isDuplicateProduct: isDuplicate,
+        productStt: isDuplicate ? '' : productCounter,
+      };
+    });
+  }, [filteredMappings]);
+
+  const compactMappings = useMemo(() => {
+    const groups: Record<string, any> = {};
+    processedMappings.forEach(m => {
+      if (!groups[m.product_item_code]) {
+        groups[m.product_item_code] = {
+          id: m.product_item_code,
+          product_item_code: m.product_item_code,
+          product_name: m.product_name,
+          supplier_code: m.supplier_code,
+          label_item_codes: [],
+          label_names: [],
+        };
+      }
+      groups[m.product_item_code].label_item_codes.push(m.label_item_code);
+      groups[m.product_item_code].label_names.push(m.label_name);
+    });
+
+    const list = Object.values(groups);
+    let result = [...list];
+
+    const activeColFilters = Object.fromEntries(
+      Object.entries(columnFilters).filter(([, v]) => v.trim() !== '')
+    );
+    if (Object.keys(activeColFilters).length > 0) {
+      result = applyColumnFilters(result as any, activeColFilters) as any;
+    }
+
+    if (globalSearch.trim()) {
+      const q = globalSearch.toLowerCase().trim();
+      result = result.filter(r => {
+        return (
+          r.product_item_code.toLowerCase().includes(q) ||
+          r.product_name.toLowerCase().includes(q) ||
+          r.supplier_code.toLowerCase().includes(q) ||
+          r.label_item_codes.some((c: string) => c.toLowerCase().includes(q)) ||
+          r.label_names.some((n: string) => n.toLowerCase().includes(q))
+        );
+      });
+    }
+
+    result.sort((a, b) => a.product_item_code.localeCompare(b.product_item_code));
+
+    return result.map((item, idx) => ({
+      ...item,
+      stt: idx + 1,
+      label_item_code: item.label_item_codes.join(', '),
+      label_name: item.label_names.join(', '),
+    }));
+  }, [processedMappings, columnFilters, globalSearch]);
+
+  const tableData = viewMode === 'compact' ? compactMappings : displayMappings;
 
   const handleColumnFilter = (key: string, value: string) => {
     setColumnFilters(prev => ({
@@ -277,11 +346,20 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
       key: 'stt',
       width: w('stt'),
       align: 'center',
-      render: (_: any, __: any, idx: number) => (
-        <span style={{ color: '#94a3b8', fontSize: 12 }}>
-          {(currentPage - 1) * pageSize + idx + 1}
-        </span>
-      ),
+      render: (_: any, r: any, idx: number) => {
+        if (viewMode === 'compact') {
+          return (
+            <span style={{ color: '#94a3b8', fontSize: 12 }}>
+              {(currentPage - 1) * pageSize + idx + 1}
+            </span>
+          );
+        }
+        return (
+          <span style={{ color: '#94a3b8', fontSize: 12 }}>
+            {r.productStt}
+          </span>
+        );
+      },
     },
     product_item_code: {
       title: <ColumnSearchHeader title="Mã SP" dataKey="product_item_code" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
@@ -290,7 +368,10 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
       width: w('product_item_code'),
       ellipsis: true,
       onHeaderCell: () => resizable('product_item_code'),
-      render: (v: string) => <code style={{ color: '#0d9488', fontWeight: 700 }}>{v}</code>,
+      render: (v: string, r: any) => {
+        if (viewMode === 'detailed' && r.isDuplicateProduct) return '';
+        return <code style={{ color: '#0d9488', fontWeight: 700 }}>{v}</code>;
+      },
     },
     product_name: {
       title: <ColumnSearchHeader title="Tên sản phẩm" dataKey="product_name" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
@@ -299,7 +380,10 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
       width: w('product_name'),
       ellipsis: true,
       onHeaderCell: () => resizable('product_name'),
-      render: (v: string) => <span style={{ fontWeight: 500, color: '#334155' }}>{v}</span>,
+      render: (v: string, r: any) => {
+        if (viewMode === 'detailed' && r.isDuplicateProduct) return '';
+        return <span style={{ fontWeight: 500, color: '#334155' }}>{v}</span>;
+      },
     },
     supplier_code: {
       title: <ColumnSearchHeader title="Hãng" dataKey="supplier_code" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
@@ -307,7 +391,10 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
       key: 'supplier_code',
       width: w('supplier_code'),
       onHeaderCell: () => resizable('supplier_code'),
-      render: (v: string) => <Tag color="cyan">{v}</Tag>,
+      render: (v: string, r: any) => {
+        if (viewMode === 'detailed' && r.isDuplicateProduct) return '';
+        return <Tag color="cyan">{v}</Tag>;
+      },
     },
     label_item_code: {
       title: <ColumnSearchHeader title="Mã Tem/Nhãn" dataKey="label_item_code" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
@@ -334,7 +421,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
       width: w('quantity_per_unit'),
       align: 'right',
       onHeaderCell: () => resizable('quantity_per_unit'),
-      render: (v: number) => <strong style={{ color: '#0f766e' }}>{v} cái/SP</strong>,
+      render: (v: number) => <strong style={{ color: '#0f766e' }}>{v}</strong>,
     },
     actions: {
       title: <div style={{ fontWeight: 600, fontSize: 12, textAlign: 'center' }}>Thao tác</div>,
@@ -378,6 +465,9 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
     const visibleConfigs = prefs.columnConfigs.filter(c => c.visible);
     return visibleConfigs
       .map(c => {
+        if (viewMode === 'compact' && (c.key === 'quantity_per_unit' || c.key === 'actions')) {
+          return null;
+        }
         const def = columns[c.key];
         if (!def) return null;
         return {
@@ -386,7 +476,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
         };
       })
       .filter(Boolean) as ColumnsType<any>;
-  }, [prefs.columnConfigs, prefs.columnWidths, columns]);
+  }, [prefs.columnConfigs, prefs.columnWidths, columns, viewMode]);
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '8px 4px', overflow: 'hidden' }}>
@@ -412,7 +502,21 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
           </p>
         </div>
 
-        <Space>
+        <Space size="middle">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 8 }}>
+            <span style={{ fontSize: 12, color: '#475569', fontWeight: 500 }}>Chế độ xem:</span>
+            <Switch
+              checkedChildren="Chi tiết"
+              unCheckedChildren="Gọn"
+              checked={viewMode === 'detailed'}
+              onChange={(checked) => {
+                setViewMode(checked ? 'detailed' : 'compact');
+                setCurrentPage(1);
+              }}
+              style={{ background: viewMode === 'detailed' ? '#0d9488' : '#94a3b8' }}
+            />
+          </div>
+
           <Button
             icon={<RefreshCw size={14} />}
             onClick={loadData}
@@ -469,7 +573,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
           className="portal-table"
           components={{ header: { cell: ResizableTitle } }}
           columns={tableColumns}
-          dataSource={filteredMappings}
+          dataSource={tableData}
           loading={loading}
           rowKey="id"
           size="small"
