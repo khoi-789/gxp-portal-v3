@@ -1045,7 +1045,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                   <Select
                     showSearch
                     placeholder="Chọn hoặc nhập NCC"
-                    optionFilterProp="children"
+                    optionFilterProp="label"
                     value={detailRow.supplier_code || undefined}
                     onChange={(val) => updateField('supplier_code', val)}
                     disabled={simulatedRole !== 'SCM'}
@@ -1332,7 +1332,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           danger
                           size="small"
                           icon={<Trash2 size={14} />}
-                          style={{ position: 'absolute', top: 8, right: 8 }}
+                          style={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}
                           onClick={() => handleRemoveItem(idx)}
                         />
                       )}
@@ -1346,7 +1346,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           <Select
                             showSearch
                             placeholder="Khớp mã SP..."
-                            optionFilterProp="children"
+                            optionFilterProp="label"
                             value={item.item_code || undefined}
                             onChange={(val) => updateItemField(idx, 'item_code', val)}
                             disabled={simulatedRole !== 'SCM'}

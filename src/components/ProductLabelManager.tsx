@@ -540,7 +540,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
                 <Select
                   showSearch
                   placeholder="Chọn sản phẩm..."
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   value={selectedProduct || undefined}
                   onChange={(val) => setSelectedProduct(val)}
                   disabled={!!editingId}
@@ -563,7 +563,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
                 <Select
                   showSearch
                   placeholder="Chọn nhãn..."
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   value={selectedLabel || undefined}
                   onChange={(val) => setSelectedLabel(val)}
                   disabled={!!editingId}
