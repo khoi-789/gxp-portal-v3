@@ -30,6 +30,7 @@ export interface ShipmentItem {
   issue_notes: string | null;
   resolution_notes: string | null;
   created_at?: string;
+  required_labels?: any[] | null; // Stored labels snapshot: { code: string, name: string, qty: number }[]
 }
 
 export interface ShipmentRecord {
@@ -359,11 +360,16 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       const items = [...prev.imp_shipment_items];
       items[index] = { ...items[index], [key]: value };
       
-      // Auto fill item_name if SCM changes item_code
-      if (key === 'item_code' && value) {
-        const match = masterItems.find(m => m.item_code === value);
-        if (match) {
-          items[index].item_name = match.item_name;
+      // Auto fill item_name and recalculate labels if SCM changes item_code
+      if (key === 'item_code') {
+        if (value) {
+          const match = masterItems.find(m => m.item_code === value);
+          if (match) {
+            items[index].item_name = match.item_name;
+          }
+          items[index].required_labels = getProductLabels(value);
+        } else {
+          items[index].required_labels = null;
         }
       }
       return { ...prev, imp_shipment_items: items };
@@ -462,16 +468,25 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
       // Separate into inserts & updates
       const toUpdate = currentItems.filter(item => item.id);
-      const toInsert = currentItems.filter(item => !item.id).map(item => ({
-        invoice_number: invoiceNumber,
-        item_code: item.item_code || null,
-        item_name: item.item_name || 'Sản phẩm mới',
-        issue_notes: item.issue_notes || null,
-        resolution_notes: item.resolution_notes || null,
-      }));
+      const toInsert = currentItems.filter(item => !item.id).map(item => {
+        const labels = (item.required_labels !== undefined && item.required_labels !== null)
+          ? item.required_labels
+          : getProductLabels(item.item_code);
+        return {
+          invoice_number: invoiceNumber,
+          item_code: item.item_code || null,
+          item_name: item.item_name || 'Sản phẩm mới',
+          issue_notes: item.issue_notes || null,
+          resolution_notes: item.resolution_notes || null,
+          required_labels: (labels && labels.length > 0) ? labels : null,
+        };
+      });
 
       // Perform updates
       for (const item of toUpdate) {
+        const labels = (item.required_labels !== undefined && item.required_labels !== null)
+          ? item.required_labels
+          : getProductLabels(item.item_code);
         const { error: updateError } = await supabase
           .from('imp_shipment_items')
           .update({
@@ -479,6 +494,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             item_name: item.item_name,
             issue_notes: item.issue_notes || null,
             resolution_notes: item.resolution_notes || null,
+            required_labels: (labels && labels.length > 0) ? labels : null,
           })
           .eq('id', item.id);
         if (updateError) throw updateError;
@@ -1372,11 +1388,12 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           />
                         </Col>
 
-                        {/* Required Stamps/Labels (Calculated dynamically) */}
+                        {/* Required Stamps/Labels (Calculated dynamically or loaded from snapshot) */}
                         {item.item_code && (
                           <Col span={24}>
                             {(() => {
-                              const reqLabels = getProductLabels(item.item_code);
+                              const isFrozen = !!(item.required_labels && Array.isArray(item.required_labels) && item.required_labels.length > 0);
+                              const reqLabels = isFrozen ? item.required_labels! : getProductLabels(item.item_code);
                               if (reqLabels.length === 0) return null;
                               return (
                                 <div style={{
@@ -1387,8 +1404,13 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   marginTop: 4,
                                   marginBottom: 4
                                 }}>
-                                  <div style={{ fontSize: 11, fontWeight: 700, color: '#0f766e', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                                    <span style={{ fontSize: 13 }}>🏷️</span> Tem/Nhãn bắt buộc bổ sung:
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      <span style={{ fontSize: 13 }}>🏷️</span> Tem/Nhãn bắt buộc bổ sung:
+                                    </span>
+                                    <span style={{ fontSize: 9, fontWeight: 600, color: isFrozen ? '#64748b' : '#0d9488', background: isFrozen ? '#f1f5f9' : '#ccfbf1', padding: '2px 6px', borderRadius: 4 }}>
+                                      {isFrozen ? 'Lịch sử Invoice' : 'Master Data Realtime'}
+                                    </span>
                                   </div>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                                     {reqLabels.map((lbl, lidx) => (
