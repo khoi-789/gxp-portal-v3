@@ -12,7 +12,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { MasterItem } from '@/lib/types';
-import { MOCK_MASTER_ITEMS } from '@/lib/mockData';
+import { supabase } from '@/lib/supabase';
 import { ColumnSearchHeader, applyColumnFilters } from '@/lib/columnSearch';
 import TableControls, { ColumnConfig } from '@/components/TableControls';
 import ResizableTitle from '@/components/ResizableTitle';
@@ -58,52 +58,22 @@ const masterItemSchema = z.object({
 type MasterItemFormData = z.infer<typeof masterItemSchema>;
 
 // ──────────────────────────────────────────────────────────
-// Mock CRUD functions (thay bằng Supabase thật sau)
+// Supabase CRUD functions
 // ──────────────────────────────────────────────────────────
-let mockDb = [...MOCK_MASTER_ITEMS];
-let isInitialized = false;
-
-// Đồng bộ dữ liệu ra phạm vi global để các module khác (VD: Destruction) có thể dùng chung
-const syncGlobal = () => {
-  if (typeof window !== 'undefined') {
-    (window as any)._masterItemsMock = mockDb;
-    // Lưu vào LocalStorage để không bị mất khi Refresh trang
-    localStorage.setItem('gxpportal_master_items', JSON.stringify(mockDb));
-  }
-};
-
 async function fetchMasterItems(): Promise<MasterItem[]> {
-  if (isInitialized) return mockDb;
+  const { data, error } = await supabase
+    .from('master_items')
+    .select('*')
+    .order('updated_at', { ascending: false });
 
-  // Thử đọc từ LocalStorage trước
-  const saved = typeof window !== 'undefined' ? localStorage.getItem('gxpportal_master_items') : null;
-  if (saved) {
-    try {
-      mockDb = JSON.parse(saved);
-      isInitialized = true;
-      syncGlobal();
-      return mockDb;
-    } catch (e) { console.error('Failed to parse saved master items', e); }
+  if (error) {
+    throw new Error('Lỗi khi tải danh mục sản phẩm: ' + error.message);
   }
-
-  try {
-    const res = await fetch('/master-data.json');
-    if (!res.ok) throw new Error('Failed to load master data');
-    const json = await res.json();
-    // Đồng bộ mockDb với dữ liệu từ file JSON để các hàm update/delete hoạt động đúng
-    mockDb = json.items; 
-    isInitialized = true;
-    syncGlobal();
-    return mockDb;
-  } catch (err) {
-    console.warn('Fallback to mock data:', err);
-    return mockDb;
-  }
+  return data as MasterItem[];
 }
 
 async function createMasterItem(data: MasterItemFormData): Promise<MasterItem> {
-  await new Promise((r) => setTimeout(r, 500));
-  const newItem: MasterItem = {
+  const newItem = {
     item_code: data.item_code.toUpperCase(),
     item_name: data.item_name,
     supplier_code: data.supplier_code,
@@ -116,29 +86,70 @@ async function createMasterItem(data: MasterItemFormData): Promise<MasterItem> {
     pallet_qty: data.pallet_qty,
     case_qty: data.case_qty,
     inner_pack: data.inner_pack,
-    updated_at: dayjs().format('DD/MM/YYYY HH:mm:ss'),
+    updated_at: new Date().toISOString(),
   };
-  if (mockDb.find((i) => i.item_code === newItem.item_code)) {
+
+  // Check if item_code already exists
+  const { data: existing } = await supabase
+    .from('master_items')
+    .select('item_code')
+    .eq('item_code', newItem.item_code)
+    .maybeSingle();
+
+  if (existing) {
     throw new Error('Mã sản phẩm đã tồn tại!');
   }
-  mockDb = [...mockDb, newItem];
-  return newItem;
+
+  const { data: inserted, error } = await supabase
+    .from('master_items')
+    .insert([newItem])
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error('Lỗi khi thêm sản phẩm: ' + error.message);
+  }
+  return inserted as MasterItem;
 }
 
 async function updateMasterItem(item_code: string, data: Partial<MasterItemFormData>): Promise<MasterItem> {
-  await new Promise((r) => setTimeout(r, 400));
-  const idx = mockDb.findIndex((i) => i.item_code === item_code);
-  if (idx < 0) throw new Error('Không tìm thấy sản phẩm');
-  const now = dayjs().format('DD/MM/YYYY HH:mm:ss');
-  const updated = { ...mockDb[idx], ...data, visa_no: data.visa_no || null, updated_at: now };
-  mockDb = [...mockDb.slice(0, idx), updated, ...mockDb.slice(idx + 1)];
-  syncGlobal();
-  return updated;
+  const patch: any = {
+    item_name: data.item_name,
+    supplier_code: data.supplier_code,
+    visa_no: data.visa_no || null,
+    is_active: data.is_active,
+    gross_weight: data.gross_weight,
+    net_weight: data.net_weight,
+    cube: data.cube,
+    tare_weight: data.tare_weight,
+    pallet_qty: data.pallet_qty,
+    case_qty: data.case_qty,
+    inner_pack: data.inner_pack,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data: updated, error } = await supabase
+    .from('master_items')
+    .update(patch)
+    .eq('item_code', item_code)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error('Lỗi khi cập nhật sản phẩm: ' + error.message);
+  }
+  return updated as MasterItem;
 }
 
 async function deleteMasterItem(item_code: string): Promise<void> {
-  await new Promise((r) => setTimeout(r, 400));
-  mockDb = mockDb.filter((i) => i.item_code !== item_code);
+  const { error } = await supabase
+    .from('master_items')
+    .delete()
+    .eq('item_code', item_code);
+
+  if (error) {
+    throw new Error('Lỗi khi xóa sản phẩm: ' + error.message);
+  }
 }
 
 // Default column configs
@@ -402,7 +413,11 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
       dataIndex: 'updated_at', key: 'updated_at',
       width: w('updated_at'), align: 'center' as const,
       onHeaderCell: () => resizable('updated_at'),
-      render: (v: string) => <span style={{ fontSize: 12, color: '#64748b' }}>{v || '—'}</span>,
+      render: (v: string) => (
+        <span style={{ fontSize: 12, color: '#64748b' }}>
+          {v ? (dayjs(v).isValid() ? dayjs(v).format('DD/MM/YYYY HH:mm:ss') : v) : '—'}
+        </span>
+      ),
     },
     actions: null as unknown as object,
   };

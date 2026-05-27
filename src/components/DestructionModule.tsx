@@ -17,6 +17,7 @@ import TableControls, { ColumnConfig } from '@/components/TableControls';
 import ResizableTitle from '@/components/ResizableTitle';
 import { useTablePreferences } from '@/lib/useTablePreferences';
 import dayjs from 'dayjs';
+import { supabase } from '@/lib/supabase';
 
 /* ──────────────────────────────────────────────────
    Types
@@ -133,36 +134,105 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
 
   const SNAPSHOT_KEY = 'destruction-snapshot-v1';
   const SNAPSHOT_TIME_KEY = 'destruction-snapshot-time-v1';
-  const RULES_KEY = 'gxpportal_vendor_rules';
-
-  // Load rules from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem(RULES_KEY);
-    if (saved) setVendorRules(JSON.parse(saved));
-    else {
-      // Default initial rules
-      const defaults = [
-        { prefix: 'BK', label: 'BP TBYT' },
-        { prefix: 'ST9-', label: 'BP TBYT' },
-        { prefix: 'NM', label: 'BP TBYT' },
-        { prefix: 'TT', label: 'P.Tem' },
-        { prefix: 'BA', label: 'P.Tem' },
-      ];
-      setVendorRules(defaults);
-      localStorage.setItem(RULES_KEY, JSON.stringify(defaults));
-    }
-  }, []);
 
   const getVendorLabel = useCallback((itemCode: string) => {
     if (!itemCode) return '';
-    // Check rules first (longest prefix matches first)
     const sortedRules = [...vendorRules].sort((a, b) => b.prefix.length - a.prefix.length);
     for (const rule of sortedRules) {
       if (itemCode.startsWith(rule.prefix)) return rule.label;
     }
-    // Fallback to 2 chars
     return itemCode.substring(0, 2).toUpperCase();
   }, [vendorRules]);
+
+  // ── Load rules & raw data from Supabase ──
+  useEffect(() => {
+    const loadInitData = async () => {
+      setLoading(true);
+      try {
+        // 1. Load Rules
+        const { data: rules, error: rulesError } = await supabase
+          .from('vendor_rules')
+          .select('*')
+          .order('id', { ascending: true });
+        
+        let activeRules = rules || [];
+        if (rulesError) {
+          console.warn('Lỗi load rules:', rulesError.message);
+        } else {
+          setVendorRules(activeRules);
+        }
+
+        // Helper to compute vendor label inline
+        const getVendorLabelInline = (itemCode: string, rulesList: typeof activeRules) => {
+          if (!itemCode) return '';
+          const sortedRules = [...rulesList].sort((a, b) => b.prefix.length - a.prefix.length);
+          for (const rule of sortedRules) {
+            if (itemCode.startsWith(rule.prefix)) return rule.label;
+          }
+          return itemCode.substring(0, 2).toUpperCase();
+        };
+
+        // 2. Load Destruction Records
+        const { data: records, error: recordsError } = await supabase
+          .from('destruction_records')
+          .select('*')
+          .order('id', { ascending: true });
+
+        if (recordsError) {
+          throw new Error('Lỗi load records: ' + recordsError.message);
+        }
+
+        if (records) {
+          const mapped: DestructionRecord[] = records.map(r => ({
+            id: Number(r.id),
+            owner: r.owner,
+            item: r.item,
+            descr: r.descr,
+            location: r.location,
+            lpn: r.lpn,
+            onHand: Number(r.on_hand),
+            available: Number(r.available),
+            status: r.status,
+            visa: r.visa,
+            lotNo: r.lot_no,
+            expDate: r.exp_date,
+            soBatch: r.so_batch,
+            lyDoHold: r.ly_do_hold,
+            loaiHold: r.loai_hold,
+            ngayHold: r.ngay_hold,
+            nguoiHold: r.nguoi_hold,
+            ghiChu: r.ghi_chu,
+            grossWgt: Number(r.gross_wgt),
+            netWgt: Number(r.net_wgt),
+            tare: Number(r.tare),
+            cube: Number(r.cube),
+            innerPack: Number(r.inner_pack),
+            caseCnt: Number(r.case_cnt),
+            pallet: Number(r.pallet),
+            uom: r.uom,
+            decision: r.decision || '',
+            soLuongHuy: Number(r.so_luong_huy) || 0,
+            lyDoQD: r.ly_do_qd || '',
+            nguoiDuyet: r.nguoi_duyet || '',
+            ngayDuyet: r.ngay_duyet || '',
+            vendor: getVendorLabelInline(r.item, activeRules),
+          }));
+          setRawData(mapped);
+          
+          const snapTime = localStorage.getItem(SNAPSHOT_TIME_KEY) || dayjs().format('DD/MM/YYYY HH:mm:ss');
+          setLastCalculatedAt(snapTime);
+        }
+      } catch (err: any) {
+        messageApi.error(err.message || 'Lỗi kết nối database!');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isMounted) {
+      loadInitData();
+    }
+  }, [isMounted, messageApi]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -185,53 +255,26 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
     style: { width: w(key) },
   });
 
-  /* load JSON or Snapshot */
-  useEffect(() => {
-    const loadData = async () => {
-      const snap = localStorage.getItem(SNAPSHOT_KEY);
-      const snapTime = localStorage.getItem(SNAPSHOT_TIME_KEY);
-      
-      if (snap) {
-        setRawData(JSON.parse(snap));
-        setLastCalculatedAt(snapTime);
-        setLoading(false);
-      } else {
-        fetch('/destruction-data.json')
-          .then(r => r.json())
-          .then(json => {
-            const saved = loadDecisions();
-            const merged: DestructionRecord[] = json.data.map((r: DestructionRecord) => ({
-              ...r,
-              vendor: getVendorLabel(r.item),
-              ...(saved[r.id] || {}),
-            }));
-            
-            const nowStr = dayjs().format('DD/MM/YYYY HH:mm:ss');
-            localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(merged));
-            localStorage.setItem(SNAPSHOT_TIME_KEY, nowStr);
-            setRawData(merged);
-            setLastCalculatedAt(nowStr);
-          })
-          .catch(() => messageApi.error('Không tải được dữ liệu!'))
-          .finally(() => setLoading(false));
-      }
-    };
-    loadData();
-  }, [messageApi]);
+  /* persist decision changes in Supabase */
+  const updateRecord = useCallback(async (id: number, patch: Partial<DestructionRecord>) => {
+    setRawData(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r));
 
-  /* persist decision changes */
-  const updateRecord = useCallback((id: number, patch: Partial<DestructionRecord>) => {
-    setRawData(prev => {
-      const next = prev.map(r => r.id === id ? { ...r, ...patch } : r);
-      // Luôn ghi đè snapshot để giữ đồng bộ
-      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(next));
-      
-      const saved = loadDecisions();
-      saved[id] = { ...saved[id], ...patch };
-      saveDecisions(saved);
-      return next;
-    });
-  }, []);
+    const dbPatch: Record<string, any> = {};
+    if (patch.decision !== undefined) dbPatch.decision = patch.decision;
+    if (patch.soLuongHuy !== undefined) dbPatch.so_luong_huy = patch.soLuongHuy;
+    if (patch.lyDoQD !== undefined) dbPatch.ly_do_qd = patch.lyDoQD;
+    if (patch.nguoiDuyet !== undefined) dbPatch.nguoi_duyet = patch.nguoiDuyet;
+    if (patch.ngayDuyet !== undefined) dbPatch.ngay_duyet = patch.ngayDuyet;
+
+    const { error } = await supabase
+      .from('destruction_records')
+      .update(dbPatch)
+      .eq('id', id);
+
+    if (error) {
+      messageApi.error('Lỗi khi lưu quyết định: ' + error.message);
+    }
+  }, [messageApi]);
 
   const owners = useMemo(() =>
     Array.from(new Set(rawData.map(r => r.owner))).sort(),
@@ -289,41 +332,81 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
   const recalculateData = async () => {
     setLoading(true);
     try {
-      const savedMaster = localStorage.getItem('gxpportal_master_items');
-      let masterData: any[] = [];
-      if (savedMaster) {
-        masterData = JSON.parse(savedMaster);
-      } else {
-        const res = await fetch('/master-data.json');
-        if (res.ok) {
-          const json = await res.json();
-          masterData = json.items;
+      // 1. Tải danh mục sản phẩm từ Supabase
+      const { data: masterItems, error: masterError } = await supabase
+        .from('master_items')
+        .select('item_code, gross_weight, pallet_qty');
+
+      if (masterError) throw new Error(masterError.message);
+      if (!masterItems) return;
+
+      const masterMap = new Map(masterItems.map(m => [m.item_code, m]));
+
+      // 2. Cập nhật dữ liệu tạm trong memory
+      const updatedRecords = rawData.map(r => {
+        const masterItem = masterMap.get(r.item);
+        if (masterItem) {
+          return {
+            ...r,
+            vendor: getVendorLabel(r.item),
+            pallet: Number(masterItem.pallet_qty) || r.pallet,
+            grossWgt: Number(masterItem.gross_weight) || r.grossWgt,
+          };
         }
+        return r;
+      });
+
+      // 3. Upsert hàng loạt (batch upsert) lên Supabase để ghi nhận
+      const batchSize = 100;
+      for (let i = 0; i < updatedRecords.length; i += batchSize) {
+        const batch = updatedRecords.slice(i, i + batchSize).map(r => ({
+          id: r.id,
+          owner: r.owner,
+          item: r.item,
+          descr: r.descr,
+          location: r.location,
+          lpn: r.lpn,
+          on_hand: r.onHand,
+          available: r.available,
+          status: r.status,
+          visa: r.visa || null,
+          lot_no: r.lotNo,
+          exp_date: r.expDate,
+          so_batch: r.soBatch,
+          ly_do_hold: r.lyDoHold || null,
+          loai_hold: r.loaiHold || null,
+          ngay_hold: r.ngayHold || null,
+          nguoi_hold: r.nguoiHold || null,
+          ghi_chu: r.ghiChu || null,
+          gross_wgt: r.grossWgt || 0,
+          net_wgt: r.netWgt || 0,
+          tare: r.tare || 0,
+          cube: r.cube || 0,
+          inner_pack: r.innerPack || 0,
+          case_cnt: r.caseCnt || 0,
+          pallet: r.pallet || 0,
+          uom: r.uom,
+          decision: r.decision || '',
+          so_luong_huy: r.soLuongHuy || 0,
+          ly_do_qd: r.lyDoQD || '',
+          nguoi_duyet: r.nguoiDuyet || null,
+          ngay_duyet: r.ngayDuyet || null
+        }));
+
+        const { error: upsertError } = await supabase
+          .from('destruction_records')
+          .upsert(batch);
+        
+        if (upsertError) throw upsertError;
       }
 
-      setRawData(prev => {
-        const next = prev.map(r => {
-          const masterItem = masterData.find(m => m.item_code === r.item);
-          if (masterItem) {
-            return {
-              ...r,
-              vendor: getVendorLabel(r.item),
-              pallet: masterItem.pallet_qty || masterItem.pallet || r.pallet,
-              grossWgt: masterItem.gross_weight || r.grossWgt,
-            };
-          }
-          return r;
-        });
-        
-        const nowStr = dayjs().format('DD/MM/YYYY HH:mm:ss');
-        localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(next));
-        localStorage.setItem(SNAPSHOT_TIME_KEY, nowStr);
-        setLastCalculatedAt(nowStr);
-        return next;
-      });
-      messageApi.success('Đã tính toán lại dữ liệu dựa trên Danh mục SP hiện tại');
-    } catch (e) {
-      messageApi.error('Lỗi khi tính toán lại dữ liệu!');
+      setRawData(updatedRecords);
+      const nowStr = dayjs().format('DD/MM/YYYY HH:mm:ss');
+      localStorage.setItem(SNAPSHOT_TIME_KEY, nowStr);
+      setLastCalculatedAt(nowStr);
+      messageApi.success('Đã tính toán lại dữ liệu và đồng bộ lên Supabase thành công!');
+    } catch (e: any) {
+      messageApi.error('Lỗi khi tính toán lại dữ liệu: ' + (e.message || e));
     } finally {
       setLoading(false);
     }
@@ -819,11 +902,18 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
                       { 
                         title: 'Thao tác', key: 'op', width: 120, align: 'center',
                         render: (_, __, index) => (
-                          <Popconfirm title="Xóa quy tắc này?" onConfirm={() => {
-                            const next = vendorRules.filter((_, i) => i !== index);
-                            setVendorRules(next);
-                            localStorage.setItem(RULES_KEY, JSON.stringify(next));
-                            message.success('Đã xóa rule');
+                          <Popconfirm title="Xóa quy tắc này?" onConfirm={async () => {
+                            const targetRule = vendorRules[index];
+                            const { error } = await supabase
+                              .from('vendor_rules')
+                              .delete()
+                              .eq('prefix', targetRule.prefix);
+                            if (!error) {
+                              setVendorRules(prev => prev.filter((_, i) => i !== index));
+                              message.success('Đã xóa rule');
+                            } else {
+                              message.error('Lỗi khi xóa rule: ' + error.message);
+                            }
                           }}>
                             <Button type="text" danger icon={<Trash2 size={16}/>}>Xóa</Button>
                           </Popconfirm>
@@ -842,18 +932,26 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
                         <Input id="new-label" placeholder="Tên NCC/BP (VD: BP TBYT)" />
                       </Col>
                       <Col span={6}>
-                        <Button type="primary" block icon={<Plus size={16}/>} onClick={() => {
+                        <Button type="primary" block icon={<Plus size={16}/>} onClick={async () => {
                           const p = (document.getElementById('new-prefix') as HTMLInputElement).value.trim();
                           const l = (document.getElementById('new-label') as HTMLInputElement).value.trim();
                           if (!p || !l) return message.warning('Vui lòng nhập đủ thông tin');
                           if (vendorRules.find(r => r.prefix === p)) return message.error('Prefix này đã tồn tại');
                           
-                          const next = [...vendorRules, { prefix: p, label: l }];
-                          setVendorRules(next);
-                          localStorage.setItem(RULES_KEY, JSON.stringify(next));
-                          (document.getElementById('new-prefix') as HTMLInputElement).value = '';
-                          (document.getElementById('new-label') as HTMLInputElement).value = '';
-                          message.success('Đã thêm Rule mới thành công');
+                          const { data: inserted, error } = await supabase
+                            .from('vendor_rules')
+                            .insert([{ prefix: p, label: l }])
+                            .select()
+                            .single();
+                          
+                          if (!error && inserted) {
+                            setVendorRules(prev => [...prev, inserted]);
+                            (document.getElementById('new-prefix') as HTMLInputElement).value = '';
+                            (document.getElementById('new-label') as HTMLInputElement).value = '';
+                            message.success('Đã thêm Rule mới thành công');
+                          } else {
+                            message.error('Lỗi khi thêm Rule: ' + (error?.message || ''));
+                          }
                         }}>Thêm Rule</Button>
                       </Col>
                     </Row>
