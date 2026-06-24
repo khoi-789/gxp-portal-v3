@@ -9,6 +9,7 @@ import AppCard from './AppCard';
 import FolderModal from './FolderModal';
 import { useRouter } from 'next/navigation';
 import { LayoutGrid, Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 /**
  * URS §4.2: <AppDashboard>
@@ -23,13 +24,31 @@ interface AppDashboardProps {
 
 // Fetch function - giai đoạn pilot dùng mock, sau thay bằng supabase
 async function fetchPortalApps(): Promise<PortalApp[]> {
-  // TODO: Thay bằng supabase khi có credentials
-  // const { data, error } = await supabase.from('portal_apps').select('*');
-  // if (error) throw error;
-  // return data;
+  try {
+    const { data, error } = await supabase
+      .from('portal_apps')
+      .select('*')
+      .order('order_index', { ascending: true });
+    
+    if (error) throw error;
+    if (data && data.length > 0) {
+      // Map database schema to frontend type (e.g. allowed_depts)
+      return data.map(app => ({
+        app_id: app.app_id,
+        app_name: app.app_name,
+        type: app.type as 'link' | 'folder',
+        target_url: app.target_url,
+        parent_id: app.parent_id,
+        allowed_depts: app.allowed_depts || [],
+        is_testing: app.is_testing || false,
+      }));
+    }
+  } catch (err) {
+    console.warn('Lỗi fetch portal_apps từ Supabase, fallback về Mock Data:', err);
+  }
 
-  // Simulate network delay
-  await new Promise((res) => setTimeout(res, 600));
+  // Fallback to Mock Data
+  await new Promise((res) => setTimeout(res, 200));
   return MOCK_PORTAL_APPS;
 }
 
