@@ -15,7 +15,7 @@ export default function DestructionPage() {
   const router = useRouter();
 
   return (
-    <PortalLayout currentUser={MOCK_CURRENT_USER} fullWidth noScroll>
+    <PortalLayout currentUser={MOCK_CURRENT_USER} fullWidth>
       <div style={{ padding: '0 4px', height: '100%', display: 'flex', flexDirection: 'column' }}>
         {/* Navigation / Header */}
         <div style={{ marginBottom: 8 }}>
@@ -50,7 +50,7 @@ export default function DestructionPage() {
             boxShadow: '0 4px 24px rgba(13,148,136,0.08)',
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden' // Important for internal scroll
+            overflow: 'visible' // Changed to visible for zoom scroll
           }}
         >
           <DestructionModule userId={MOCK_CURRENT_USER.id} />

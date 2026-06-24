@@ -11,7 +11,7 @@ export default function CCPage() {
   const router = useRouter();
 
   return (
-    <PortalLayout currentUser={MOCK_CURRENT_USER} fullWidth noScroll>
+    <PortalLayout currentUser={MOCK_CURRENT_USER} fullWidth>
       <div style={{ padding: '0 4px', height: '100%', display: 'flex', flexDirection: 'column' }}>
         <div style={{ marginBottom: 8 }}>
           <Button 
@@ -44,7 +44,7 @@ export default function CCPage() {
             boxShadow: '0 4px 24px rgba(13,148,136,0.08)',
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden'
+            overflow: 'visible'
           }}
         >
           <CCModule userId={MOCK_CURRENT_USER.id} />

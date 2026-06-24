@@ -64,7 +64,7 @@ export default function HomePage() {
       onOpenGroupManager={() => alert('Mở quản lý nhóm (coming soon)')}
       onOpenAppManager={() => alert('Mở thêm công cụ mới (coming soon)')}
       fullWidth={true}
-      noScroll={true}
+      noScroll={false}
       pilotSwitcher={
         <div
           id="pilot-user-switcher"
@@ -111,7 +111,7 @@ export default function HomePage() {
           backdropFilter: 'blur(12px)',
           border: '1px solid rgba(255,255,255,0.6)',
           boxShadow: '0 4px 24px rgba(13,148,136,0.08)',
-          overflow: 'hidden'
+          overflow: 'visible'
         }}
       >
         <Tabs

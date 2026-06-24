@@ -15,7 +15,7 @@ export default function ImportPage() {
   const router = useRouter();
 
   return (
-    <PortalLayout currentUser={MOCK_CURRENT_USER} fullWidth noScroll>
+    <PortalLayout currentUser={MOCK_CURRENT_USER} fullWidth>
       <div style={{ padding: '0 4px', height: '100%', display: 'flex', flexDirection: 'column' }}>
         {/* Navigation / Header */}
         <div style={{ marginBottom: 8 }}>
@@ -50,7 +50,7 @@ export default function ImportPage() {
             boxShadow: '0 4px 24px rgba(13,148,136,0.08)',
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden' // Important for internal scroll
+            overflow: 'visible' // Changed from hidden to visible for zoom scroll
           }}
         >
           <ImportModule userId={MOCK_CURRENT_USER.id} />
