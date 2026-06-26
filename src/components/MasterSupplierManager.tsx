@@ -46,16 +46,46 @@ type MasterSupplierFormData = z.infer<typeof masterSupplierSchema>;
 // ──────────────────────────────────────────────────────────
 // Supabase CRUD functions
 // ──────────────────────────────────────────────────────────
-async function fetchMasterSuppliers(): Promise<MasterSupplier[]> {
-  const { data, error } = await supabase
+async function fetchMasterSuppliers(
+  page: number,
+  pageSize: number,
+  search: string,
+  filters: Record<string, string>
+): Promise<{ items: MasterSupplier[]; count: number }> {
+  let query = supabase
     .from('master_suppliers')
-    .select('*')
-    .order('supplier_code', { ascending: true });
+    .select('*', { count: 'exact' });
+
+  if (search && search.trim()) {
+    const q = `%${search.trim().toLowerCase()}%`;
+    query = query.or(`supplier_code.ilike.${q},supplier_name.ilike.${q},notes.ilike.${q}`);
+  }
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (!value || value.trim() === '') return;
+    const val = value.trim();
+    if (key === 'business_type') {
+      query = query.contains('business_type', [val]);
+    } else {
+      query = query.ilike(key, `%${val}%`);
+    }
+  });
+
+  query = query.order('supplier_code', { ascending: true });
+
+  const from = (page - 1) * pageSize;
+  const to = page * pageSize - 1;
+  query = query.range(from, to);
+
+  const { data, count, error } = await query;
 
   if (error) {
     throw new Error('Lỗi khi tải danh mục nhà cung cấp: ' + error.message);
   }
-  return (data || []) as MasterSupplier[];
+  return {
+    items: (data || []) as MasterSupplier[],
+    count: count || 0,
+  };
 }
 
 async function createMasterSupplier(data: MasterSupplierFormData): Promise<MasterSupplier> {
@@ -151,6 +181,7 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<MasterSupplier | null>(null);
   const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
 
   // ── Per-user table preferences ──
@@ -163,13 +194,17 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
 
   const handleColumnFilter = (key: string, value: string) => {
     setColumnFilters(prev => ({ ...prev, [key]: value }));
+    setCurrentPage(1);
   };
 
   // ── React Query ──
-  const { data: suppliers = [], isLoading, refetch } = useQuery<MasterSupplier[]>({
-    queryKey: ['master_suppliers'],
-    queryFn: fetchMasterSuppliers,
+  const { data: supplierResult, isLoading, refetch } = useQuery({
+    queryKey: ['master_suppliers', currentPage, pageSize, searchText, columnFilters],
+    queryFn: () => fetchMasterSuppliers(currentPage, pageSize, searchText, columnFilters),
   });
+
+  const rawSuppliers = supplierResult?.items || [];
+  const totalCount = supplierResult?.count || 0;
 
   const createMutation = useMutation({
     mutationFn: createMasterSupplier,
@@ -246,35 +281,6 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
       createMutation.mutate(data);
     }
   };
-
-  // ── Client-side filters ──
-  const filteredSuppliers = useMemo(() => {
-    let list = suppliers;
-
-    // Global Search
-    if (searchText.trim()) {
-      const q = searchText.toLowerCase();
-      list = list.filter(
-        s =>
-          s.supplier_code.toLowerCase().includes(q) ||
-          s.supplier_name.toLowerCase().includes(q) ||
-          (s.notes && s.notes.toLowerCase().includes(q))
-      );
-    }
-
-    // Per-column filters
-    const activeColFilters = Object.fromEntries(
-      Object.entries(columnFilters).filter(([, v]) => v.trim() !== '')
-    );
-    if (Object.keys(activeColFilters).length > 0) {
-      list = applyColumnFilters(
-        list as unknown as Record<string, unknown>[],
-        activeColFilters
-      ) as unknown as MasterSupplier[];
-    }
-
-    return list;
-  }, [suppliers, searchText, columnFilters]);
 
   // Width resolver
   const w = (key: string) => columnWidths[key] ?? DEFAULT_WIDTHS[key];
@@ -576,7 +582,10 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
           placeholder="Tìm theo Mã/Tên/Ghi chú..."
           prefix={<Search size={16} color="#94a3b8" />}
           value={searchText}
-          onChange={e => setSearchText(e.target.value)}
+          onChange={e => {
+            setSearchText(e.target.value);
+            setCurrentPage(1);
+          }}
           allowClear
           style={{ width: 280, borderRadius: 10 }}
         />
@@ -593,15 +602,20 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
       <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', overflow: 'hidden' }}>
         <Table
           columns={columns}
-          dataSource={filteredSuppliers}
+          dataSource={rawSuppliers}
           rowKey="supplier_code"
           loading={isLoading}
           components={{ header: { cell: ResizableTitle } }}
           scroll={{ x: totalWidth, y: 550 }}
           style={{ width: '100%' }}
           pagination={{
+            current: currentPage,
             pageSize: pageSize,
-            onChange: (page, size) => setPageSize(size),
+            total: totalCount,
+            onChange: (page, size) => {
+              setCurrentPage(page);
+              setPageSize(size);
+            },
             showSizeChanger: true,
             pageSizeOptions: ['10', '20', '50', '100'],
             showTotal: total => `Tổng số ${total} nhà cung cấp`,

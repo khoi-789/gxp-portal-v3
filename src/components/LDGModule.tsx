@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Table, Button, Input, Tag, Select, Space, Tooltip,
   Badge, Drawer, Form, InputNumber, message, Row, Col, Popconfirm,
@@ -90,20 +91,83 @@ const DEFAULT_LDG_WIDTHS: Record<string, number> = {
   actions: 80,
 };
 
+// ── Server-side fetch function ──
+async function fetchLDGOrders(
+  page: number,
+  pageSize: number,
+  search: string,
+  filters: Record<string, string>
+): Promise<{ items: LDGOrder[]; count: number }> {
+  let query = supabase
+    .from('ldg_orders')
+    .select('*, ldg_lpns(*)', { count: 'exact' });
+
+  if (search.trim()) {
+    const q = `%${search.trim()}%`;
+    query = query.or(`ldg_code.ilike.${q},item_code.ilike.${q},lot_number.ilike.${q},supplier_code.ilike.${q}`);
+  }
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (!value || value.trim() === '') return;
+    query = query.ilike(key, `%${value.trim()}%`);
+  });
+
+  query = query.order('created_date', { ascending: false });
+  const from = (page - 1) * pageSize;
+  query = query.range(from, from + pageSize - 1);
+
+  const { data, count, error } = await query;
+  if (error) throw new Error('Lỗi tải danh sách lệnh đóng gói: ' + error.message);
+  return { items: (data || []) as LDGOrder[], count: count || 0 };
+}
+
 export default function LDGModule({ userId = 'default' }: { userId?: string }) {
   const [messageApi, contextHolder] = message.useMessage();
-  const [rawData, setRawData] = useState<LDGOrder[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Master Data
-  const [masterItems, setMasterItems] = useState<any[]>([]);
-  const [masterSuppliers, setMasterSuppliers] = useState<any[]>([]);
-  const [allLabels, setAllLabels] = useState<any[]>([]);
+  // Master Data (load-all for dropdowns)
+  const { data: masterItems = [] } = useQuery({
+    queryKey: ['master-items-dropdown'],
+    queryFn: async () => {
+      const { data } = await supabase.from('master_items').select('item_code, item_name, supplier_code').eq('is_active', true);
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: masterSuppliers = [] } = useQuery({
+    queryKey: ['master-suppliers-dropdown'],
+    queryFn: async () => {
+      const { data } = await supabase.from('master_suppliers').select('supplier_code, supplier_name').order('supplier_code', { ascending: true });
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: allLabels = [] } = useQuery({
+    queryKey: ['lbl-labels-dropdown'],
+    queryFn: async () => {
+      const { data } = await supabase.from('lbl_labels').select('id, item_code, base_label_code, version_number, status');
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Server-side paginated table data
+  const ldgQueryKey = ['ldg_orders', currentPage, pageSize, globalSearch, columnFilters];
+  const { data: ldgResult, isLoading: loading, refetch: loadData } = useQuery({
+    queryKey: ldgQueryKey,
+    queryFn: () => fetchLDGOrders(currentPage, pageSize, globalSearch, columnFilters),
+    placeholderData: (prev) => prev,
+  });
+
+  const rawData = ldgResult?.items || [];
+  const totalCount = ldgResult?.count || 0;
 
   // Drawer Form State
   const [detailRow, setDetailRow] = useState<LDGOrder | null>(null);
@@ -134,49 +198,7 @@ export default function LDGModule({ userId = 'default' }: { userId?: string }) {
     } as any),
   });
 
-  // Load everything
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      // 1. Fetch Master Items
-      const { data: mItems } = await supabase
-        .from('master_items')
-        .select('item_code, item_name, supplier_code')
-        .eq('is_active', true);
-      setMasterItems(mItems || []);
-
-      // 2. Fetch Master Suppliers
-      const { data: mSuppliers } = await supabase
-        .from('master_suppliers')
-        .select('*')
-        .order('supplier_code', { ascending: true });
-      setMasterSuppliers(mSuppliers || []);
-
-      // 3. Fetch all Label versions
-      const { data: mLabels } = await supabase
-        .from('lbl_labels')
-        .select('id, item_code, base_label_code, version_number, status');
-      setAllLabels(mLabels || []);
-
-      // 4. Fetch LDG Orders joined with LPNs
-      const { data: orders, error: lError } = await supabase
-        .from('ldg_orders')
-        .select('*, ldg_lpns(*)');
-
-      if (lError) throw lError;
-      setRawData(orders || []);
-    } catch (e: any) {
-      messageApi.error('Lỗi tải danh sách lệnh đóng gói: ' + e.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [messageApi]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  // Handle column filtering change
+  // Handle column filtering change - reset to page 1
   const handleColumnFilter = (key: string, value: string) => {
     setColumnFilters(prev => ({ ...prev, [key]: value }));
     setCurrentPage(1);
@@ -344,7 +366,7 @@ export default function LDGModule({ userId = 'default' }: { userId?: string }) {
 
       messageApi.success('Lưu lệnh đóng gói LDG thành công!');
       setDetailRow(null);
-      loadData();
+      queryClient.invalidateQueries({ queryKey: ['ldg_orders'] });
     } catch (e: any) {
       if (e.errorFields) return; // Antd validation failed
       messageApi.error('Lỗi khi lưu lệnh đóng gói: ' + e.message);
@@ -359,41 +381,19 @@ export default function LDGModule({ userId = 'default' }: { userId?: string }) {
       const { error } = await supabase.from('ldg_orders').delete().eq('ldg_code', code);
       if (error) throw error;
       messageApi.success('Xóa lệnh đóng gói thành công!');
-      loadData();
+      queryClient.invalidateQueries({ queryKey: ['ldg_orders'] });
     } catch (e: any) {
       messageApi.error('Không thể xóa: ' + e.message);
     }
   };
 
-  // Process data with filtering
-  const processedData = useMemo(() => {
-    let filtered = [...rawData];
-
-    // Global Search
-    if (globalSearch) {
-      const searchLower = globalSearch.toLowerCase();
-      filtered = filtered.filter(
-        r =>
-          r.ldg_code.toLowerCase().includes(searchLower) ||
-          r.item_code.toLowerCase().includes(searchLower) ||
-          r.lot_number.toLowerCase().includes(searchLower) ||
-          r.supplier_code.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Column Filters
-    filtered = applyColumnFilters(filtered as any, columnFilters) as any;
-
-    return filtered;
-  }, [rawData, globalSearch, columnFilters]);
-
-  // Statistics
+  // Statistics from server total
   const stats = useMemo(() => {
-    const total = processedData.length;
-    const activeCount = processedData.filter(r => r.status === 'In Progress').length;
-    const completed = processedData.filter(r => r.status === 'Released').length;
+    const total = totalCount;
+    const activeCount = rawData.filter(r => r.status === 'In Progress').length;
+    const completed = rawData.filter(r => r.status === 'Released').length;
     return { total, activeCount, completed };
-  }, [processedData]);
+  }, [rawData, totalCount]);
 
   // Columns definition
   const columns: ColumnsType<LDGOrder> = useMemo(() => {
@@ -592,7 +592,7 @@ export default function LDGModule({ userId = 'default' }: { userId?: string }) {
           <Tooltip title="Tải lại dữ liệu">
             <Button
               type="text"
-              onClick={loadData}
+              onClick={() => loadData()}
               icon={<RefreshCw size={16} color="#64748b" />}
             />
           </Tooltip>
@@ -671,19 +671,21 @@ export default function LDGModule({ userId = 'default' }: { userId?: string }) {
       >
         <Table
           components={components}
-          dataSource={processedData}
+          dataSource={rawData}
           columns={columns}
           loading={loading}
           rowKey="ldg_code"
           pagination={{
             current: currentPage,
             pageSize: pageSize,
+            total: totalCount,
             onChange: (p, s) => {
               setCurrentPage(p);
               setPageSize(s);
             },
             showSizeChanger: true,
             pageSizeOptions: ['5', '10', '20', '50'],
+            showTotal: (total) => `Tổng ${total} bản ghi`,
             style: { padding: '16px 24px', margin: 0 },
           }}
           scroll={{ x: 'max-content' }}

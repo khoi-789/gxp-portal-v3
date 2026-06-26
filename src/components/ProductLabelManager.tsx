@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import {
   Table, Button, Drawer, Input, Tag, Space,
@@ -15,6 +16,62 @@ import { ColumnSearchHeader, applyColumnFilters } from '@/lib/columnSearch';
 import TableControls, { ColumnConfig } from '@/components/TableControls';
 import ResizableTitle from '@/components/ResizableTitle';
 import { useTablePreferences } from '@/lib/useTablePreferences';
+
+async function fetchLabelMappings(
+  page: number,
+  pageSize: number,
+  search: string,
+  filters: Record<string, string>
+): Promise<{ items: any[]; count: number }> {
+  let query = supabase
+    .from('product_label_mappings')
+    .select(`
+      id,
+      product_item_code,
+      label_item_code,
+      quantity_per_unit,
+      created_at,
+      product:master_items!product_item_code(item_name, supplier_code),
+      label:master_items!label_item_code(item_name)
+    `, { count: 'exact' });
+
+  if (search && search.trim()) {
+    const q = `%${search.trim().toLowerCase()}%`;
+    query = query.or(`product_item_code.ilike.${q},label_item_code.ilike.${q}`);
+  }
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (!value || value.trim() === '') return;
+    const val = value.trim();
+    if (key === 'product_item_code' || key === 'label_item_code') {
+      query = query.ilike(key, `%${val}%`);
+    }
+  });
+
+  query = query.order('id', { ascending: false });
+
+  const from = (page - 1) * pageSize;
+  const to = page * pageSize - 1;
+  query = query.range(from, to);
+
+  const { data, count, error } = await query;
+  if (error) {
+    throw new Error('Lỗi khi tải liên kết nhãn phụ: ' + error.message);
+  }
+
+  const items = (data || []).map((m: any) => ({
+    id: m.id,
+    product_item_code: m.product_item_code,
+    product_name: m.product?.item_name || 'Không rõ sản phẩm',
+    supplier_code: m.product?.supplier_code || 'UNKNOWN',
+    label_item_code: m.label_item_code,
+    label_name: m.label?.item_name || 'Không rõ nhãn',
+    quantity_per_unit: Number(m.quantity_per_unit),
+    created_at: m.created_at,
+  }));
+
+  return { items, count: count || 0 };
+}
 
 export interface LabelMappingRecord {
   id?: number;
@@ -51,10 +108,7 @@ const DEFAULT_MAPPING_WIDTHS: Record<string, number> = {
 
 export default function ProductLabelManager({ userId = 'default' }: { userId?: string }) {
   const [messageApi, contextHolder] = message.useMessage();
-  const [mappings, setMappings] = useState<any[]>([]);
-  const [masterItems, setMasterItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
   const [globalSearch, setGlobalSearch] = useState('');
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [pageSize, setPageSize] = useState(10);
@@ -67,6 +121,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
   const [selectedProduct, setSelectedProduct] = useState<string>('');
   const [selectedLabel, setSelectedLabel] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
+  const [saving, setSaving] = useState(false);
 
   const { prefs, save: savePrefs, setColumnWidth } = useTablePreferences(
     'product_label_mappings_table',
@@ -86,95 +141,50 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
     } as any),
   });
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      // 1. Fetch Master Items
-      const { data: mItems, error: mError } = await supabase
+  // 1. Fetch Master Items for Dropdown options
+  const { data: masterItems = [] } = useQuery({
+    queryKey: ['master-items-dropdown'],
+    queryFn: async () => {
+      const { data } = await supabase
         .from('master_items')
         .select('item_code, item_name, supplier_code')
         .eq('is_active', true);
-      if (mError) throw mError;
-      setMasterItems(mItems || []);
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
-      // 2. Fetch Mappings
-      const { data: maps, error: mapsError } = await supabase
-        .from('product_label_mappings')
-        .select('*')
-        .order('id', { ascending: false });
-      if (mapsError) throw mapsError;
-      setMappings(maps || []);
-    } catch (e: any) {
-      messageApi.error('Lỗi tải dữ liệu: ' + e.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [messageApi]);
+  // 2. Fetch Paginated Mappings
+  const mappingQueryKey = ['product_label_mappings', currentPage, pageSize, globalSearch, columnFilters];
+  const { data: mappingResult, isLoading: loading, refetch: loadData } = useQuery({
+    queryKey: mappingQueryKey,
+    queryFn: () => fetchLabelMappings(currentPage, pageSize, globalSearch, columnFilters),
+  });
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const mappings = mappingResult?.items || [];
+  const totalCount = mappingResult?.count || 0;
 
   // Separate product items and label items
   const productOptions = useMemo(() => {
-    // Exclude P.Tem or label prefix codes
     return masterItems.filter(
       item => item.supplier_code !== 'P.Tem' && !item.item_code.startsWith('TT') && !item.item_code.startsWith('BA')
     );
   }, [masterItems]);
 
   const labelOptions = useMemo(() => {
-    // Only labels
     return masterItems.filter(
       item => item.supplier_code === 'P.Tem' || item.item_code.startsWith('TT') || item.item_code.startsWith('BA')
     );
   }, [masterItems]);
 
-  // Map raw mappings to processed UI mappings with names
-  const processedMappings = useMemo(() => {
-    return mappings.map(m => {
-      const product = masterItems.find(item => item.item_code === m.product_item_code);
-      const label = masterItems.find(item => item.item_code === m.label_item_code);
-      return {
-        id: m.id,
-        product_item_code: m.product_item_code,
-        product_name: product ? product.item_name : 'Không rõ sản phẩm',
-        supplier_code: product ? product.supplier_code : 'UNKNOWN',
-        label_item_code: m.label_item_code,
-        label_name: label ? label.item_name : 'Không rõ nhãn',
-        quantity_per_unit: Number(m.quantity_per_unit),
-        created_at: m.created_at,
-      };
-    });
-  }, [mappings, masterItems]);
+  const processedMappings = mappings;
 
-  // Apply filters & search (sorted by product_item_code so consecutive rows are grouped)
+  // Since mappings are already filtered & paginated by server, we just need to format them:
   const filteredMappings = useMemo(() => {
-    let result = [...processedMappings];
-
-    const activeColFilters = Object.fromEntries(
-      Object.entries(columnFilters).filter(([, v]) => v.trim() !== '')
-    );
-    if (Object.keys(activeColFilters).length > 0) {
-      result = applyColumnFilters(result as any, activeColFilters) as any;
-    }
-
-    if (globalSearch.trim()) {
-      const q = globalSearch.toLowerCase().trim();
-      result = result.filter(r => {
-        return (
-          r.product_item_code.toLowerCase().includes(q) ||
-          r.product_name.toLowerCase().includes(q) ||
-          r.label_item_code.toLowerCase().includes(q) ||
-          r.label_name.toLowerCase().includes(q) ||
-          r.supplier_code.toLowerCase().includes(q)
-        );
-      });
-    }
-
+    const result = [...processedMappings];
     result.sort((a, b) => a.product_item_code.localeCompare(b.product_item_code));
     return result;
-  }, [processedMappings, columnFilters, globalSearch]);
+  }, [processedMappings]);
 
   const displayMappings = useMemo(() => {
     let productCounter = 0;
@@ -209,28 +219,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
     });
 
     const list = Object.values(groups);
-    let result = [...list];
-
-    const activeColFilters = Object.fromEntries(
-      Object.entries(columnFilters).filter(([, v]) => v.trim() !== '')
-    );
-    if (Object.keys(activeColFilters).length > 0) {
-      result = applyColumnFilters(result as any, activeColFilters) as any;
-    }
-
-    if (globalSearch.trim()) {
-      const q = globalSearch.toLowerCase().trim();
-      result = result.filter(r => {
-        return (
-          r.product_item_code.toLowerCase().includes(q) ||
-          r.product_name.toLowerCase().includes(q) ||
-          r.supplier_code.toLowerCase().includes(q) ||
-          r.label_item_codes.some((c: string) => c.toLowerCase().includes(q)) ||
-          r.label_names.some((n: string) => n.toLowerCase().includes(q))
-        );
-      });
-    }
-
+    const result = [...list];
     result.sort((a, b) => a.product_item_code.localeCompare(b.product_item_code));
 
     return result.map((item, idx) => ({
@@ -239,7 +228,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
       label_item_code: item.label_item_codes.join(', '),
       label_name: item.label_names.join(', '),
     }));
-  }, [processedMappings, columnFilters, globalSearch]);
+  }, [processedMappings]);
 
   const tableData = viewMode === 'compact' ? compactMappings : displayMappings;
 
@@ -278,7 +267,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
         .eq('id', id);
       if (error) throw error;
       messageApi.success('Đã xóa liên kết thành công!');
-      loadData();
+      queryClient.invalidateQueries({ queryKey: ['product_label_mappings'] });
     } catch (e: any) {
       messageApi.error('Lỗi khi xóa liên kết: ' + e.message);
     }
@@ -334,7 +323,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
         messageApi.success('Thêm mới liên kết SP - Tem thành công!');
       }
       setIsOpen(false);
-      loadData();
+      queryClient.invalidateQueries({ queryKey: ['product_label_mappings'] });
     } catch (e: any) {
       messageApi.error('Lỗi khi lưu dữ liệu: ' + e.message);
     } finally {
@@ -524,7 +513,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
 
           <Button
             icon={<RefreshCw size={14} />}
-            onClick={loadData}
+            onClick={() => loadData()}
             loading={loading}
             style={{ borderRadius: 6 }}
           >
@@ -587,6 +576,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
             size: 'small',
             current: currentPage,
             pageSize: pageSize,
+            total: totalCount,
             onChange: (p, s) => {
               setCurrentPage(p);
               setPageSize(s);
@@ -594,6 +584,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
             showSizeChanger: true,
             pageSizeOptions: ['10', '20', '50', '100'],
             style: { margin: '8px 0 0' },
+            showTotal: (total) => `Tổng ${total} liên kết`,
           }}
           style={{ background: 'white', borderRadius: 8 }}
         />

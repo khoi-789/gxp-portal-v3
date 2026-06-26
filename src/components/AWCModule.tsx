@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Table, Button, Input, Tag, Select, Space, Tooltip,
   Badge, Drawer, Form, message, Row, Col, Popconfirm,
@@ -82,19 +83,74 @@ const DEFAULT_AWC_WIDTHS: Record<string, number> = {
   actions: 80,
 };
 
+// ── Server-side fetch function ──
+async function fetchAWCChanges(
+  page: number,
+  pageSize: number,
+  search: string,
+  filters: Record<string, string>
+): Promise<{ items: AWCChange[]; count: number }> {
+  let query = supabase
+    .from('awc_changes')
+    .select('*', { count: 'exact' });
+
+  if (search.trim()) {
+    const q = `%${search.trim()}%`;
+    query = query.or(`awc_code.ilike.${q},item_code.ilike.${q},supplier_code.ilike.${q},expected_batch.ilike.${q}`);
+  }
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (!value || value.trim() === '') return;
+    query = query.ilike(key, `%${value.trim()}%`);
+  });
+
+  query = query.order('notice_date', { ascending: false });
+  const from = (page - 1) * pageSize;
+  query = query.range(from, from + pageSize - 1);
+
+  const { data, count, error } = await query;
+  if (error) throw new Error('Lỗi tải danh sách AWC: ' + error.message);
+  return { items: (data || []) as AWCChange[], count: count || 0 };
+}
+
 export default function AWCModule({ userId = 'default' }: { userId?: string }) {
   const [messageApi, contextHolder] = message.useMessage();
-  const [rawData, setRawData] = useState<AWCChange[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Master Data
-  const [masterItems, setMasterItems] = useState<any[]>([]);
-  const [masterSuppliers, setMasterSuppliers] = useState<any[]>([]);
+  // Master Data (load-all for dropdowns, lightweight select)
+  const { data: masterItems = [] } = useQuery({
+    queryKey: ['master-items-dropdown'],
+    queryFn: async () => {
+      const { data } = await supabase.from('master_items').select('item_code, item_name, supplier_code').eq('is_active', true);
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: masterSuppliers = [] } = useQuery({
+    queryKey: ['master-suppliers-dropdown'],
+    queryFn: async () => {
+      const { data } = await supabase.from('master_suppliers').select('supplier_code, supplier_name').order('supplier_code', { ascending: true });
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Server-side paginated table data
+  const awcQueryKey = ['awc_changes', currentPage, pageSize, globalSearch, columnFilters];
+  const { data: awcResult, isLoading: loading, refetch: loadData } = useQuery({
+    queryKey: awcQueryKey,
+    queryFn: () => fetchAWCChanges(currentPage, pageSize, globalSearch, columnFilters),
+    placeholderData: (prev) => prev,
+  });
+
+  const rawData = awcResult?.items || [];
+  const totalCount = awcResult?.count || 0;
 
   // Drawer Form State
   const [detailRow, setDetailRow] = useState<AWCChange | null>(null);
@@ -121,44 +177,7 @@ export default function AWCModule({ userId = 'default' }: { userId?: string }) {
     } as any),
   });
 
-  // Load everything
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      // 1. Fetch Master Items
-      const { data: mItems } = await supabase
-        .from('master_items')
-        .select('item_code, item_name, supplier_code')
-        .eq('is_active', true);
-      setMasterItems(mItems || []);
-
-      // 2. Fetch Master Suppliers
-      const { data: mSuppliers } = await supabase
-        .from('master_suppliers')
-        .select('*')
-        .order('supplier_code', { ascending: true });
-      setMasterSuppliers(mSuppliers || []);
-
-      // 3. Fetch AWC Changes
-      const { data: changes, error: aError } = await supabase
-        .from('awc_changes')
-        .select('*')
-        .order('notice_date', { ascending: false });
-
-      if (aError) throw aError;
-      setRawData(changes || []);
-    } catch (e: any) {
-      messageApi.error('Lỗi tải danh sách Artwork Changes: ' + e.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [messageApi]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  // Handle column filtering change
+  // Handle column filtering change - reset to page 1
   const handleColumnFilter = (key: string, value: string) => {
     setColumnFilters(prev => ({ ...prev, [key]: value }));
     setCurrentPage(1);
@@ -262,7 +281,7 @@ export default function AWCModule({ userId = 'default' }: { userId?: string }) {
       }
 
       setDetailRow(null);
-      loadData();
+      queryClient.invalidateQueries({ queryKey: ['awc_changes'] });
     } catch (e: any) {
       if (e.errorFields) return; // Antd validation failed
       messageApi.error('Lỗi khi lưu Artwork Change: ' + e.message);
@@ -277,41 +296,19 @@ export default function AWCModule({ userId = 'default' }: { userId?: string }) {
       const { error } = await supabase.from('awc_changes').delete().eq('id', id);
       if (error) throw error;
       messageApi.success('Xóa bản ghi thay đổi Artwork thành công!');
-      loadData();
+      queryClient.invalidateQueries({ queryKey: ['awc_changes'] });
     } catch (e: any) {
       messageApi.error('Không thể xóa: ' + e.message);
     }
   };
 
-  // Process data with filtering
-  const processedData = useMemo(() => {
-    let filtered = [...rawData];
-
-    // Global Search
-    if (globalSearch) {
-      const searchLower = globalSearch.toLowerCase();
-      filtered = filtered.filter(
-        r =>
-          r.awc_code.toLowerCase().includes(searchLower) ||
-          r.item_code.toLowerCase().includes(searchLower) ||
-          (r.expected_batch || '').toLowerCase().includes(searchLower) ||
-          r.supplier_code.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Column Filters
-    filtered = applyColumnFilters(filtered as any, columnFilters) as any;
-
-    return filtered;
-  }, [rawData, globalSearch, columnFilters]);
-
-  // Statistics
+  // Statistics from server total
   const stats = useMemo(() => {
-    const total = processedData.length;
-    const alertingCount = processedData.filter(r => r.status === 'Alerted' || r.status === 'Pending 1st Batch').length;
-    const verifiedCount = processedData.filter(r => r.status === 'Verified' || r.status === 'Closed').length;
+    const total = totalCount;
+    const alertingCount = rawData.filter(r => r.status === 'Alerted' || r.status === 'Pending 1st Batch').length;
+    const verifiedCount = rawData.filter(r => r.status === 'Verified' || r.status === 'Closed').length;
     return { total, alertingCount, verifiedCount };
-  }, [processedData]);
+  }, [rawData, totalCount]);
 
   // Columns definition
   const columns: ColumnsType<AWCChange> = useMemo(() => {
@@ -519,7 +516,7 @@ export default function AWCModule({ userId = 'default' }: { userId?: string }) {
           <Tooltip title="Tải lại dữ liệu">
             <Button
               type="text"
-              onClick={loadData}
+              onClick={() => loadData()}
               icon={<RefreshCw size={16} color="#64748b" />}
             />
           </Tooltip>
@@ -598,19 +595,21 @@ export default function AWCModule({ userId = 'default' }: { userId?: string }) {
       >
         <Table
           components={components}
-          dataSource={processedData}
+          dataSource={rawData}
           columns={columns}
           loading={loading}
           rowKey="id"
           pagination={{
             current: currentPage,
             pageSize: pageSize,
+            total: totalCount,
             onChange: (p, s) => {
               setCurrentPage(p);
               setPageSize(s);
             },
             showSizeChanger: true,
             pageSizeOptions: ['5', '10', '20', '50'],
+            showTotal: (total) => `Tổng ${total} bản ghi`,
             style: { padding: '16px 24px', margin: 0 },
           }}
           scroll={{ x: 'max-content' }}

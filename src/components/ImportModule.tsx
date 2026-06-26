@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Table, Button, Input, Tag, Select, Space, Tooltip,
   Badge, Drawer, InputNumber, message, Row, Col, Popconfirm,
@@ -132,32 +133,94 @@ const DEFAULT_IMPORT_WIDTHS: Record<string, number> = {
   actions: 80,
 };
 
+// ── Server-side fetch function ──
+async function fetchShipments(
+  page: number,
+  pageSize: number,
+  search: string,
+  filters: Record<string, string>
+): Promise<{ items: ShipmentRecord[]; count: number }> {
+  let query = supabase
+    .from('imp_shipments')
+    .select('*, imp_shipment_items(*)', { count: 'exact' });
+
+  if (search.trim()) {
+    const q = `%${search.trim()}%`;
+    query = query.or(`invoice_number.ilike.${q},supplier_code.ilike.${q}`);
+  }
+
+  const colMap: Record<string, string> = {
+    invoice_number: 'invoice_number',
+    supplier_code: 'supplier_code',
+    coa_status: 'coa_status',
+    label_status: 'label_status',
+    progress_status: 'progress_status',
+  };
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (!value || value.trim() === '') return;
+    const col = colMap[key];
+    if (col) query = query.ilike(col, `%${value.trim()}%`);
+  });
+
+  query = query.order('created_date', { ascending: false });
+  const from = (page - 1) * pageSize;
+  query = query.range(from, from + pageSize - 1);
+
+  const { data, count, error } = await query;
+  if (error) throw new Error('Lỗi tải danh sách chuyến hàng: ' + error.message);
+  return { items: (data || []) as ShipmentRecord[], count: count || 0 };
+}
+
 export default function ImportModule({ userId = 'default' }: { userId?: string }) {
   const [messageApi, contextHolder] = message.useMessage();
-  const [rawData, setRawData] = useState<ShipmentRecord[]>([]);
-  const [data, setData] = useState<ShipmentRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Simulated Persona: defaults to 'QA' based on currentUser's dept, switchable by Segmented
+  // Simulated Persona
   const [simulatedRole, setSimulatedRole] = useState<'SCM' | 'QA' | 'KHO'>('QA');
 
-  // Master product data for select list
-  const [masterItems, setMasterItems] = useState<any[]>([]);
+  // Master product data for select list (load all for dropdowns)
+  const { data: masterItems = [] } = useQuery({
+    queryKey: ['master-items-dropdown'],
+    queryFn: async () => {
+      const { data } = await supabase.from('master_items').select('item_code, item_name, supplier_code').eq('is_active', true);
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Product label mappings
+  const { data: labelMappings = [] } = useQuery({
+    queryKey: ['label-mappings'],
+    queryFn: async () => {
+      const { data } = await supabase.from('product_label_mappings').select('*');
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Server-side paginated table data
+  const impQueryKey = ['imp_shipments', currentPage, pageSize, globalSearch, columnFilters];
+  const { data: impResult, isLoading: loading, refetch: loadData } = useQuery({
+    queryKey: impQueryKey,
+    queryFn: () => fetchShipments(currentPage, pageSize, globalSearch, columnFilters),
+    placeholderData: (prev) => prev,
+  });
+
+  const rawData = impResult?.items || [];
+  const totalCount = impResult?.count || 0;
 
   // Drawer / Form state
   const [detailRow, setDetailRow] = useState<ShipmentRecord | null>(null);
   const [isNew, setIsNew] = useState(false);
   
-  // Track original detail items for smart DB updates (deletes, updates, inserts)
+  // Track original detail items for smart DB updates
   const [originalItems, setOriginalItems] = useState<ShipmentItem[]>([]);
-
-  // Product label mappings from database
-  const [labelMappings, setLabelMappings] = useState<any[]>([]);
 
   const { prefs, save: savePrefs, setColumnWidth } = useTablePreferences(
     'import_shipments_table_v1',
@@ -177,56 +240,13 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     } as any),
   });
 
-  // Load shipments & master items
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Load Master Items
-      const { data: mItems, error: mError } = await supabase
-        .from('master_items')
-        .select('item_code, item_name, supplier_code')
-        .eq('is_active', true);
-      if (!mError && mItems) {
-        setMasterItems(mItems);
-      }
-
-      // Load Product-Label Mappings
-      const { data: mappings, error: mappingError } = await supabase
-        .from('product_label_mappings')
-        .select('*');
-      if (!mappingError && mappings) {
-        setLabelMappings(mappings);
-      }
-
-      // Load Shipments joined with items
-      const { data: shipments, error: sError } = await supabase
-        .from('imp_shipments')
-        .select('*, imp_shipment_items(*)')
-        .order('created_date', { ascending: false });
-
-      if (sError) throw sError;
-
-      if (shipments) {
-        setRawData(shipments as ShipmentRecord[]);
-      }
-    } catch (e: any) {
-      messageApi.error('Lỗi khi tải dữ liệu: ' + e.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [messageApi]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   // Get required stamps/labels for a given product code
   const getProductLabels = useCallback((productItemCode: string | null) => {
     if (!productItemCode) return [];
-    return labelMappings
-      .filter(m => m.product_item_code === productItemCode)
-      .map(m => {
-        const labelItem = masterItems.find(item => item.item_code === m.label_item_code);
+    return (labelMappings as any[])
+      .filter((m: any) => m.product_item_code === productItemCode)
+      .map((m: any) => {
+        const labelItem = (masterItems as any[]).find((item: any) => item.item_code === m.label_item_code);
         return {
           code: m.label_item_code,
           name: labelItem ? labelItem.item_name : 'Không rõ tên nhãn',
@@ -235,65 +255,28 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       });
   }, [labelMappings, masterItems]);
 
-  // Unique suppliers loaded from shipments list (useful for dropdown select)
+  // Unique suppliers from current page data
   const suppliersList = useMemo(() => {
-    const set = new Set(rawData.map(r => r.supplier_code).filter(Boolean));
+    const set = new Set(rawData.map((r: any) => r.supplier_code).filter(Boolean));
     return Array.from(set).sort();
   }, [rawData]);
 
-  // Helper for column search input values change
+  // Handle column filter change - reset page
   const handleColumnFilter = (key: string, value: string) => {
-    setColumnFilters(prev => ({
-      ...prev,
-      [key]: value,
-    }));
+    setColumnFilters(prev => ({ ...prev, [key]: value }));
     setCurrentPage(1);
   };
 
-  // Process data for the table (add helper products search string)
-  const processedRecords = useMemo(() => {
-    return rawData.map(r => ({
-      ...r,
-      products: r.imp_shipment_items?.map(item => item.item_name).join(', ') || '',
-    }));
-  }, [rawData]);
-
-  // Apply filters and searches locally
-  useEffect(() => {
-    let result = [...processedRecords];
-
-    // Filter by columns
-    const activeFilters = Object.fromEntries(
-      Object.entries(columnFilters).filter(([, v]) => v.trim() !== '')
-    );
-    if (Object.keys(activeFilters).length > 0) {
-      result = applyColumnFilters(result as any, activeFilters) as any;
-    }
-
-    // Filter by global search
-    if (globalSearch.trim()) {
-      const q = globalSearch.toLowerCase().trim();
-      result = result.filter(r => {
-        const inv = r.invoice_number?.toLowerCase() || '';
-        const sup = r.supplier_code?.toLowerCase() || '';
-        const prods = r.products.toLowerCase();
-        return inv.includes(q) || sup.includes(q) || prods.includes(q);
-      });
-    }
-
-    setData(result);
-  }, [processedRecords, columnFilters, globalSearch]);
-
   // Statistics calculation
   const stats = useMemo(() => {
-    const total = rawData.length;
+    const total = totalCount;
     const issues = rawData.filter(r => r.progress_status === 'Issue' || r.temp_out_of_range).length;
     const pendingInbound = rawData.filter(r => r.progress_status === 'Pending Inbound').length;
     const closed = rawData.filter(r => r.progress_status === 'Closed').length;
     const outOfRange = rawData.filter(r => r.temp_out_of_range).length;
 
     return { total, issues, pendingInbound, closed, outOfRange };
-  }, [rawData]);
+  }, [rawData, totalCount]);
 
   // Open Edit / Detail Drawer
   const handleOpenDetail = (record: ShipmentRecord) => {
@@ -339,7 +322,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       if (error) throw error;
 
       messageApi.success(`Đã xóa Invoice ${invoiceNumber} thành công!`);
-      loadData();
+      queryClient.invalidateQueries({ queryKey: ['imp_shipments'] });
     } catch (e: any) {
       messageApi.error('Lỗi khi xóa chuyến hàng: ' + e.message);
     }
@@ -513,7 +496,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
       messageApi.success(`Lưu thông tin Invoice ${invoiceNumber} thành công!`);
       setDetailRow(null);
-      loadData();
+      queryClient.invalidateQueries({ queryKey: ['imp_shipments'] });
     } catch (e: any) {
       messageApi.error('Lỗi khi lưu dữ liệu: ' + e.message);
     } finally {
@@ -808,7 +791,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
           <Space>
             <Button
               icon={<RefreshCw size={14} />}
-              onClick={loadData}
+              onClick={() => loadData()}
               loading={loading}
               style={{ borderRadius: 8 }}
             >
@@ -927,7 +910,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
           className="portal-table"
           components={{ header: { cell: ResizableTitle } }}
           columns={tableColumns}
-          dataSource={data}
+          dataSource={rawData}
           loading={loading}
           rowKey="invoice_number"
           rowClassName={rowClassName}
@@ -937,12 +920,14 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             size: 'small',
             current: currentPage,
             pageSize: pageSize,
+            total: totalCount,
             onChange: (p, s) => {
               setCurrentPage(p);
               setPageSize(s);
             },
             showSizeChanger: true,
             pageSizeOptions: ['10', '20', '50', '100'],
+            showTotal: (total) => `Tổng ${total} bản ghi`,
             style: { margin: '8px 0 0' },
           }}
           style={{ background: 'white', borderRadius: 8 }}
