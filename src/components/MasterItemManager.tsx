@@ -785,7 +785,7 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
                 >
                   {suppliersList.map((s: any) => (
                     <Select.Option key={s.supplier_code} value={s.supplier_code}>
-                      {s.supplier_code} - {s.supplier_name}
+                      {s.supplier_name}
                     </Select.Option>
                   ))}
                 </Select>

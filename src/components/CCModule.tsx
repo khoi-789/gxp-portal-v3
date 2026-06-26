@@ -845,7 +845,7 @@ export default function CCModule({ userId = 'default' }: { userId?: string }) {
                   <Select
                     showSearch
                     placeholder="Chọn nhà cung cấp"
-                    options={masterSuppliers.map(s => ({ value: s.supplier_code, label: `${s.supplier_code} - ${s.supplier_name}` }))}
+                    options={masterSuppliers.map(s => ({ value: s.supplier_code, label: s.supplier_name }))}
                     optionFilterProp="label"
                     style={{ borderRadius: 6 }}
                   />

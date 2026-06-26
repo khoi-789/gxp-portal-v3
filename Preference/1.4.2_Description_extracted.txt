@@ -1,0 +1,1489 @@
+
+MASTER ARCHITECTURE: HỆ THỐNG GxP PORTAL & TRANG CHỦ
+PHẦN 1: TỔNG QUAN HỆ SINH THÁI (THE ECOSYSTEM)
+GxP Portal không chỉ là một trang chủ, mà là một "Hệ điều hành" trung tâm dành cho khối Quản lý chất lượng (QA), Kho (Warehouse) và Chuỗi cung ứng (SCM/Plan).
+Thay vì hoạt động rời rạc trên 7 file Excel khác nhau, các module giờ đây giao tiếp với nhau thông qua một ngôn ngữ dữ liệu chung, đồng bộ trực tiếp với hệ thống lõi INFOR và SAP của công ty.
+1.1. Hệ thống Phân cấp Dữ liệu Lõi (Master Hierarchy)
+Để các module liên kết chặt chẽ, hệ thống áp dụng bộ định nghĩa cấu trúc dữ liệu từ lớn đến nhỏ như sau:
+Item (Mã sản phẩm): Là mã danh mục gốc, được đồng bộ từ hệ thống INFOR và SAP. Mọi biểu mẫu đều phải gọi dữ liệu từ mã này.
+INV (Invoice - Số hóa đơn): Chứng từ cấp cao nhất của một chuyến hàng nhập khẩu. Một INV có thể chứa nhiều ASN. (Quản lý chính tại Module Nhập khẩu - IMP).
+ASN (Advanced Shipping Notice - Mã nhập kho): Chứng từ đại diện cho 1 lần nhập hàng thực tế vào kho trên INFOR. Một ASN có thể bao gồm nhiều Số Lô (Batch). (Dùng để truy vết tại Module Sự cố BBSC và Khiếu nại CC).
+Batch / Số Lô: Lô sản xuất của nhà máy. Một Lô có thể được đóng gói trên nhiều LPN.
+LPN (License Plate Number): Mã định danh duy nhất cho 1 Pallet lưu trữ thực tế trên hệ thống INFOR. Đây là đơn vị vật lý nhỏ nhất. Khi có sự cố, QA sẽ ra lệnh "Hold" (phong tỏa) chính xác từng LPN này. (Quản lý trực tiếp tại Module Biên bản Nội bộ - INT và Lệnh đóng gói - LDG).
+1.2. Luồng luân chuyển dữ liệu giữa các Module
+IMP (Nhập khẩu): Hàng cập cảng theo số INV -> Tạo mã ASN nhập kho.
+AWC (Thay đổi Artwork): Kiểm tra xem lô hàng của ASN này có thay đổi thiết kế bao bì không.
+LBL (Nhãn phụ): Cập nhật version nhãn mới nhất cho Item vừa nhập.
+LDG (Lệnh đóng gói): Kho kéo các pallet (LPN) thuộc ASN đó ra để dán nhãn phụ.
+BBSC (Sự cố) / CC (Khiếu nại): Nếu khui LPN ra dán nhãn thấy móp méo, hoặc khách mua về phàn nàn, lập BBSC/CC để ghi nhận.
+INT (Biên bản nội bộ): Dựa vào BBSC/CC trên, kho tiến hành chuyển trạng thái tồn vật lý (Hold/Hủy) cho chính xác cái LPN đó trên INFOR.
+
+PHẦN 2: ĐẶC TẢ GIAO DIỆN TRANG CHỦ (PORTAL HOMEPAGE)
+Trang chủ đóng vai trò là Lớp vỏ (Shell) kiểm soát truy cập và điều hướng người dùng vào 7 module nghiệp vụ nêu trên.
+2.1. Luồng Xác thực & Chọn Không gian làm việc (Workspace)
+Màn hình Landing: Khi truy cập, hệ thống yêu cầu chọn "Bộ phận của bạn" (QA, Kho, Development, SCM).
+Kiểm tra Context: Tự động điều hướng đến màn hình Đăng nhập (SSO hoặc Supabase Auth). Sau khi đăng nhập, hệ thống tải dữ liệu Role (Quyền) và Department (Phòng ban) vào Global State.
+2.2. Giao diện Dashboard (App Grid)
+Thanh công cụ (Top Bar): Hiển thị tên User, Bộ phận, ô Tìm kiếm toàn cầu (Global Search - gõ từ khóa tìm nhanh module), và Thanh công cụ Admin (chỉ hiện với QA Manager/IT).
+Lưới Ứng dụng động (Dynamic Apps):
+Hiển thị dưới dạng Thẻ (Card). Mỗi thẻ tương ứng với 1 Module (BBSC, LDG, LBL...).
+Tag phân quyền: Góc trái thẻ có Tag (Ví dụ: QA, KHO) cho biết ai được vào. Nhân sự bộ phận nào chỉ thấy các Card thuộc quyền hạn của mình.
+Cấu trúc Thư mục: Cho phép nhóm nhiều Card vào 1 Thư mục (Ví dụ: Folder "Dữ liệu Master" chứa các app Nhãn phụ, Artwork). Click vào Folder sẽ hiện Modal/Popup chứa các app con.
+
+PHẦN 3: BẢNG CẤU TRÚC DỮ LIỆU CỐT LÕI (CORE DATABASE SCHEMA)
+Đây là kiến trúc Database nền tảng đặt tại trung tâm Supabase để Trang chủ vận hành và cung cấp "Master Data" cho 7 module con.
+Bảng 1: master_items (Danh mục Sản phẩm Đồng bộ INFOR/SAP)
+(Nơi mọi module khác phải tham chiếu vào)
+
+Tên mã
+
+Loại dữ liệu
+
+Ghi chú
+
+item_code
+
+Chữ (Text)
+
+Khóa chính (PK). Mã lấy từ INFOR/SAP.
+
+item_name
+
+Chữ (Text)
+
+Tên sản phẩm, hàm lượng.
+
+supplier_code
+
+Tham chiếu
+
+Trỏ đến bảng master_suppliers (Hãng).
+
+visa_no
+
+Chữ (Text)
+
+Số đăng ký lưu hành (Visa/SĐK).
+
+is_active
+
+Boolean
+
+Trạng thái còn kinh doanh hay không.
+Bảng 2: portal_apps (Quản lý Giao diện Trang chủ động)
+(Cho phép Admin tự cấu hình thêm/bớt các Module lên Trang chủ mà không cần IT sửa code)
+
+Tên mã
+
+Loại dữ liệu
+
+Ghi chú
+
+app_id
+
+UUID
+
+Khóa chính.
+
+app_name
+
+Chữ (Text)
+
+Tên hiển thị (VD: "Module Khiếu nại CC").
+
+type
+
+Chữ (Text)
+
+link (Mở app trực tiếp) hoặc folder (Mở thư mục).
+
+target_url
+
+Chữ (Text)
+
+Đường dẫn (Route) tới app con (VD: /apps/cc-module).
+
+parent_id
+
+UUID
+
+Nếu app này nằm trong Folder, trỏ ID về Folder đó.
+
+allowed_depts
+
+Mảng (Array)
+
+Mảng chứa mã phòng ban được phép thấy app này (VD: ['QA', 'KHO']).
+
+is_testing
+
+Boolean
+
+Hiện ruy-băng "TESTING MODE" để báo app đang thử nghiệm.
+Bảng 3: users (Danh sách Nhân sự & Phân quyền)
+
+Tên mã
+
+Loại dữ liệu
+
+Ghi chú
+
+id
+
+UUID
+
+Liên kết với Supabase Auth ID.
+
+email
+
+Chữ (Text)
+
+Email công ty.
+
+full_name
+
+Chữ (Text)
+
+Tên nhân sự.
+
+department_code
+
+Chữ (Text)
+
+Mã phòng ban (QA, KHO, SCM).
+
+system_role
+
+Chữ (Text)
+
+Quyền cấp Portal: admin, manager, staff, viewer.
+
+MODULE KHIẾU NẠI KHÁCH HÀNG (CC)
+PHẦN 1: TỔNG QUAN MODULE
+Tên Module: Quản lý Khiếu nại Khách hàng (Customer Complaints - CC)
+Người phụ trách (Owner): Team CS (Customer Service) / QA.
+Mục đích cốt lõi: Số hóa sổ theo dõi khiếu nại khách hàng. Theo dõi chặt chẽ tiến độ tiếp nhận, nguyên nhân lỗi (từ NSX hay Vận chuyển), tình trạng phản hồi từ Hãng (Astra, Sanofi...), và phương án giải quyết cuối cùng (Đổi/Trả/Hủy) để đảm bảo trải nghiệm khách hàng.
+PHẦN 2: PHÂN QUYỀN NGƯỜI DÙNG (RBAC)
+Nhóm Tạo hồ sơ (CS / Trình dược viên): Quyền tạo mới khiếu nại, điền thông tin khách hàng, lô, date, lý do khách phàn nàn và đính kèm ảnh (Zalo).
+Nhóm Điều tra (QA): Cập nhật tiến độ, chẩn đoán nguyên nhân gốc (Root Cause), ghi chú phản hồi từ Hãng.
+Nhóm Phê duyệt (QA Manager / Giám đốc): Duyệt phương án xử lý cuối cùng (Chấp nhận đền bù / Từ chối) và đóng hồ sơ.
+PHẦN 3: LUỒNG TRẠNG THÁI (WORKFLOW STATUS)
+(Thay vì gõ text tự do vào cột "Tình trạng" như file Excel hiện tại, hệ thống sẽ chuẩn hóa thành các nút bấm trạng thái sau để dễ lọc dữ liệu vẽ biểu đồ):
+Khởi tạo: Vừa tiếp nhận thông tin từ khách.
+Chờ Hãng xác nhận: Đã chuyển thông tin/mẫu sang hãng, đang đợi hướng xử lý.
+Đang xử lý: Đang tiến hành thu hồi hàng, đổi hàng hoặc bù hàng.
+Hoàn tất: Khách hàng đã hài lòng, đóng case.
+Hủy khiếu nại: Khách hàng rút khiếu nại (như case Toujeo của BV Hoàn Mỹ Đà Lạt).
+PHẦN 4: YÊU CẦU GIAO DIỆN CHÍNH (UI/UX)
+Màn hình 1 (Danh sách CC): Dạng bảng lưới (Grid), bôi đỏ các case có "Xác nhận từ Hãng" là "Chờ..." để nhắc nhở. Lọc nhanh theo Tên Bệnh viện/Khách hàng.
+Màn hình 2 (Form Chi tiết): Chia làm 3 phần (Thông tin sản phẩm - Thông tin khách hàng - Khu vực ghi chú xử lý). Đặc biệt cần khu vực "Lịch sử cập nhật" (Timeline) để thay thế cho việc gõ dồn cục ngày tháng vào 1 ô Excel.
+PHẦN 5: BẢNG CẤU TRÚC DỮ LIỆU (DATABASE SCHEMA - Chuẩn bị cho Supabase)
+Dựa trên cấu trúc file CC.xlsx (từ dòng 2), đây là bộ khung hoàn hảo để thiết lập Database.
+
+Tên cột Excel hiện tại
+
+Tên mã Database (Supabase)
+
+Loại dữ liệu
+
+Bắt buộc?
+
+Ghi chú / Cải tiến so với Excel
+
+Code CC-
+
+cc_code
+
+Text
+
+Có
+
+Mã định danh hồ sơ (VD: CC_010125-HCM).
+
+Ngày (date)
+
+complaint_date
+
+Datetime
+
+Có
+
+Ngày phát sinh khiếu nại.
+
+Tên khách hàng
+
+customer_id
+
+Tham chiếu
+
+Có
+
+Trỏ về bảng Master Khách Hàng (tránh gõ sai tên Bệnh viện).
+
+Địa chỉ
+
+customer_address
+
+Text
+
+Không
+
+Nếu trỏ Master, cột này tự động nhảy ra.
+
+Mã Sản Phẩm / Item (Mới)
+
+item_code
+
+Tham chiếu
+
+Có
+
+Mã Sản Phẩm / Item
+
+Tên sản phẩm
+
+item_name
+
+Tham chiếu
+
+Có
+
+Trỏ về bảng Master Sản Phẩm.
+
+Số Lô
+
+lot_number
+
+Text
+
+Có
+
+Số Batch/Lot lô hàng bị lỗi.
+
+NSX (Mfg date)
+
+mfg_date
+
+Date
+
+Không
+
+Ngày sản xuất.
+
+HD (Exp date)
+
+exp_date
+
+Date
+
+Có
+
+Hạn sử dụng.
+
+Đơn vị tính
+
+unit
+
+Text
+
+Không
+
+VD: Hộp, Bút, Lọ...
+
+Số Lượng
+
+quantity
+
+Number
+
+Có
+
+Nhận số dương.
+
+LPN (Mới)
+
+lpn_code
+
+Text
+
+Không
+
+LPN (Mới)
+
+ASN / Số HĐ (Mới)
+
+asn_number
+
+Text
+
+Không
+
+ASN / Số HĐ (Mới)
+
+Lý do khiếu nại
+
+complaint_reason
+
+Text
+
+Có
+
+Lời phàn nàn nguyên gốc của khách.
+
+Nguyên nhân khiếu nại
+
+root_cause
+
+Text
+
+Không
+
+Cột để QA kết luận (VD: Lỗi NSX, Vận chuyển...).
+
+Bảo mật TT Cá nhân
+
+is_info_secured
+
+Boolean
+
+Không
+
+Tick (true/false) đánh dấu bảo mật cho khách.
+
+Hình thức nhận
+
+receive_method
+
+Text
+
+Không
+
+Cổng tiếp nhận (VD: Zalo, Email, Văn bản).
+
+Xác nhận từ Hãng
+
+supplier_action
+
+Text
+
+Không
+
+VD: "Chờ hủy", "Trả lời câu hỏi"...
+
+Ngày nhận
+
+received_date
+
+Date
+
+Không
+
+Ngày nhận mẫu vật lý hoặc thông tin đầy đủ.
+
+Tình trạng/ Status
+
+(Tách làm 2 cột)
+
+-
+
+-
+
+Xem giải pháp kỹ thuật bên dưới!
+💡 Lưu ý đặc biệt cho team chuyên môn (IT Note):
+Tối ưu cột "Tình trạng/ Status":
+Trong Excel, mình thấy các bạn đang gõ chung 1 ô rất dài (VD: "Ngày 03/01/2025, nhận được hướng xử lý... Ngày 03/01, Khách hàng hủy... --> Hoàn tất").
+Khi đưa lên App, TUYỆT ĐỐI KHÔNG dùng 1 ô Text để gõ dồn như vậy nữa, vì nó làm phá vỡ cấu trúc và không thể tìm kiếm.
+
+MODULE BIÊN BẢN NỘI BỘ (INT)
+Mình thấy đây là một bảng theo dõi mang tính chất Kiểm soát Tồn kho (Inventory Control) & Xử lý hàng hóa nội bộ, đóng vai trò như một cầu nối giữa WMS (Hệ thống quản lý kho) và QA.
+Có một số "điểm đau" trong file này mình đã phát hiện ra:
+Cột Ghi Chú thường xuyên bị mượn để ghi mã Khiếu nại (VD: CC_210324), chứng tỏ thiếu sự liên kết hệ thống.
+Cột Tồn (Có/Không) thỉnh thoảng lại bị dán nhầm thành các dải số (VD: 000168197 or 000168198...), đây là lỗi nhập liệu tự do trên Excel rất điển hình.
+Dưới đây là Master URS & Schema chuẩn hóa cho module này, sẵn sàng để nạp vào Antigravity (AG)!
+PHẦN 1: TỔNG QUAN MODULE
+Tên Module: Quản lý Biên bản nội bộ (Internal Records - INT).
+Người phụ trách (Owner): Team Kho (Inventory Control / Warehouse) & QA.
+Mục đích cốt lõi: Số hóa sổ theo dõi các sự việc phát sinh nội bộ tại kho (Hư hỏng nội bộ, Hàng cận date, Chuyển kho, Hàng PAP, Trả về...). Theo dõi chặt chẽ quyết định xử lý (Bán/Hủy/Trả hãng) và hiện trạng tồn kho vật lý của các LPN (Thùng/Pallet) đang có vấn đề, đảm bảo không bị xuất nhầm hàng chờ xử lý.
+PHẦN 2: PHÂN QUYỀN NGƯỜI DÙNG (RBAC)
+Nhóm Tạo hồ sơ (Kho / Inventory): Khởi tạo biên bản, quét mã LPN, điền số lượng, nội dung sự việc. Cập nhật tình trạng tồn kho vật lý (Còn giữ hay đã xuất).
+Nhóm Ra quyết định (QA / Planning / SCM): Cập nhật "Tình trạng" xử lý (Chuyển Hủy, Chuyển Bán, Đơn chỉ định) và ghi chú hành động.
+Nhóm Xem báo cáo (Manager): Xem tổng số lượng LPN đang bị "Hold" trong kho, số lượng đang chờ hãng phản hồi.
+PHẦN 3: LUỒNG TRẠNG THÁI (WORKFLOW STATUS)
+(Dựa trên cột "Tình trạng" hiện tại của Excel, hệ thống sẽ quy chuẩn thành các luồng sau)
+Chờ xác định (Khởi tạo): Hàng mới phát hiện lỗi, đang chờ các bên họp bàn.
+Đang phong tỏa (Hold): Đang chờ hãng trả lời (Yêu cầu hãng) hoặc chờ phê duyệt nội bộ.
+Chờ thực thi (Pending Action): Đã có quyết định (VD: Chuyển Hủy, Chuyển Bán, Trả Hãng) nhưng kho chưa thao tác vật lý.
+Hoàn tất (Closed): Kho đã xuất/hủy/trả xong. Hết tồn.
+PHẦN 4: YÊU CẦU GIAO DIỆN CHÍNH (UI/UX)
+Màn hình 1 (Danh sách INT): Bảng lưới (Grid) hiển thị mã LPN và Số lượng nổi bật. Cần có bộ lọc theo Phân loại (PAP, Yêu cầu hãng...) và Tồn (Có/Không) để Kho dễ đi kiểm kê.
+Màn hình 2 (Form Chi tiết): Chia làm 3 phần: Thông tin Hàng hóa (Quét LPN) -> Phân loại & Nội dung sự cố -> Quyết định & Hành động (QA chốt).
+Tính năng Liên kết (Cross-Link): Có một ô chọn (Select) cho phép nối Biên bản Nội bộ này với một Biên bản Sự cố (BBSC) hoặc Biên bản Khiếu nại (BBKN) đã có sẵn trên hệ thống.
+PHẦN 5: BẢNG CẤU TRÚC DỮ LIỆU (DATABASE SCHEMA)
+Dựa trên cột của sheet "Theo dõi", đây là cấu trúc Database đã được chuẩn hóa để loại bỏ lỗi nhập liệu.
+
+Tên trường (Cột hiển thị)
+
+Tên mã (Tiếng Anh viết thường, cách nhau bằng dấu _)
+
+Loại dữ liệu
+
+Bắt buộc nhập?
+
+Ghi chú / Cải tiến so với Excel
+
+Số theo dõi
+
+int_code
+
+Chữ (Text)
+
+Có
+
+Mã tự động sinh (VD: INT-0001-26).
+
+Ngày lập
+
+created_at
+
+Ngày giờ (Datetime)
+
+Có
+
+Tự động lấy ngày hệ thống.
+
+Phân loại
+
+category
+
+Chọn (Select)
+
+Có
+
+Chọn từ list cố định: PAP, Chuyển kho, Nội bộ, Yêu cầu hãng...
+
+Mã Sản Phẩm
+
+item_code
+
+Tham chiếu (Lookup)
+
+Có
+
+Lấy từ bảng Master Data chung (Kéo theo Tên SP tự động).
+
+Batch / Số lô
+
+lot_number
+
+Chữ (Text)
+
+Có
+
+HSD / Exp Date
+
+exp_date
+
+Ngày (Date)
+
+Có
+
+Mã LPN
+
+lpn_code
+
+Chữ (Text)
+
+Có
+
+Mã Thùng/Pallet trên WMS để định vị.
+
+Số lượng
+
+quantity
+
+Số (Number)
+
+Có
+
+Nội dung sự việc
+
+incident_content
+
+Chữ dài (Textarea)
+
+Có
+
+Mô tả nguyên nhân tại sao lập BB (VD: Không có thuốc bên trong hộp).
+
+Tình trạng xử lý
+
+handling_status
+
+Chọn (Select)
+
+Có
+
+(Khởi tạo, Chờ Hủy, Đơn chỉ định, Đã Xuất...). Chuẩn hóa lại, cấm gõ tay.
+
+Hành động / Ghi chú
+
+action_notes
+
+Chữ dài (Textarea)
+
+Không
+
+Lịch sử các bước đã làm (Có thể lưu dạng JSON Timeline).
+
+Tham chiếu Gốc
+
+ref_link
+
+Tham chiếu (Lookup)
+
+Không
+
+Giải quyết việc gõ tay "CC_210324". Cho phép pick link thẳng tới BBSC/BBKN.
+
+Link thư mục
+
+folder_url
+
+Chữ (URL)
+
+Không
+
+Dẫn link SharePoint/Drive chứa hình ảnh nếu có.
+
+Tồn vật lý
+
+is_in_stock
+
+True/False (Boolean)
+
+Có
+
+Cải tiến: Chỉ nhận Có/Không. Giao diện là nút Toggle Switch (Bật/Tắt).
+
+Chứng từ WMS
+
+wms_doc_number
+
+Chữ (Text)
+
+Không
+
+Mới: Dành để gõ các dải số như 000168197 (Số phiếu xuất/nhập trên WMS) thay vì gõ nhầm vào cột Tồn.
+
+MODULE QUẢN LÝ NHÃN PHỤ (LBL)
+File Excel Nhan phu.xlsx (sheet 2022-Nay) cho thấy team QA đang thực hiện một việc cực kỳ chuẩn xác theo yêu cầu GxP: Quản lý Phiên bản (Version Control) thông qua cột "Mã hóa" (VD: 00370 - Ver01) và ghi nhận lại "Lý do thay đổi" ở cột Ghi chú.
+Tuy nhiên, việc quản lý bằng Excel đang gặp hạn chế lớn: nó chỉ lưu được "cái tên" của nhãn, chứ không chứa được file thiết kế gốc (PDF/AI). Khi nhân sự Kho cần in, họ lại phải đi tìm file ở một thư mục khác, rất dễ dẫn đến rủi ro in nhầm file cũ.
+Dưới đây là Master URS & Schema chuẩn hóa cho module Quản lý Nhãn phụ, giúp biến file Excel này thành một thư viện lưu trữ tài liệu pháp lý thực thụ.
+PHẦN 1: TỔNG QUAN MODULE
+Tên Module: Quản lý Biểu mẫu Nhãn phụ (Label Management - LBL).
+Người phụ trách (Owner): Team QA / Regulatory Affairs (RA).
+Mục đích cốt lõi: Số hóa sổ theo dõi các mã nhãn phụ. Quản lý chặt chẽ vòng đời của một mẫu nhãn (từ lúc Soạn mới -> Cập nhật version -> Đến khi Hết hiệu lực). Đảm bảo kho lưu trữ và cung cấp đúng bản thiết kế nhãn (PDF/Image) mới nhất cho quy trình in ấn đóng gói, loại bỏ hoàn toàn rủi ro sử dụng nhãn cũ.
+PHẦN 2: PHÂN QUYỀN NGƯỜI DÙNG (RBAC)
+Nhóm Biên soạn (QA Staff): Có quyền tạo mã nhãn mới, tải lên (upload) file thiết kế gốc, ghi chú lý do thay đổi (VD: Cập nhật số lô, NSX, thay đổi địa chỉ DNNK).
+Nhóm Phê duyệt (QA Manager): Có quyền duyệt (Approve) để một phiên bản nhãn chính thức có hiệu lực, đồng thời hệ thống tự động khóa các phiên bản cũ của sản phẩm đó.
+Nhóm Sử dụng (Kho / Team Đóng gói): Chỉ có quyền Tìm kiếm (Read-only) và Tải xuống (Download) file thiết kế của những nhãn đang ở trạng thái "Đang hiệu lực".
+PHẦN 3: LUỒNG TRẠNG THÁI (WORKFLOW STATUS)
+Hệ thống sẽ thay thế việc kiểm soát bằng mắt trên Excel thông qua 3 trạng thái cứng:
+Bản nháp (Draft): Nhãn đang trong quá trình thiết kế, chưa được dùng.
+Đang hiệu lực (Active): Bản in chính thức. Tại một thời điểm, một sản phẩm chỉ có DUY NHẤT một phiên bản mang trạng thái này.
+Hết hiệu lực (Obsolete): Các phiên bản cũ (VD: Ver01 khi Ver02 ra đời). Hệ thống tự động vô hiệu hóa nút tải file in đối với trạng thái này để chống in nhầm.
+PHẦN 4: YÊU CẦU GIAO DIỆN CHÍNH (UI/UX)
+Màn hình 1 (Thư viện Nhãn): Dạng bảng lưới (Grid). Các cột "Thuốc", "TPCN", "TTBYT", "Mỹ phẩm" trong Excel sẽ được gộp thành một bộ lọc Phân loại (Dropdown) để giao diện gọn gàng hơn.
+Màn hình 2 (Quản lý Phiên bản): Khi bấm vào một sản phẩm, màn hình mở ra danh sách dọc (Timeline) chứa các đời nhãn (Ver01, Ver02...).
+Tính năng cốt lõi (File Viewer): Tích hợp công cụ xem trước tài liệu (PDF Preview) ngay trên trình duyệt web để kiểm tra nội dung nhãn mà không cần tải file về máy.
+PHẦN 5: BẢNG CẤU TRÚC DỮ LIỆU (DATABASE SCHEMA)
+Cấu trúc này loại bỏ các cột checkbox thủ công trong Excel và tách "Mã hóa" thành số ID và Version để hệ thống dễ dàng quản lý theo chuỗi.
+
+Tên trường (Cột hiển thị)
+
+Tên mã (Tiếng Anh viết thường)
+
+Loại dữ liệu
+
+Bắt buộc?
+
+Ghi chú / Cải tiến so với Excel
+
+Mã Sản Phẩm (Mới)
+
+item_code
+
+Tham chiếu
+
+Có
+
+Lấy từ Master Data. (Thay thế cột "Tên sản phẩm" tự gõ).
+
+Nhóm Sản Phẩm
+
+product_category
+
+Chọn (Select)
+
+Có
+
+Chọn 1: Thuốc, TPCN, TTBYT, Mỹ phẩm. (Thay thế 4 cột dấu 'X' trong Excel).
+
+Nhà Cung Cấp
+
+supplier_code
+
+Tham chiếu
+
+Có
+
+Tương đương cột "Hãng".
+
+Số mã hóa gốc
+
+base_label_code
+
+Số (Number)
+
+Có
+
+ID định danh của chuỗi nhãn (VD: 370).
+
+Phiên bản
+
+version_number
+
+Chữ (Text)
+
+Có
+
+(VD: Ver01, Ver02).
+
+Trạng thái
+
+status
+
+Chọn (Select)
+
+Có
+
+Mặc định: Bản nháp, Đang hiệu lực, Hết hiệu lực.
+
+Ngày hiệu lực
+
+effective_date
+
+Ngày (Date)
+
+Có
+
+Từ ngày nào được phép in.
+
+Lý do thay đổi
+
+change_reason
+
+Chữ dài
+
+Có
+
+Tương đương cột "Ghi chú". Bắt buộc điền để đáp ứng Audit Trail.
+
+File thiết kế gốc
+
+original_file_url
+
+Tệp (File)
+
+Có
+
+Link chứa file PDF/AI độ phân giải cao để in.
+
+Ảnh xem trước
+
+preview_image_url
+
+Tệp (File)
+
+Không
+
+Dành cho giao diện web load nhanh hơn.
+
+MODULE QUẢN LÝ NHẬP KHẨU (IMP)
+Qua phân tích file NHAP KHAU.xlsx của bạn bằng Python, mình phát hiện ra một số điểm cực kỳ thú vị phản ánh đúng "nỗi khổ" của người làm QA/SCM Dược phẩm:
+Một ô chứa nhiều sản phẩm: Cột "Sản phẩm" đang bị nhồi nhét nhiều loại hàm lượng (VD: SEROQUEL XR 50MG 200MG 300MG). Theo chuẩn Database, đây là lỗi vi phạm nguyên tắc chuẩn hóa (Normalization), khiến bạn không thể dùng hàm Filter hay Count chính xác được.
+Theo dõi Data Logger (Nhiệt kế tự ghi): Đây là một "đặc sản" bắt buộc của ngành Dược (GSP/GDP) để kiểm soát nhiệt độ hàng nhập. Việc có cột DATA out of range là rất đắt giá.
+Để chuyển đổi file này thành một App Web xịn xò trên Antigravity, chúng ta bắt buộc phải thiết kế Database theo mô hình Cha - Con (1 Invoice chứa nhiều Sản phẩm). Tuy nhiên, để team dễ hình dung, mình sẽ gom vào 1 bản Đặc tả dễ hiểu nhất.
+Dưới đây là Master URS & Schema chuẩn hóa cho Module Nhập khẩu.
+PHẦN 1: TỔNG QUAN MODULE
+Tên Module: Quản lý Lô hàng Nhập khẩu & Hồ sơ (Import Management - IMP).
+Người phụ trách (Owner): Team QA / Supply Chain (Mua hàng).
+Mục đích cốt lõi: Số hóa sổ theo dõi các lô hàng nhập khẩu (theo số Invoice). Theo dõi sát sao tiến độ duyệt chứng từ (COA, Nhãn phụ), đánh giá dữ liệu nhiệt độ (Data Logger) trong quá trình vận chuyển, và ghi nhận thời điểm hàng thực tế cập các kho (Long Hậu, Hà Nội).
+PHẦN 2: PHÂN QUYỀN NGƯỜI DÙNG (RBAC)
+Nhóm Khởi tạo (SCM / Mua hàng): Tạo mới chuyến hàng, nhập số Invoice, Nhà cung cấp, điền các sản phẩm đi kèm chuyến đó. Dán link folder chứng từ.
+Nhóm Kiểm duyệt (QA): Cập nhật tình trạng COA, Mẫu nhãn, đánh giá Data Logger có bị lố nhiệt độ (Out of range) hay không. Điền các sự cố phát sinh (VD: Sai hạn dùng giữa hộp và COA).
+Nhóm Kho (Warehouse): Chỉ cập nhật ngày nhập kho thực tế tại Long Hậu hoặc Hà Nội.
+PHẦN 3: LUỒNG TRẠNG THÁI (WORKFLOW STATUS)
+Hệ thống sẽ thay thế cột "Tiến độ" gõ tay hiện tại thành quy trình chuẩn:
+Khởi tạo (Created): SCM vừa lên thông tin chuyến hàng.
+Đang kiểm tra chứng từ (Checking): Đang đợi QA duyệt COA và Nhãn.
+Chờ nhập kho (Pending Inbound): Chứng từ đã pass, đợi hàng vật lý cập kho.
+Có sự cố (Issue): Có vấn đề về Data Logger (lệch nhiệt) hoặc sai lệch chứng từ.
+Hoàn tất (Closed): Hàng đã vào kho, hồ sơ lưu trữ đầy đủ.
+PHẦN 4: YÊU CẦU GIAO DIỆN CHÍNH (UI/UX)
+Màn hình 1 (Dashboard Quản lý Invoice): Dạng bảng lưới (Grid) hiển thị theo từng Invoice. Cần làm nổi bật (Highlight đỏ) các Invoice đang ở trạng thái "Có sự cố" hoặc "DATA out of range".
+Màn hình 2 (Form Chi tiết - Master/Detail):
+Phần trên (Master): Thông tin Invoice, NCC, File đính kèm.
+Phần dưới (Detail): Danh sách dạng bảng động (Dynamic Table) để thêm nhiều sản phẩm (Item) vào cùng 1 Invoice. Không gõ dồn vào 1 ô Text nữa.
+Khu vực Ghi chú Sự cố: Thiết kế form text rộng để QA ghi chi tiết Vấn đề (Issue) và Cách giải quyết (Resolution).
+PHẦN 5: BẢNG CẤU TRÚC DỮ LIỆU (DATABASE SCHEMA)
+Để xử lý việc 1 Invoice có nhiều sản phẩm, trong Supabase phải chia làm 2 bảng (Bảng Cha lưu Invoice, Bảng Con lưu chi tiết Thuốc).
+Bảng Cha: imp_shipments (Thông tin chuyến hàng)
+
+Tên trường (Cột hiển thị)
+
+Tên mã (Tiếng Anh viết thường)
+
+Loại dữ liệu
+
+Bắt buộc?
+
+Ghi chú / Cải tiến so với Excel
+
+Số Invoice
+
+invoice_number
+
+Chữ (Text)
+
+Có
+
+Là mã định danh chính (VD: INUK-240025).
+
+Ngày lập (STT)
+
+created_date
+
+Ngày (Date)
+
+Có
+
+Sửa lại đúng bản chất của cột STT cũ.
+
+Nhà Cung Cấp
+
+supplier_code
+
+Tham chiếu
+
+Có
+
+Lấy từ Master Data. (Tương đương cột Hãng).
+
+Trạng thái COA
+
+coa_status
+
+Chọn (Select)
+
+Có
+
+(Chưa có, Đã cập nhật, Đang sai sót).
+
+Trạng thái Nhãn phụ
+
+label_status
+
+Chọn (Select)
+
+Có
+
+(Chưa có, Đã cập nhật).
+
+Tiến độ tổng
+
+progress_status
+
+Chọn (Select)
+
+Có
+
+Lấy từ [PHẦN 3].
+
+Có Data Logger?
+
+has_data_logger
+
+Switch (Bật/Tắt)
+
+Có
+
+(Tương đương cột DATA LOGGER).
+
+Số lượng Logger
+
+logger_qty
+
+Số (Number)
+
+Không
+
+Cảnh báo Nhiệt độ
+
+temp_out_of_range
+
+Switch (Bật/Tắt)
+
+Không
+
+Thay cột "DATA out of range". Nếu gạt sang Bật (True), Form tự động hiện thêm ô nhập lý do.
+
+Kho nhập
+
+wh_import
+
+Ngày (Date)
+
+Không
+
+Long Hậu, Đà Nẵng, Hưng Yên
+
+Ngày nhập Hà Nội
+
+import_date
+
+Ngày (Date)
+
+Không
+
+Link Invoice
+
+invoice_link
+
+URL
+
+Không
+
+Bảng Con: imp_shipment_items (Chi tiết Sản phẩm trong Invoice)
+(Đây là sự khác biệt nâng tầm hệ thống, thay vì nhồi nhét nhiều sản phẩm vào 1 ô)
+
+Tên trường
+
+Tên mã
+
+Loại dữ liệu
+
+Bắt buộc?
+
+Ghi chú
+
+Mã Liên kết
+
+invoice_number
+
+Tham chiếu
+
+Có
+
+Nối với Bảng Cha.
+
+Mã Sản Phẩm (Mới)
+
+item_code
+
+Tham chiếu
+
+Có
+
+Kéo từ Master Data (Tự nhảy tên Sản phẩm).
+
+Tên sản phẩm
+
+item_name
+
+Tham chiếu
+
+Có
+
+Trỏ về bảng Master Sản Phẩm.
+
+Vấn đề phát sinh
+
+issue_notes
+
+Chữ dài
+
+Không
+
+Nơi QA ghi rõ lỗi (VD: Sai ngày HSD trên COA).
+
+Hướng giải quyết
+
+resolution_notes
+
+Chữ dài
+
+Không
+
+Nơi QA ghi lại cách xử lý cuối cùng.
+
+MODULE QUẢN LÝ SỰ CỐ (BBSC)
+Phân tích từ tệp dữ liệu xuất ra thực tế, có thể thấy hệ thống hiện tại đang quản lý một khối lượng thông tin rất chi tiết với 22 cột dữ liệu. Các bản ghi bao gồm đầy đủ thông tin từ lô hàng, hóa đơn đến các lỗi cụ thể như "Cấn móp vỏ thùng ngoài" hay "Thiếu trong thùng lẻ".
+Để đưa module cốt lõi này vào quy trình phát triển thống nhất trên Antigravity, giao diện và dữ liệu cần được chuẩn hóa tối đa. Dưới đây là bản Đặc tả Yêu cầu (URS) và Cấu trúc Database được tinh gọn chuyên nghiệp.
+PHẦN 1: TỔNG QUAN MODULE
+Tên Module: Quản lý Sự cố Hàng hóa (BBSC).
+Người phụ trách (Owner): Phòng QA.
+Mục đích cốt lõi: Quản lý vòng đời hồ sơ sự cố từ lúc phát hiện tại các bộ phận (Kho Nhập, ĐGC2) đến khi hoàn tất xử lý với nhà cung cấp.
+PHẦN 2: PHÂN QUYỀN NGƯỜI DÙNG (RBAC)
+Nhóm Báo cáo (Kho Nhập / Team ĐGC2): Được quyền tạo mới BBSC, nhập thông tin sản phẩm, mã LPN/ASN và mô tả hiện trạng lỗi.
+Nhóm Xử lý (QA Staff - PIC): Chịu trách nhiệm chính. Được quyền cập nhật trạng thái, thêm ghi chú khắc phục và kết luận lỗi.
+Nhóm Quản trị (QA Manager): Toàn quyền kiểm soát. Được quyền thiết lập cấu hình phân quyền động (Field-Level Security) cho từng trường dữ liệu.
+PHẦN 3: LUỒNG TRẠNG THÁI (WORKFLOW STATUS)
+Dựa vào giao diện thực tế, hệ thống quản lý theo các trạng thái sau:
+Khởi tạo: Hồ sơ mới được ghi nhận.
+Chờ hết INV: Đang đợi xử lý trên hệ thống hóa đơn/chứng từ.
+Hoàn tất: Sự cố đã có hướng giải quyết.
+Đóng: Sự cố đã được đóng.
+PHẦN 4: YÊU CẦU GIAO DIỆN & TÍNH NĂNG (UI/UX)
+Màn hình Danh sách (Data Grid):
+Sử dụng bảng dữ liệu có phân trang, hiển thị 10-20 dòng/trang.
+Thanh tìm kiếm linh hoạt và bộ lọc Dropdown (Trạng thái, Phân loại).
+Hiển thị trực quan: Các dòng thiếu dữ liệu (ví dụ: dòng chưa có Mã hàng trong hình) cần được highlight màu nền (VD: màu hồng nhạt) để dễ dàng rà soát.
+Tính năng Xuất Biểu mẫu (Export):
+Xuất Excel: Xuất toàn bộ lưới dữ liệu hiện tại để làm báo cáo.
+Xuất BM-04: Chức năng in/xuất file Word hoặc PDF theo biểu mẫu chuẩn. Lưu ý kỹ thuật đặc biệt: Khi lập trình chức năng xuất file, thuật toán đặt tên file tải xuống phải sử dụng đúng định dạng chuẩn. Tuyệt đối không tự động nối thêm các tiền tố dư thừa vào tên file mặc định (ví dụ: lỗi tự động gắn thêm chuỗi "BBSC_" vào trước mã hồ sơ trong code xuất file cũ) để đảm bảo tính đồng nhất của hệ thống tài liệu.
+PHẦN 5: BẢNG CẤU TRÚC DỮ LIỆU (DATABASE SCHEMA)
+Để tối ưu hóa hiệu năng truy vấn cho bảng dữ liệu lớn, cấu trúc Database được chuẩn hóa nghiêm ngặt xuống chính xác 14 cột cốt lõi. Các thông tin phụ trợ được gom vào trường JSONB.
+
+Tên trường (Cột hiển thị)
+
+Tên mã (Tiếng Anh viết thường)
+
+Loại dữ liệu
+
+Bắt buộc?
+
+Ghi chú
+
+ID Hệ thống
+
+id
+
+UUID
+
+Có
+
+Khóa chính (Primary Key).
+
+Mã sự cố
+
+bbsc_code
+
+Chữ (Text)
+
+Có
+
+Mã định danh hồ sơ.
+
+Ngày lập
+
+created_at
+
+Ngày giờ (Timestamp)
+
+Có
+
+Tự động ghi nhận giờ hệ thống.
+
+Trạng thái
+
+status
+
+Chọn (Select)
+
+Có
+
+Khởi tạo, Chờ hết INV, Hoàn tất...
+
+Nhà cung cấp
+
+supplier_code
+
+Tham chiếu
+
+Có
+
+Liên kết Master Data Nhà cung cấp.
+
+Bộ phận
+
+department_id
+
+Tham chiếu
+
+Có
+
+Bộ phận phát hiện (Kho Nhập, ĐGC2).
+
+PIC
+
+pic_id
+
+Tham chiếu
+
+Có
+
+Người phụ trách chính.
+
+Mã hàng
+
+item_code
+
+Tham chiếu
+
+Có
+
+Kéo tên sản phẩm tự động từ Master Data.
+
+Số lô
+
+lot_number
+
+Chữ (Text)
+
+Có
+
+HSD
+
+exp_date
+
+Ngày (Date)
+
+Có
+
+Số lượng
+
+quantity
+
+Số (Numeric)
+
+Có
+
+LPN
+
+lpn_code
+
+Chữ (Text)
+
+Không
+
+Mã định vị pallet/thùng.
+
+Mô tả lỗi chi tiết
+
+defect_description
+
+Chữ dài (Textarea)
+
+Có
+
+Mô tả hiện trạng sự cố.
+
+Trường mở rộng
+
+custom_fields
+
+JSONB
+
+Không
+
+Gom các thông tin: ĐVT, Phân loại hàng, ASN, Nhãn dán, Số INV, Ghi chú chung.
+
+MODULE LỆNH ĐÓNG GÓI (LDG)
+Phân tích file LDG.xlsx bằng Python, mình nhận thấy đây là chốt chặn cuối cùng cực kỳ quan trọng trong quy trình Quản lý Chất lượng trước khi hàng hóa được tung ra thị trường: Dán nhãn phụ và Release (Giải phóng lô).
+Tuy nhiên, file Excel hiện tại đang bộc lộ một số vấn đề về cấu trúc dữ liệu:
+Lặp lại dữ liệu (Duplication): Một Lệnh Đóng Gói (VD: LDG-0771-0423) đang bị lặp lại thành nhiều dòng chỉ vì nó chứa nhiều LPN (pallet) khác nhau.
+Quản lý Bằng chứng yếu: Cột Chụp hình 6 mặt chỉ được đánh dấu "x", không có chỗ lưu trữ bức ảnh thực tế để đối chiếu khi có thanh tra (Audit).
+Ghi nhận sự cố thủ công: Các lỗi như "1H có dấu viết", "3H hộp ố vàng" được gõ chay. Đáng lẽ nó phải được link thẳng sang một thẻ Sự cố (BBSC) hoặc Biên bản Nội bộ (INT) để cô lập hàng.
+Hệ thống GxP Portal của bạn đang ghép các mảnh logic lại với nhau rất tốt. Module Lệnh Đóng Gói (LDG) này chính là nơi "tiêu thụ" dữ liệu của Module Quản lý Nhãn phụ (LBL) mà chúng ta vừa làm ở trên.
+Dưới đây là Master URS & Schema chuẩn hóa cho Module Lệnh Đóng Gói.
+PHẦN 1: TỔNG QUAN MODULE
+Tên Module: Quản lý Lệnh Đóng Gói & Nhãn phụ (Packaging Orders - LDG).
+Người phụ trách (Owner): Team Kho (Thực thi) & QA (Kiểm duyệt/Release).
+Mục đích cốt lõi: Quản lý tiến độ dán nhãn phụ cho các lô hàng nhập khẩu. Đảm bảo Kho sử dụng đúng phiên bản nhãn đang có hiệu lực. Lưu trữ bằng chứng hình ảnh (6 mặt) và kiểm soát chặt chẽ số lượng hàng đạt tiêu chuẩn (Release) so với số lượng hàng lỗi (Sự cố) trên từng Pallet/LPN.
+PHẦN 2: PHÂN QUYỀN NGƯỜI DÙNG (RBAC)
+Nhóm Thực thi (Kho / Đóng gói): Tạo Lệnh đóng gói, nhập số Lô, hạn dùng. Upload hình ảnh 6 mặt thực tế. Khai báo danh sách các LPN thuộc Lệnh này và ghi chú sự cố (nếu có lúc khui thùng).
+Nhóm Kiểm duyệt (QA / DGC2): Nhận thông báo khi Kho dán xong. Kiểm tra hình ảnh 6 mặt xem dán nhãn có đúng vị trí, đúng version không. Thực hiện thao tác "Release" (Giải phóng) lô hàng để WMS cho phép xuất bán.
+PHẦN 3: LUỒNG TRẠNG THÁI (WORKFLOW STATUS)
+Hệ thống sẽ thay thế việc theo dõi thủ công bằng luồng chuẩn GxP sau:
+Khởi tạo (Draft): Kho vừa tạo lệnh, đang chuẩn bị in nhãn.
+Đang đóng gói (In Progress): Kho đang thực hiện dán nhãn.
+Chờ QA duyệt (Pending QA Review): Kho dán xong, upload hình 6 mặt và gửi yêu cầu duyệt.
+Có sự cố (Issue): QA phát hiện dán sai, hoặc Kho báo cáo có hàng móp méo/ố vàng bên trong.
+Đã Release (Released): Lô hàng đạt chuẩn, đóng Lệnh đóng gói.
+PHẦN 4: YÊU CẦU GIAO DIỆN CHÍNH (UI/UX)
+Màn hình 1 (Dashboard Lệnh DG): Dạng bảng lưới (Grid). Cần hiển thị rõ Trạng thái và Thanh tiến độ (VD: Đã dán 500/2000 hộp).
+Màn hình 2 (Form Chi tiết - Cấu trúc Master/Detail):
+Phần Master (Thông tin chung): Mã Lệnh, Mã sản phẩm, Số Lô, File hình ảnh 6 mặt. Đặc biệt, có mục "Version Nhãn đang áp dụng" (Tự động kéo từ hệ thống LBL sang).
+Phần Detail (Danh sách LPN): Bảng động để Kho nhập các LPN liên quan, số lượng từng LPN, và nút Report sự cố cho từng LPN.
+Bảo vệ GxP (Cảnh báo đỏ): Nếu QA đã Hủy (Obsolete) một mẫu nhãn bên Module LBL, mà Kho đang mở form Lệnh đóng gói dùng nhãn đó, hệ thống phải block (khóa) nút "Gửi QA duyệt" và báo lỗi.
+PHẦN 5: BẢNG CẤU TRÚC DỮ LIỆU (DATABASE SCHEMA)
+Để xử lý việc 1 Lệnh có nhiều LPN, chúng ta thiết kế theo mô hình Cha-Con.
+Bảng Cha: ldg_orders (Thông tin chung Lệnh đóng gói)
+
+Tên trường (Cột hiển thị)
+
+Tên mã (Tiếng Anh)
+
+Loại dữ liệu
+
+Bắt buộc?
+
+Ghi chú / Cải tiến
+
+Mã Lệnh DG
+
+ldg_code
+
+Chữ (Text)
+
+Có
+
+(VD: LDG-0770-0426).
+
+Ngày lập
+
+created_date
+
+Ngày (Date)
+
+Có
+
+Mã Sản Phẩm
+
+item_code
+
+Tham chiếu
+
+Có
+
+Kéo từ Master Data. (Tự hiện SĐK & Tên).
+
+Nhà cung cấp
+
+supplier_code
+
+Tham chiếu
+
+Có
+
+Tương đương cột "Hãng".
+
+Số Lô
+
+lot_number
+
+Chữ (Text)
+
+Có
+
+HSD
+
+exp_date
+
+Ngày (Date)
+
+Có
+
+Cỡ lô (Batch Size)
+
+batch_size
+
+Số (Number)
+
+Có
+
+Tổng số lượng của cả lô.
+
+Yêu cầu đóng gói
+
+packaging_req
+
+Chữ dài
+
+Không
+
+VD: "Dán nhãn nắp, bọc màng co".
+
+Version Nhãn
+
+label_version_id
+
+Tham chiếu
+
+Có
+
+Cực kỳ quan trọng: Link sang bảng label_versions của Module Nhãn phụ.
+
+Hình 6 mặt
+
+six_sides_photo
+
+Tệp (File)
+
+Có
+
+Thay vì đánh dấu "x", bắt buộc up ảnh làm bằng chứng QA.
+
+Trạng thái
+
+status
+
+Chọn (Select)
+
+Có
+
+Lấy từ [PHẦN 3].
+
+Ghi chú chung
+
+general_notes
+
+Chữ dài
+
+Không
+
+Bảng Con: ldg_lpns (Chi tiết LPN trong Lệnh đóng gói)
+(Giải quyết triệt để việc lặp dòng dữ liệu trong Excel)
+
+Tên trường
+
+Tên mã
+
+Loại dữ liệu
+
+Bắt buộc?
+
+Ghi chú
+
+Mã Liên kết
+
+ldg_code
+
+Tham chiếu
+
+Có
+
+Nối với Bảng Cha.
+
+Mã LPN
+
+lpn_code
+
+Chữ (Text)
+
+Có
+
+(VD: 100385).
+
+Số lượng LPN
+
+quantity
+
+Số (Number)
+
+Có
+
+Số lượng trên pallet này.
+
+SL Release
+
+released_qty
+
+Số (Number)
+
+Không
+
+QA sẽ điền số này sau khi trừ hao hụt/lỗi.
+
+Ghi chú sự cố
+
+incident_note
+
+Chữ (Text)
+
+Không
+
+VD: "3H hộp ố vàng".
+
+Link BBSC/INT
+
+incident_ref
+
+Tham chiếu
+
+Không
+
+Nếu có sự cố, nối thẳng ID của BBSC hoặc Biên bản nội bộ vào đây.
+
+MODULE QUẢN LÝ THAY ĐỔI ARTWORK (AWC)
+Phân tích file Theo dõi thay đổi AW.xlsx bằng Python đã hé lộ một mảng nghiệp vụ cực kỳ chuyên sâu và chuẩn GxP của team bạn: Kiểm soát Thay đổi Thiết kế Bao bì/Nhãn (Artwork Change Control - AWC).
+"AW" (Artwork) là thiết kế bao bì gốc từ nhà sản xuất (như Sanofi, Hyphens...). Khi hãng thay đổi Logo, cập nhật Số đăng ký (Visa No.), thay đổi Hạn dùng (Shelf life) hay Nơi sản xuất, kho và QA phải "canh" xem chính xác lô hàng nào (Batch) sẽ bắt đầu áp dụng thiết kế mới này. Nếu không theo dõi sát, công ty có thể bán nhầm hàng cũ, in sai nhãn phụ, hoặc khai báo sai với Hải quan.
+File Excel của bạn đang làm rất tốt việc ghi nhận Thông tin cũ vs Thông tin mới, Lô dự kiến vs Lô thực tế. Tuy nhiên, nó thiếu luồng Trạng thái (để biết cái nào đã chốt, cái nào đang phải "canh" hàng về).
+Dưới đây là Master URS & Schema để biến file Excel này thành một công cụ xịn xò trên GxP Portal.
+PHẦN 1: TỔNG QUAN MODULE
+Tên Module: Quản lý Thay đổi Artwork / Bao bì gốc (Artwork Change Control - AWC).
+Người phụ trách (Owner): Team QA & RA (Regulatory Affairs) / Supply Chain.
+Mục đích cốt lõi: Quản lý vòng đời của một thông báo thay đổi bao bì từ Hãng. Theo dõi sự khác biệt giữa Thông tin cũ và Thông tin mới. Quan trọng nhất là "đón lõng" (tracking) lô hàng đầu tiên áp dụng thiết kế mới này cập kho để cập nhật dữ liệu đồng loạt cho các hệ thống khác (như Module Nhãn Phụ - LBL).
+PHẦN 2: PHÂN QUYỀN NGƯỜI DÙNG (RBAC)
+Nhóm Khởi tạo (SCM / RA): Khi nhận email thông báo từ Hãng, vào hệ thống tạo Mã AWC, nhập nội dung thay đổi, đính kèm email/hình ảnh hãng gửi, và điền "Lô dự kiến" (Expected Batch).
+Nhóm Theo dõi & Cập nhật (Kho / QA): Khi hàng thực tế về kho (liên kết với Module Kiểm soát Nhập khẩu), QA đối chiếu và điền "Lô thực tế" (Actual Batch), xác nhận hàng đã đúng với thiết kế mới.
+Nhóm Quản lý (QA Manager): Đánh giá tác động của sự thay đổi này (Có cần đổi nhãn phụ không? Có cần báo cáo Cục Dược không?) và Đóng hồ sơ.
+PHẦN 3: LUỒNG TRẠNG THÁI (WORKFLOW STATUS)
+Hệ thống sẽ bổ sung luồng Trạng thái để thay thế việc rà soát bằng mắt trên Excel:
+Thông báo mới (Alerted): Vừa ghi nhận thông báo từ Hãng.
+Chờ lô đầu tiên (Pending 1st Batch): Đã biết thay đổi gì, đang chờ lô hàng đầu tiên mang thiết kế mới cập cảng.
+Đã xác minh (Verified): Lô thực tế đã về, QA đã chụp hình kiểm tra khớp 100%.
+Hoàn tất (Closed): Đã cập nhật xong các thủ tục liên quan (cập nhật Master Data, cập nhật Nhãn phụ).
+PHẦN 4: YÊU CẦU GIAO DIỆN CHÍNH (UI/UX)
+Màn hình 1 (Danh sách AWC): Bảng lưới (Grid). Highlight màu Cam cho các dòng đang ở trạng thái Chờ lô đầu tiên để QA và Kho chú ý khi kiểm hàng nhập.
+Màn hình 2 (Form So sánh Trực quan): Form nhập liệu phải thiết kế chia làm 2 cột rõ ràng: Cột trái (Thông tin Cũ) - Cột phải (Thông tin Mới/Change).
+Màn hình 3 (Tracking Lô hàng): Khu vực điền "Lô dự kiến" và "Lô thực tế". Hệ thống tự động báo Đỏ nếu "Lô thực tế" về khác với "Lô dự kiến" mà Hãng đã báo trước đó.
+PHẦN 5: BẢNG CẤU TRÚC DỮ LIỆU (DATABASE SCHEMA)
+Cấu trúc này bám sát 100% cột của bạn nhưng được chuẩn hóa thành Data Types trên Supabase. Bảng List SNF Pro. trong Excel sẽ bị loại bỏ vì hệ thống sẽ lấy trực tiếp từ bảng Master Data chung.
+
+Tên trường (Cột hiển thị)
+
+Tên mã (Tiếng Anh)
+
+Loại dữ liệu
+
+Bắt buộc?
+
+Ghi chú / Cải tiến so với Excel
+
+Mã Thay đổi AW
+
+awc_code
+
+Chữ (Text)
+
+Có
+
+(VD: AWC-001-24).
+
+Ngày thông báo
+
+notice_date
+
+Ngày (Date)
+
+Có
+
+(Cột "Ngày" trong Excel).
+
+Mã Sản Phẩm
+
+item_code
+
+Tham chiếu
+
+Có
+
+Tự động kéo tên thuốc từ Master Data.
+
+Mã mới
+
+New_item_code
+
+Chữ (Text)
+
+Không
+
+Cập nhật khi kế toán/ Plan tạo mã mới cho việc thay đổi AW
+
+Trạng thái
+
+status
+
+Chọn (Select)
+
+Có
+
+Lấy từ [PHẦN 3].
+
+Thông tin cũ
+
+old_info
+
+Chữ dài
+
+Có
+
+(VD: Xuất xứ Indo, Tuổi thọ 36T).
+
+Nội dung thay đổi
+
+new_change_info
+
+Chữ dài
+
+Có
+
+(VD: Plant Country VN, Tuổi thọ 18T).
+
+Lô dự kiến (Hãng báo)
+
+expected_batch
+
+Chữ (Text)
+
+Không
+
+Ngày nhập dự kiến
+
+estimated_receive
+
+Ngày (Date)
+
+Không
+
+Tương đương "Estimate first SI & SO".
+
+Lô thực tế (Đã về)
+
+actual_batch
+
+Chữ (Text)
+
+Không
+
+QA cập nhật khi hàng về tới kho.
+
+Ngày nhập thực tế
+
+actual_receive
+
+Ngày (Date)
+
+Không
+
+Bằng chứng (Link)
+
+evidence_url
+
+Tệp / URL
+
+Không
+
+Thay vì quăng "Xem hình" hoặc dán Link thô, cho phép upload/attach link chuẩn xác.
+
+Tác động (Mở rộng)
+
+impact_analysis
+
+JSONB
+
+Không
+
+Mới: Để QA tick chọn các hệ quả (Ví dụ: {"cần_đổi_nhãn_phụ": true, "báo_cáo_DAV": false}).

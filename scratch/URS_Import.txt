@@ -1,0 +1,226 @@
+
+MODULE QUẢN LÝ NHẬP KHẨU (IMP)
+Qua phân tích file NHAP KHAU.xlsx của bạn bằng Python, mình phát hiện ra một số điểm cực kỳ thú vị phản ánh đúng "nỗi khổ" của người làm QA/SCM Dược phẩm:
+Một ô chứa nhiều sản phẩm: Cột "Sản phẩm" đang bị nhồi nhét nhiều loại hàm lượng (VD: SEROQUEL XR 50MG 200MG 300MG). Theo chuẩn Database, đây là lỗi vi phạm nguyên tắc chuẩn hóa (Normalization), khiến bạn không thể dùng hàm Filter hay Count chính xác được.
+Theo dõi Data Logger (Nhiệt kế tự ghi): Đây là một "đặc sản" bắt buộc của ngành Dược (GSP/GDP) để kiểm soát nhiệt độ hàng nhập. Việc có cột DATA out of range là rất đắt giá.
+Để chuyển đổi file này thành một App Web xịn xò trên Antigravity, chúng ta bắt buộc phải thiết kế Database theo mô hình Cha - Con (1 Invoice chứa nhiều Sản phẩm). Tuy nhiên, để team dễ hình dung, mình sẽ gom vào 1 bản Đặc tả dễ hiểu nhất.
+Dưới đây là Master URS & Schema chuẩn hóa cho Module Nhập khẩu.
+PHẦN 1: TỔNG QUAN MODULE
+Tên Module: Quản lý Lô hàng Nhập khẩu & Hồ sơ (Import Management - IMP).
+Người phụ trách (Owner): Team QA / Supply Chain (Mua hàng).
+Mục đích cốt lõi: Số hóa sổ theo dõi các lô hàng nhập khẩu (theo số Invoice). Theo dõi sát sao tiến độ duyệt chứng từ (COA, Nhãn phụ), đánh giá dữ liệu nhiệt độ (Data Logger) trong quá trình vận chuyển, và ghi nhận thời điểm hàng thực tế cập các kho (Long Hậu, Hà Nội).
+PHẦN 2: PHÂN QUYỀN NGƯỜI DÙNG (RBAC)
+Nhóm Khởi tạo (SCM / Mua hàng): Tạo mới chuyến hàng, nhập số Invoice, Nhà cung cấp, điền các sản phẩm đi kèm chuyến đó. Dán link folder chứng từ.
+Nhóm Kiểm duyệt (QA): Cập nhật tình trạng COA, Mẫu nhãn, đánh giá Data Logger có bị lố nhiệt độ (Out of range) hay không. Điền các sự cố phát sinh (VD: Sai hạn dùng giữa hộp và COA).
+Nhóm Kho (Warehouse): Chỉ cập nhật ngày nhập kho thực tế tại Long Hậu hoặc Hà Nội.
+PHẦN 3: LUỒNG TRẠNG THÁI (WORKFLOW STATUS)
+Hệ thống sẽ thay thế cột "Tiến độ" gõ tay hiện tại thành quy trình chuẩn:
+Khởi tạo (Created): SCM vừa lên thông tin chuyến hàng.
+Đang kiểm tra chứng từ (Checking): Đang đợi QA duyệt COA và Nhãn.
+Chờ nhập kho (Pending Inbound): Chứng từ đã pass, đợi hàng vật lý cập kho.
+Có sự cố (Issue): Có vấn đề về Data Logger (lệch nhiệt) hoặc sai lệch chứng từ.
+Hoàn tất (Closed): Hàng đã vào kho, hồ sơ lưu trữ đầy đủ.
+PHẦN 4: YÊU CẦU GIAO DIỆN CHÍNH (UI/UX)
+Màn hình 1 (Dashboard Quản lý Invoice): Dạng bảng lưới (Grid) hiển thị theo từng Invoice. Cần làm nổi bật (Highlight đỏ) các Invoice đang ở trạng thái "Có sự cố" hoặc "DATA out of range".
+Màn hình 2 (Form Chi tiết - Master/Detail):
+Phần trên (Master): Thông tin Invoice, NCC, File đính kèm.
+Phần dưới (Detail): Danh sách dạng bảng động (Dynamic Table) để thêm nhiều sản phẩm (Item) vào cùng 1 Invoice. Không gõ dồn vào 1 ô Text nữa.
+Khu vực Ghi chú Sự cố: Thiết kế form text rộng để QA ghi chi tiết Vấn đề (Issue) và Cách giải quyết (Resolution).
+PHẦN 5: BẢNG CẤU TRÚC DỮ LIỆU (DATABASE SCHEMA)
+Để xử lý việc 1 Invoice có nhiều sản phẩm, trong Supabase phải chia làm 2 bảng (Bảng Cha lưu Invoice, Bảng Con lưu chi tiết Thuốc).
+Bảng Cha: imp_shipments (Thông tin chuyến hàng)
+
+
+Tên trường (Cột hiển thị)
+
+Tên mã (Tiếng Anh viết thường)
+
+Loại dữ liệu
+
+Bắt buộc?
+
+Ghi chú / Cải tiến so với Excel
+
+Số Invoice
+
+invoice_number
+
+Chữ (Text)
+
+Có
+
+Là mã định danh chính (VD: INUK-240025).
+
+Ngày lập (STT)
+
+created_date
+
+Ngày (Date)
+
+Có
+
+Sửa lại đúng bản chất của cột STT cũ.
+
+Nhà Cung Cấp
+
+supplier_code
+
+Tham chiếu
+
+Có
+
+Lấy từ Master Data. (Tương đương cột Hãng).
+
+Trạng thái COA
+
+coa_status
+
+Chọn (Select)
+
+Có
+
+(Chưa có, Đã cập nhật, Đang sai sót).
+
+Trạng thái Nhãn phụ
+
+label_status
+
+Chọn (Select)
+
+Có
+
+(Chưa có, Đã cập nhật).
+
+Tiến độ tổng
+
+progress_status
+
+Chọn (Select)
+
+Có
+
+Lấy từ [PHẦN 3].
+
+Có Data Logger?
+
+has_data_logger
+
+Switch (Bật/Tắt)
+
+Có
+
+(Tương đương cột DATA LOGGER).
+
+Số lượng Logger
+
+logger_qty
+
+Số (Number)
+
+Không
+
+
+
+Cảnh báo Nhiệt độ
+
+temp_out_of_range
+
+Switch (Bật/Tắt)
+
+Không
+
+Thay cột "DATA out of range". Nếu gạt sang Bật (True), Form tự động hiện thêm ô nhập lý do.
+
+Kho nhập
+
+wh_import
+
+Ngày (Date)
+
+Không
+
+Long Hậu, Đà Nẵng, Hưng Yên
+
+Ngày nhập Hà Nội
+
+import_date
+
+Ngày (Date)
+
+Không
+
+
+
+Link Invoice
+
+invoice_link
+
+URL
+
+Không
+
+
+Bảng Con: imp_shipment_items (Chi tiết Sản phẩm trong Invoice)
+(Đây là sự khác biệt nâng tầm hệ thống, thay vì nhồi nhét nhiều sản phẩm vào 1 ô)
+
+
+Tên trường
+
+Tên mã
+
+Loại dữ liệu
+
+Bắt buộc?
+
+Ghi chú
+
+Mã Liên kết
+
+invoice_number
+
+Tham chiếu
+
+Có
+
+Nối với Bảng Cha.
+
+Mã Sản Phẩm (Mới)
+
+item_code
+
+Tham chiếu
+
+Có
+
+Kéo từ Master Data (Tự nhảy tên Sản phẩm).
+
+Tên sản phẩm
+
+item_name
+
+Tham chiếu
+
+Có
+
+Trỏ về bảng Master Sản Phẩm.
+
+Vấn đề phát sinh
+
+issue_notes
+
+Chữ dài
+
+Không
+
+Nơi QA ghi rõ lỗi (VD: Sai ngày HSD trên COA).
+
+Hướng giải quyết
+
+resolution_notes
+
+Chữ dài
+
+Không
+
+Nơi QA ghi lại cách xử lý cuối cùng.
+

@@ -27,12 +27,20 @@ const { Option } = Select;
 // ──────────────────────────────────────────────────────────
 // Zod Schema Validation
 // ──────────────────────────────────────────────────────────
+function generateSupplierCode(name: string): string {
+  if (!name) return '';
+  // Chuyển sang không dấu
+  const nonAccent = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  // Chuyển sang chữ hoa, thay thế ký tự đặc biệt bằng gạch dưới, giữ chữ và số
+  const code = nonAccent.toUpperCase()
+    .replace(/[^A-Z0-9]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return code || `NCC_${Date.now()}`;
+}
+
 const masterSupplierSchema = z.object({
-  supplier_code: z
-    .string()
-    .min(1, 'Bắt buộc nhập Mã/ID Nhà Cung Cấp')
-    .min(2, 'Mã phải có ít nhất 2 ký tự')
-    .regex(/^[A-Za-z0-9 _&().\'-]+$/, 'Không dùng ký tự đặc biệt lạ (chỉ hỗ trợ A-Z, 0-9, dấu cách, &()_.\'-)'),
+  supplier_code: z.string().optional(),
   supplier_name: z
     .string()
     .min(1, 'Bắt buộc nhập Tên Nhà Cung Cấp')
@@ -89,8 +97,9 @@ async function fetchMasterSuppliers(
 }
 
 async function createMasterSupplier(data: MasterSupplierFormData): Promise<MasterSupplier> {
+  const code = data.supplier_code || generateSupplierCode(data.supplier_name);
   const newSupplier = {
-    supplier_code: data.supplier_code.trim().toUpperCase(),
+    supplier_code: code.trim().toUpperCase(),
     supplier_name: data.supplier_name.trim(),
     business_type: data.business_type || [],
     notes: data.notes || '',
@@ -155,7 +164,6 @@ async function deleteMasterSupplier(supplier_code: string): Promise<void> {
 
 // Default columns configuration
 const DEFAULT_SUPPLIER_COLS: ColumnConfig[] = [
-  { key: 'supplier_code', label: 'Mã NCC (ID)', visible: true, fixed: true },
   { key: 'supplier_name', label: 'Tên nhà cung cấp', visible: true },
   { key: 'business_type', label: 'Loại hình', visible: true },
   { key: 'notes',         label: 'Ghi chú', visible: true },
@@ -190,7 +198,11 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
     userId,
     DEFAULT_SUPPLIER_COLS
   );
-  const { columnConfigs, showFilters, columnWidths } = prefs;
+  const { columnConfigs: rawColumnConfigs, showFilters, columnWidths } = prefs;
+
+  const columnConfigs = useMemo(() => {
+    return rawColumnConfigs.filter(cfg => cfg.key !== 'supplier_code');
+  }, [rawColumnConfigs]);
 
   const handleColumnFilter = (key: string, value: string) => {
     setColumnFilters(prev => ({ ...prev, [key]: value }));
@@ -640,30 +652,6 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
       >
         <Form layout="vertical" onFinish={handleSubmit(onSubmit)}>
           <Row gutter={16}>
-            <Col span={24}>
-              <Form.Item
-                label={
-                  <span style={{ fontWeight: 600, color: '#374151' }}>
-                    Mã/ID Nhà Cung Cấp <span style={{ color: '#ef4444' }}>*</span>
-                  </span>
-                }
-                validateStatus={errors.supplier_code ? 'error' : ''}
-                help={errors.supplier_code?.message}
-              >
-                <Controller
-                  name="supplier_code"
-                  control={control}
-                  render={({ field }) => (
-                    <Input
-                      {...field}
-                      disabled={!!editingSupplier}
-                      placeholder="VD: ABBOTT, SANOFI"
-                      style={{ borderRadius: 8, textTransform: 'uppercase' }}
-                    />
-                  )}
-                />
-              </Form.Item>
-            </Col>
 
             <Col span={24}>
               <Form.Item
