@@ -22,7 +22,7 @@ import { supabase } from '@/lib/supabase';
    Types
 ────────────────────────────────────────────────── */
 export interface BBSCIncident {
-  id?: number;
+  id: number;
   bbsc_code: string;
   created_at?: string;
   status: string; // 'Khởi tạo' | 'Chờ hết INV' | 'Hoàn tất' | 'Đóng'
@@ -125,8 +125,11 @@ export default function BBSCModule({ userId = 'default' }: { userId?: string }) 
 
   const w = (key: string) => columnWidths[key] ?? DEFAULT_BBSC_WIDTHS[key] ?? 100;
   const resizable = (key: string) => ({
-    onResize: (width: number) => setColumnWidth(key, width),
-    style: { width: w(key) },
+    width: w(key),
+    ellipsis: true,
+    onHeaderCell: () => ({
+      onResize: (width: number) => setColumnWidth(key, width),
+    } as any),
   });
 
   // Load everything
@@ -201,6 +204,7 @@ export default function BBSCModule({ userId = 'default' }: { userId?: string }) 
     } else {
       setIsNew(true);
       setDetailRow({
+        id: 0,
         bbsc_code: `BBSC-${dayjs().format('YYYYMMDD')}-${Math.floor(1000 + Math.random() * 9000)}`,
         status: 'Khởi tạo',
         supplier_code: '',
@@ -403,6 +407,11 @@ export default function BBSCModule({ userId = 'default' }: { userId?: string }) 
         dataIndex: 'supplier_code',
         key: 'supplier_code',
         ...resizable('supplier_code'),
+        render: (val: string) => {
+          const s = masterSuppliers.find(x => x.supplier_code === val);
+          const display = s ? s.supplier_name : val;
+          return display.length > 50 ? `${display.substring(0, 50)}...` : display;
+        },
       },
       {
         title: (
@@ -445,8 +454,11 @@ export default function BBSCModule({ userId = 'default' }: { userId?: string }) 
         ),
         dataIndex: 'defect_description',
         key: 'defect_description',
-        ellipsis: true,
         ...resizable('defect_description'),
+        render: (text: string) => {
+          const display = text && text.length > 50 ? `${text.substring(0, 50)}...` : text;
+          return <Tooltip title={text}>{display || '—'}</Tooltip>;
+        },
       },
       {
         title: 'Thao Tác',
@@ -552,7 +564,7 @@ export default function BBSCModule({ userId = 'default' }: { userId?: string }) 
             }}
             icon={<Plus size={16} />}
           >
-            Tạo Sự Cố BBSC
+            Tạo Sự Cố INC (BBSC)
           </Button>
         </div>
       </div>

@@ -32,8 +32,9 @@ interface AppCardProps {
 
 // Map app_name → Icon
 const APP_ICON_MAP: Record<string, React.ElementType> = {
-  'Khiếu Nại CC': ShieldCheck,
-  'BBSC Kiểm Kho': Warehouse,
+  'COMP (Khiếu nại)': ShieldCheck,
+  'INC (BBSC)': Warehouse,
+  'DES (Hủy hàng)': FlaskConical,
   'Quản Lý Supplier': Box,
   'App Công Ty': Folder,
   'Chấm Công': Clock,

@@ -251,8 +251,11 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
   // ── Column width helper ──
   const w = (key: string) => columnWidths[key] ?? DEFAULT_DESTR_WIDTHS[key] ?? 100;
   const resizable = (key: string) => ({
-    onResize: (width: number) => setColumnWidth(key, width),
-    style: { width: w(key) },
+    width: w(key),
+    ellipsis: true,
+    onHeaderCell: () => ({
+      onResize: (width: number) => setColumnWidth(key, width),
+    } as any),
   });
 
   /* persist decision changes in Supabase */
@@ -469,29 +472,26 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
   const allColumnDefs: Record<string, object | null> = {
     stt: {
       title: <ColumnSearchHeader title="STT" dataKey="__stt" filters={columnFilters} onFilterChange={handleColumnFilter} align="center" showFilters={showFilters} />,
-      key: 'stt', width: w('stt'), align: 'center' as const,
-      ellipsis: true,
-      onHeaderCell: () => resizable('stt'),
+      key: 'stt', align: 'center' as const,
+      ...resizable('stt'),
       render: (_: unknown, __: unknown, idx: number) => <span style={{color:'#94a3b8',fontSize:12}}>{idx+1}</span>,
     },
     owner: {
       title: <ColumnSearchHeader title="Owner" dataKey="owner" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
-      dataIndex: 'owner', key: 'owner', width: w('owner'),
-      ellipsis: true,
-      onHeaderCell: () => resizable('owner'),
+      dataIndex: 'owner', key: 'owner',
+      ...resizable('owner'),
       render: (v: string) => <Tag color="blue" style={{fontSize:11,fontWeight:600,margin:0}}>{v}</Tag>,
     },
     vendor: {
       title: <ColumnSearchHeader title="NCC" dataKey="vendor" filters={columnFilters} onFilterChange={handleColumnFilter} align="center" showFilters={showFilters} />,
-      dataIndex: 'vendor', key: 'vendor', width: w('vendor'), align: 'center' as const,
-      onHeaderCell: () => resizable('vendor'),
+      dataIndex: 'vendor', key: 'vendor', align: 'center' as const,
+      ...resizable('vendor'),
       render: (v: string) => <Tag color="blue" style={{ borderRadius: 4, fontWeight: 600 }}>{v}</Tag>,
     },
     item: {
       title: <ColumnSearchHeader title="Item" dataKey="item" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
-      dataIndex: 'item', key: 'item', width: w('item'),
-      ellipsis: true,
-      onHeaderCell: () => resizable('item'),
+      dataIndex: 'item', key: 'item',
+      ...resizable('item'),
       render: (v: string) => (
         <code style={{
           fontFamily:'monospace',fontWeight:700,color:'#0d9488',
@@ -505,32 +505,32 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
     },
     descr: {
       title: <ColumnSearchHeader title="Tên sản phẩm" dataKey="descr" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
-      dataIndex: 'descr', key: 'descr', width: w('descr'),
-      ellipsis: true,
-      onHeaderCell: () => resizable('descr'),
-      render: (v: string) => (
-        <Tooltip title={v} placement="topLeft">
-          <span style={{
-            fontWeight:500, color:'#1e293b', display: 'block', 
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-          }}>
-            {v}
-          </span>
-        </Tooltip>
-      ),
+      dataIndex: 'descr', key: 'descr',
+      ...resizable('descr'),
+      render: (v: string) => {
+        const display = v && v.length > 50 ? `${v.substring(0, 50)}...` : v;
+        return (
+          <Tooltip title={v} placement="topLeft">
+            <span style={{
+              fontWeight:500, color:'#1e293b', display: 'block', 
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+            }}>
+              {display}
+            </span>
+          </Tooltip>
+        );
+      },
     },
     location: {
       title: <ColumnSearchHeader title="Vị trí" dataKey="location" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
-      dataIndex: 'location', key: 'location', width: w('location'),
-      ellipsis: true,
-      onHeaderCell: () => resizable('location'),
+      dataIndex: 'location', key: 'location',
+      ...resizable('location'),
       render: (v: string) => <span style={{fontFamily:'monospace',fontSize:12,color:'#1e293b'}}>{v}</span>,
     },
     lpn: {
       title: <ColumnSearchHeader title="LPN" dataKey="lpn" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
-      dataIndex: 'lpn', key: 'lpn', width: w('lpn'),
-      ellipsis: true,
-      onHeaderCell: () => resizable('lpn'),
+      dataIndex: 'lpn', key: 'lpn',
+      ...resizable('lpn'),
       render: (v: string) => (
         <span style={{
           fontFamily:'monospace',fontSize:12,color:'#7c3aed',
@@ -542,22 +542,20 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
     },
     onHand: {
       title: <ColumnSearchHeader title="Tồn kho" dataKey="onHand" filters={columnFilters} onFilterChange={handleColumnFilter} align="right" showFilters={showFilters} />,
-      dataIndex: 'onHand', key: 'onHand', width: w('onHand'), align: 'right' as const,
-      ellipsis: true,
-      onHeaderCell: () => resizable('onHand'),
+      dataIndex: 'onHand', key: 'onHand', align: 'right' as const,
+      ...resizable('onHand'),
       render: (v: number) => <strong style={{color: v > 0 ? '#dc2626' : '#94a3b8'}}>{v}</strong>,
     },
     expDate: {
       title: <ColumnSearchHeader title="HSD" dataKey="expDate" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
-      dataIndex: 'expDate', key: 'expDate', width: w('expDate'),
-      ellipsis: true,
-      onHeaderCell: () => resizable('expDate'),
+      dataIndex: 'expDate', key: 'expDate',
+      ...resizable('expDate'),
       render: (v: string) => v ? <span style={{fontSize:12,color:'#ef4444',fontWeight:500}}>{v}</span> : <span style={{color:'#cbd5e1'}}>—</span>,
     },
     lyDoHold: {
       title: <ColumnSearchHeader title="Holdcode" dataKey="lyDoHold" filters={columnFilters} onFilterChange={handleColumnFilter} align="center" showFilters={showFilters} />,
-      dataIndex: 'lyDoHold', key: 'lyDoHold', width: w('lyDoHold'), align: 'center' as const,
-      onHeaderCell: () => resizable('lyDoHold'),
+      dataIndex: 'lyDoHold', key: 'lyDoHold', align: 'center' as const,
+      ...resizable('lyDoHold'),
       render: (v: string) => {
         if (!v) return <span style={{color:'#cbd5e1',fontSize:12}}>—</span>;
         
@@ -587,12 +585,20 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
     },
     ghiChu: {
       title: <ColumnSearchHeader title="Lý do hold" dataKey="ghiChu" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
-      dataIndex: 'ghiChu', key: 'ghiChu', width: w('ghiChu'),
-      onHeaderCell: () => resizable('ghiChu'),
-      render: (v: string) => <span style={{ fontSize: 12, color: '#64748b' }}>{v || '—'}</span>,
+      dataIndex: 'ghiChu', key: 'ghiChu',
+      ...resizable('ghiChu'),
+      render: (v: string) => {
+        const display = v && v.length > 50 ? `${v.substring(0, 50)}...` : v;
+        return (
+          <Tooltip title={v}>
+            <span style={{ fontSize: 12, color: '#64748b' }}>{display || '—'}</span>
+          </Tooltip>
+        );
+      },
     },
     decision: {
-      title: 'Quyết định', key: 'decision', width: w('decision'), fixed: 'right' as const,
+      title: 'Quyết định', key: 'decision', fixed: 'right' as const,
+      ...resizable('decision'),
       render: (_: unknown, record: DestructionRecord) => (
         <Select
           size="small" value={record.decision}
@@ -606,7 +612,8 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
       ),
     },
     actions: {
-      title: '', key: 'actions', width: w('actions'), fixed: 'right' as const,
+      title: '', key: 'actions', fixed: 'right' as const,
+      ...resizable('actions'),
       render: (_: unknown, record: DestructionRecord) => (
         <Tooltip title="Chi tiết">
           <Button type="text" size="small" icon={<Eye size={14} color="#64748b"/>}
@@ -668,7 +675,7 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
               </div>
               <div>
                 <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1e293b' }}>
-                  Destruction
+                  DES (Hủy hàng)
                 </h2>
                 <p style={{ margin: 0, fontSize: 11, color: '#64748b' }}>
                   08/05/2026

@@ -41,3 +41,13 @@ export interface MasterItem {
   uom3?: string;
   [key: string]: any;    // For future flexible columns
 }
+
+// Bảng master_suppliers
+export interface MasterSupplier {
+  supplier_code: string;  // text - Primary Key (ID)
+  supplier_name: string;  // text - Not Null
+  notes?: string;         // text
+  business_type?: string[]; // text[]
+  created_at?: string;    // timestamptz
+}
+

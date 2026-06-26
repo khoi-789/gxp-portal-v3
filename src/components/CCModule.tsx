@@ -22,7 +22,7 @@ import { supabase } from '@/lib/supabase';
    Types
 ────────────────────────────────────────────────── */
 export interface CCComplaint {
-  id?: number;
+  id: number;
   cc_code: string;
   complaint_date: string;
   customer_name: string;
@@ -129,8 +129,11 @@ export default function CCModule({ userId = 'default' }: { userId?: string }) {
 
   const w = (key: string) => columnWidths[key] ?? DEFAULT_CC_WIDTHS[key] ?? 100;
   const resizable = (key: string) => ({
-    onResize: (width: number) => setColumnWidth(key, width),
-    style: { width: w(key) },
+    width: w(key),
+    ellipsis: true,
+    onHeaderCell: () => ({
+      onResize: (width: number) => setColumnWidth(key, width),
+    } as any),
   });
 
   // Load everything
@@ -199,6 +202,7 @@ export default function CCModule({ userId = 'default' }: { userId?: string }) {
     } else {
       setIsNew(true);
       setDetailRow({
+        id: 0,
         cc_code: `CC-${dayjs().format('YYMMDD')}-${Math.floor(100 + Math.random() * 900)}`,
         complaint_date: dayjs().format('YYYY-MM-DD'),
         customer_name: '',
@@ -381,6 +385,10 @@ export default function CCModule({ userId = 'default' }: { userId?: string }) {
         dataIndex: 'customer_name',
         key: 'customer_name',
         ...resizable('customer_name'),
+        render: (text: string) => {
+          const display = text && text.length > 50 ? `${text.substring(0, 50)}...` : text;
+          return <Tooltip title={text}>{display || '—'}</Tooltip>;
+        },
       },
       {
         title: (
@@ -465,6 +473,11 @@ export default function CCModule({ userId = 'default' }: { userId?: string }) {
         dataIndex: 'supplier_code',
         key: 'supplier_code',
         ...resizable('supplier_code'),
+        render: (val: string) => {
+          const s = masterSuppliers.find(x => x.supplier_code === val);
+          const display = s ? s.supplier_name : val;
+          return display.length > 50 ? `${display.substring(0, 50)}...` : display;
+        },
       },
       {
         title: 'Thao Tác',
@@ -648,7 +661,7 @@ export default function CCModule({ userId = 'default' }: { userId?: string }) {
             }}
             icon={<Plus size={16} />}
           >
-            Tiếp Nhận CC Mới
+            Tiếp Nhận COMP Mới
           </Button>
         </div>
       </div>

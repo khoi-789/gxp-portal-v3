@@ -37,7 +37,7 @@ export const MOCK_PORTAL_APPS: PortalApp[] = [
   },
   {
     app_id: 'app-link-import',
-    app_name: 'Quản Lý Nhập Khẩu',
+    app_name: 'IMP (Nhập khẩu)',
     type: 'link',
     target_url: '/apps/import',
     parent_id: null,
@@ -46,7 +46,7 @@ export const MOCK_PORTAL_APPS: PortalApp[] = [
   },
   {
     app_id: 'app-destruction',
-    app_name: 'Phê Duyệt Hủy Hàng',
+    app_name: 'DES (Hủy hàng)',
     type: 'link',
     target_url: '/apps/destruction',
     parent_id: null,
@@ -55,7 +55,7 @@ export const MOCK_PORTAL_APPS: PortalApp[] = [
   },
   {
     app_id: 'app-link-bbsc',
-    app_name: 'Quản Lý Sự Cố BBSC',
+    app_name: 'INC (BBSC)',
     type: 'link',
     target_url: '/apps/bbsc',
     parent_id: null,
@@ -64,7 +64,7 @@ export const MOCK_PORTAL_APPS: PortalApp[] = [
   },
   {
     app_id: 'app-link-cc',
-    app_name: 'Khiếu Nại Khách Hàng CC',
+    app_name: 'COMP (Khiếu nại)',
     type: 'link',
     target_url: '/apps/cc',
     parent_id: null,
@@ -73,7 +73,7 @@ export const MOCK_PORTAL_APPS: PortalApp[] = [
   },
   {
     app_id: 'app-link-int',
-    app_name: 'Biên Bản Nội Bộ INT',
+    app_name: 'INT (Nội bộ)',
     type: 'link',
     target_url: '/apps/int',
     parent_id: null,
@@ -82,7 +82,7 @@ export const MOCK_PORTAL_APPS: PortalApp[] = [
   },
   {
     app_id: 'app-link-lbl',
-    app_name: 'Quản Lý Nhãn Phụ LBL',
+    app_name: 'LBL (Nhãn phụ)',
     type: 'link',
     target_url: '/apps/lbl',
     parent_id: null,
@@ -91,7 +91,7 @@ export const MOCK_PORTAL_APPS: PortalApp[] = [
   },
   {
     app_id: 'app-link-ldg',
-    app_name: 'Lệnh Đóng Gói LDG',
+    app_name: 'LDG (Lệnh ĐG)',
     type: 'link',
     target_url: '/apps/ldg',
     parent_id: null,
@@ -100,7 +100,7 @@ export const MOCK_PORTAL_APPS: PortalApp[] = [
   },
   {
     app_id: 'app-link-awc',
-    app_name: 'Thay Đổi Artwork AWC',
+    app_name: 'AWC (Thay đổi AW)',
     type: 'link',
     target_url: '/apps/awc',
     parent_id: null,

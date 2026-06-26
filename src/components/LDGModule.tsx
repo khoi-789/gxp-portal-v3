@@ -33,6 +33,7 @@ export interface LDGLpn {
 }
 
 export interface LDGOrder {
+  id?: number;
   ldg_code: string;
   created_date: string;
   item_code: string;
@@ -126,8 +127,11 @@ export default function LDGModule({ userId = 'default' }: { userId?: string }) {
 
   const w = (key: string) => columnWidths[key] ?? DEFAULT_LDG_WIDTHS[key] ?? 100;
   const resizable = (key: string) => ({
-    onResize: (width: number) => setColumnWidth(key, width),
-    style: { width: w(key) },
+    width: w(key),
+    ellipsis: true,
+    onHeaderCell: () => ({
+      onResize: (width: number) => setColumnWidth(key, width),
+    } as any),
   });
 
   // Load everything
@@ -498,6 +502,11 @@ export default function LDGModule({ userId = 'default' }: { userId?: string }) {
         dataIndex: 'supplier_code',
         key: 'supplier_code',
         ...resizable('supplier_code'),
+        render: (val: string) => {
+          const s = masterSuppliers.find(x => x.supplier_code === val);
+          const display = s ? s.supplier_name : val;
+          return display.length > 50 ? `${display.substring(0, 50)}...` : display;
+        },
       },
       {
         title: 'Số LPN/Pallet',
@@ -609,7 +618,7 @@ export default function LDGModule({ userId = 'default' }: { userId?: string }) {
             }}
             icon={<Plus size={16} />}
           >
-            Tạo Lệnh Đóng Gói
+            Tạo Lệnh Đóng Gói (LDG)
           </Button>
         </div>
       </div>

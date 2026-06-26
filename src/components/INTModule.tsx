@@ -22,7 +22,7 @@ import { supabase } from '@/lib/supabase';
    Types
 ────────────────────────────────────────────────── */
 export interface INTRecord {
-  id?: number;
+  id: number;
   int_code: string;
   created_at?: string;
   category: string; // 'PAP' | 'Chuyển kho' | 'Nội bộ kho xử lý' | 'Yêu cầu hãng' | 'Khác'
@@ -125,8 +125,11 @@ export default function INTModule({ userId = 'default' }: { userId?: string }) {
 
   const w = (key: string) => columnWidths[key] ?? DEFAULT_INT_WIDTHS[key] ?? 100;
   const resizable = (key: string) => ({
-    onResize: (width: number) => setColumnWidth(key, width),
-    style: { width: w(key) },
+    width: w(key),
+    ellipsis: true,
+    onHeaderCell: () => ({
+      onResize: (width: number) => setColumnWidth(key, width),
+    } as any),
   });
 
   // Load everything
@@ -192,6 +195,7 @@ export default function INTModule({ userId = 'default' }: { userId?: string }) {
     } else {
       setIsNew(true);
       setDetailRow({
+        id: 0,
         int_code: `INT-${dayjs().format('YYYY')}-${Math.floor(1000 + Math.random() * 9000)}`,
         category: 'PAP',
         item_code: '',

@@ -6,19 +6,53 @@ import PortalLayout from '@/components/PortalLayout';
 import AppDashboard from '@/components/AppDashboard';
 import MasterItemManager from '@/components/MasterItemManager';
 import ProductLabelManager from '@/components/ProductLabelManager';
+import MasterSupplierManager from '@/components/MasterSupplierManager';
 import { MOCK_CURRENT_USER, MOCK_STAFF_USER } from '@/lib/mockData';
 import { User } from '@/lib/types';
-import { LayoutGrid, Package, Link2 } from 'lucide-react';
+import { LayoutGrid, Package, Link2, Truck, Database } from 'lucide-react';
 
 /**
  * Trang chủ GxP Portal
- * - Tabs: Dashboard (AppDashboard) + Master Items (MasterItemManager) + Label Mappings (ProductLabelManager)
+ * - Tabs: Dashboard (AppDashboard) + Master Data (Consolidated admin managers)
  * - PILOT: user switcher để demo RBAC
  */
 export default function HomePage() {
   const [useAdmin, setUseAdmin] = useState(true);
   const currentUser: User = useAdmin ? MOCK_CURRENT_USER : MOCK_STAFF_USER;
   const isAdmin = currentUser.system_role === 'admin';
+
+  const masterDataSubItems = [
+    {
+      key: 'master-items',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+          <Package size={14} />
+          Danh mục SP
+        </span>
+      ),
+      children: <MasterItemManager userId={currentUser.id} />,
+    },
+    {
+      key: 'master-suppliers',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+          <Truck size={14} />
+          Danh mục NCC
+        </span>
+      ),
+      children: <MasterSupplierManager userId={currentUser.id} />,
+    },
+    {
+      key: 'label-mappings',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+          <Link2 size={14} />
+          Liên kết SP - Tem
+        </span>
+      ),
+      children: <ProductLabelManager userId={currentUser.id} />,
+    },
+  ];
 
   const tabItems = [
     {
@@ -31,28 +65,27 @@ export default function HomePage() {
       ),
       children: <AppDashboard currentUser={currentUser} />,
     },
-    // MasterItemManager + ProductLabelManager chỉ hiện với Admin (§4.3)
+    // Master Data chỉ hiện với Admin (§4.3)
     ...(isAdmin
       ? [
           {
-            key: 'master-items',
+            key: 'master-data',
             label: (
               <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-                <Package size={15} />
-                Danh mục SP
+                <Database size={15} />
+                Master Data
               </span>
             ),
-            children: <MasterItemManager userId={currentUser.id} />,
-          },
-          {
-            key: 'label-mappings',
-            label: (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-                <Link2 size={15} />
-                Liên kết SP - Tem
-              </span>
+            children: (
+              <div style={{ padding: '4px 0 12px' }}>
+                <Tabs
+                  defaultActiveKey="master-items"
+                  items={masterDataSubItems}
+                  type="card"
+                  size="middle"
+                />
+              </div>
             ),
-            children: <ProductLabelManager userId={currentUser.id} />,
           },
         ]
       : []),

@@ -34,6 +34,23 @@ if (!supabaseUrl || !supabaseServiceKey) {
 console.log('Kết nối tới Supabase:', supabaseUrl);
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Helper to keep only records belonging to the 3 latest unique tracking codes
+function filterToThreeLatest(records, codeKey, dateKey) {
+  // Sort descending by date
+  records.sort((a, b) => new Date(b[dateKey]) - new Date(a[dateKey]));
+
+  const uniqueCodes = [];
+  for (const r of records) {
+    const code = r[codeKey];
+    if (code && !uniqueCodes.includes(code)) {
+      uniqueCodes.push(code);
+      if (uniqueCodes.length === 3) break;
+    }
+  }
+
+  return records.filter(r => uniqueCodes.includes(r[codeKey]));
+}
+
 // Helper to parse dates
 function parseExcelDate(val) {
   if (!val) return null;
@@ -221,12 +238,7 @@ async function run() {
         const finalItemCode = ensureItem(itemCode, row['Tên sản phẩm'], supplier);
 
         const baseCode = row['Mã sự cố'] ? String(row['Mã sự cố']).trim() : `BBSC-MOCK-${idx}`;
-        let code = baseCode;
-        let count = 1;
-        while (bbscCodesSet.has(code)) {
-          code = `${baseCode}-${count++}`;
-        }
-        bbscCodesSet.add(code);
+        const code = baseCode;
 
         bbscRecords.push({
           bbsc_code: code,
@@ -251,10 +263,9 @@ async function run() {
         });
       });
 
-      // Sắp xếp giảm dần theo ngày và lấy tối đa 500 bản ghi mới nhất
-      bbscRecords.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      bbscRecords = bbscRecords.slice(0, 500);
-      console.log(`Đã chọn được ${bbscRecords.length} sự cố BBSC mới nhất.`);
+      // Lấy các bản ghi thuộc 3 mã sự cố BBSC mới nhất
+      bbscRecords = filterToThreeLatest(bbscRecords, 'bbsc_code', 'created_at');
+      console.log(`Đã chọn được ${bbscRecords.length} dòng BBSC (thuộc 3 mã sự cố mới nhất).`);
     }
 
     // ==========================================
@@ -303,12 +314,7 @@ async function run() {
         const supplierAction = cleanStr(row[16]);
         const receivedDate = parseExcelDate(row[17]);
 
-        let ccCode = baseCcCode;
-        let count = 1;
-        while (ccCodesSet.has(ccCode)) {
-          ccCode = `${baseCcCode}-${count++}`;
-        }
-        ccCodesSet.add(ccCode);
+        const ccCode = baseCcCode;
 
         // Attempt to find product code
         let itemCode = findItemCodeByName(productName);
@@ -353,10 +359,9 @@ async function run() {
         });
       });
 
-      // Sort and take 500
-      ccRecords.sort((a, b) => new Date(b.complaint_date) - new Date(a.complaint_date));
-      ccRecords = ccRecords.slice(0, 500);
-      console.log(`Đã chọn được ${ccRecords.length} khiếu nại CC mới nhất.`);
+      // Lấy các bản ghi thuộc 3 mã khiếu nại CC mới nhất
+      ccRecords = filterToThreeLatest(ccRecords, 'cc_code', 'complaint_date');
+      console.log(`Đã chọn được ${ccRecords.length} dòng CC (thuộc 3 khiếu nại mới nhất).`);
     }
 
     // ==========================================
@@ -393,12 +398,7 @@ async function run() {
         const refLink = cleanStr(row[12]);
         const isInStock = String(row[14]).toLowerCase() !== 'không';
 
-        let intCode = baseIntCode;
-        let count = 1;
-        while (intCodesSet.has(intCode)) {
-          intCode = `${baseIntCode}-${count++}`;
-        }
-        intCodesSet.add(intCode);
+        const intCode = baseIntCode;
 
         const supplier = getSupplierCodeFromItemCode(itemCode);
         const finalSupplier = ensureSupplier(supplier);
@@ -422,9 +422,9 @@ async function run() {
         });
       });
 
-      intRecords.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      intRecords = intRecords.slice(0, 500);
-      console.log(`Đã chọn được ${intRecords.length} biên bản nội bộ INT mới nhất.`);
+      // Lấy các bản ghi thuộc 3 mã biên bản INT mới nhất
+      intRecords = filterToThreeLatest(intRecords, 'int_code', 'created_at');
+      console.log(`Đã chọn được ${intRecords.length} dòng INT (thuộc 3 biên bản mới nhất).`);
     }
 
     // ==========================================
@@ -497,9 +497,9 @@ async function run() {
         });
       });
 
-      lblRecords.sort((a, b) => new Date(b.effective_date) - new Date(a.effective_date));
-      lblRecords = lblRecords.slice(0, 500);
-      console.log(`Đã chọn được ${lblRecords.length} nhãn phụ LBL mới nhất.`);
+      // Lấy các bản ghi thuộc 3 mã nhãn gốc LBL mới nhất
+      lblRecords = filterToThreeLatest(lblRecords, 'base_label_code', 'effective_date');
+      console.log(`Đã chọn được ${lblRecords.length} dòng LBL (thuộc 3 mã nhãn gốc mới nhất).`);
     }
 
     // ==========================================
@@ -580,15 +580,15 @@ async function run() {
         });
       });
 
-      // Sort and take 500 Lệnh DG
+      // Sort and take 3 Lệnh DG mới nhất
       ldgOrders.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-      ldgOrders = ldgOrders.slice(0, 500);
+      ldgOrders = ldgOrders.slice(0, 3);
 
-      // Filter LPNs to only contain LPNs belonging to the selected 500 orders
+      // Filter LPNs to only contain LPNs belonging to the selected 3 orders
       const selectedLdgCodes = new Set(ldgOrders.map(o => o.ldg_code));
       ldgLpns = ldgLpns.filter(l => selectedLdgCodes.has(l.ldg_code));
 
-      console.log(`Đã chọn được ${ldgOrders.length} Lệnh DG và ${ldgLpns.length} LPNs liên quan.`);
+      console.log(`Đã chọn được ${ldgOrders.length} Lệnh DG và ${ldgLpns.length} LPNs liên quan (thuộc 3 lệnh mới nhất).`);
     }
 
     // ==========================================
@@ -622,12 +622,7 @@ async function run() {
         const evidenceUrl = cleanStr(row[9]);
         const oldInfo = cleanStr(row[10]);
 
-        let awcCode = baseAwcCode;
-        let count = 1;
-        while (awcCodesSet.has(awcCode)) {
-          awcCode = `${baseAwcCode}-${count++}`;
-        }
-        awcCodesSet.add(awcCode);
+        const awcCode = baseAwcCode;
 
         const supplier = getSupplierCodeFromItemCode(itemCode);
         const finalSupplier = ensureSupplier(supplier);
@@ -649,9 +644,9 @@ async function run() {
         });
       });
 
-      awcRecords.sort((a, b) => new Date(b.notice_date) - new Date(a.notice_date));
-      awcRecords = awcRecords.slice(0, 500);
-      console.log(`Đã chọn được ${awcRecords.length} thay đổi Artwork AWC mới nhất.`);
+      // Lấy các bản ghi thuộc 3 mã artwork AWC mới nhất
+      awcRecords = filterToThreeLatest(awcRecords, 'awc_code', 'notice_date');
+      console.log(`Đã chọn được ${awcRecords.length} dòng AWC (thuộc 3 mã artwork mới nhất).`);
     }
 
     // ==========================================

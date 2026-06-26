@@ -80,14 +80,14 @@ ALTER TABLE public.portal_apps DISABLE ROW LEVEL SECURITY;
 
 -- Seed GxP Portal Apps in portal_apps table
 INSERT INTO public.portal_apps (app_name, type, target_url, allowed_depts, is_testing, order_index) VALUES
-('Quản Lý Nhập Khẩu', 'link', '/apps/import', '{"QA", "KHO", "SCM", "DEV"}', false, 1),
-('Phê Duyệt Hủy Hàng', 'link', '/apps/destruction', '{"QA", "KHO", "SCM", "DEV"}', false, 2),
-('Quản Lý Sự Cố BBSC', 'link', '/apps/bbsc', '{"QA", "KHO", "SCM", "DEV"}', false, 3),
-('Khiếu Nại Khách Hàng CC', 'link', '/apps/cc', '{"QA", "KHO", "SCM", "DEV"}', false, 4),
-('Biên Bản Nội Bộ INT', 'link', '/apps/int', '{"QA", "KHO", "SCM", "DEV"}', false, 5),
-('Quản Lý Nhãn Phụ LBL', 'link', '/apps/lbl', '{"QA", "KHO", "SCM", "DEV"}', false, 6),
-('Lệnh Đóng Gói LDG', 'link', '/apps/ldg', '{"QA", "KHO", "SCM", "DEV"}', false, 7),
-('Thay Đổi Artwork AWC', 'link', '/apps/awc', '{"QA", "KHO", "SCM", "DEV"}', false, 8)
+('IMP (Nhập khẩu)', 'link', '/apps/import', '{"QA", "KHO", "SCM", "DEV"}', false, 1),
+('DES (Hủy hàng)', 'link', '/apps/destruction', '{"QA", "KHO", "SCM", "DEV"}', false, 2),
+('INC (BBSC)', 'link', '/apps/bbsc', '{"QA", "KHO", "SCM", "DEV"}', false, 3),
+('COMP (Khiếu nại)', 'link', '/apps/cc', '{"QA", "KHO", "SCM", "DEV"}', false, 4),
+('INT (Nội bộ)', 'link', '/apps/int', '{"QA", "KHO", "SCM", "DEV"}', false, 5),
+('LBL (Nhãn phụ)', 'link', '/apps/lbl', '{"QA", "KHO", "SCM", "DEV"}', false, 6),
+('LDG (Lệnh ĐG)', 'link', '/apps/ldg', '{"QA", "KHO", "SCM", "DEV"}', false, 7),
+('AWC (Thay đổi AW)', 'link', '/apps/awc', '{"QA", "KHO", "SCM", "DEV"}', false, 8)
 ON CONFLICT DO NOTHING;
 
 -- 5. Create product_label_mappings table if not exists
@@ -103,7 +103,8 @@ ALTER TABLE public.product_label_mappings DISABLE ROW LEVEL SECURITY;
 
 -- 6. Create awc_changes table (Thay đổi Artwork)
 CREATE TABLE IF NOT EXISTS public.awc_changes (
-    awc_code TEXT PRIMARY KEY, -- AWC-001-24
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    awc_code TEXT NOT NULL, -- AWC-001-24
     notice_date DATE NOT NULL,
     item_code TEXT NOT NULL REFERENCES public.master_items(item_code) ON DELETE RESTRICT,
     supplier_code TEXT NOT NULL REFERENCES public.master_suppliers(supplier_code) ON DELETE RESTRICT,
@@ -173,7 +174,7 @@ ALTER TABLE public.ldg_lpns DISABLE ROW LEVEL SECURITY;
 -- 10. Create bbsc_incidents table (Sự cố)
 CREATE TABLE IF NOT EXISTS public.bbsc_incidents (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    bbsc_code TEXT UNIQUE NOT NULL, -- BBSC-0001-0124
+    bbsc_code TEXT NOT NULL, -- BBSC-0001-0124
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     status TEXT NOT NULL DEFAULT 'Khởi tạo', -- Khởi tạo, Chờ hết INV, Hoàn tất, Đóng
     supplier_code TEXT NOT NULL REFERENCES public.master_suppliers(supplier_code) ON DELETE RESTRICT,
@@ -194,7 +195,7 @@ ALTER TABLE public.bbsc_incidents DISABLE ROW LEVEL SECURITY;
 -- 11. Create cc_complaints table (Khiếu nại khách hàng)
 CREATE TABLE IF NOT EXISTS public.cc_complaints (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    cc_code TEXT UNIQUE NOT NULL, -- CC_010125-HCM
+    cc_code TEXT NOT NULL, -- CC_010125-HCM
     complaint_date DATE NOT NULL,
     customer_name TEXT NOT NULL,
     customer_address TEXT,
@@ -222,7 +223,7 @@ ALTER TABLE public.cc_complaints DISABLE ROW LEVEL SECURITY;
 -- 12. Create int_records table (Biên bản nội bộ)
 CREATE TABLE IF NOT EXISTS public.int_records (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    int_code TEXT UNIQUE NOT NULL, -- INT-0001-24
+    int_code TEXT NOT NULL, -- INT-0001-24
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     category TEXT NOT NULL, -- PAP, Chuyển kho, Nội bộ kho xử lý, Yêu cầu hãng, ...
     item_code TEXT NOT NULL REFERENCES public.master_items(item_code) ON DELETE RESTRICT,

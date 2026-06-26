@@ -22,7 +22,7 @@ import { supabase } from '@/lib/supabase';
    Types
 ────────────────────────────────────────────────── */
 export interface LBLLabel {
-  id?: number;
+  id: number;
   item_code: string;
   product_category: string; // 'Thuốc' | 'TPCN' | 'TTBYT' | 'Mỹ phẩm'
   supplier_code: string;
@@ -111,8 +111,11 @@ export default function LBLModule({ userId = 'default' }: { userId?: string }) {
 
   const w = (key: string) => columnWidths[key] ?? DEFAULT_LBL_WIDTHS[key] ?? 100;
   const resizable = (key: string) => ({
-    onResize: (width: number) => setColumnWidth(key, width),
-    style: { width: w(key) },
+    width: w(key),
+    ellipsis: true,
+    onHeaderCell: () => ({
+      onResize: (width: number) => setColumnWidth(key, width),
+    } as any),
   });
 
   // Load everything
@@ -178,6 +181,7 @@ export default function LBLModule({ userId = 'default' }: { userId?: string }) {
     } else {
       setIsNew(true);
       setDetailRow({
+        id: 0,
         item_code: '',
         product_category: 'Thuốc',
         supplier_code: '',
@@ -417,6 +421,11 @@ export default function LBLModule({ userId = 'default' }: { userId?: string }) {
         dataIndex: 'supplier_code',
         key: 'supplier_code',
         ...resizable('supplier_code'),
+        render: (val: string) => {
+          const s = masterSuppliers.find(x => x.supplier_code === val);
+          const display = s ? s.supplier_name : val;
+          return display.length > 50 ? `${display.substring(0, 50)}...` : display;
+        },
       },
       {
         title: 'Thao Tác',

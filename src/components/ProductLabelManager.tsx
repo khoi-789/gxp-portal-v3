@@ -79,8 +79,11 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
 
   const w = (key: string) => columnWidths[key] ?? DEFAULT_MAPPING_WIDTHS[key] ?? 100;
   const resizable = (key: string) => ({
-    onResize: (width: number) => setColumnWidth(key, width),
-    style: { width: w(key) },
+    width: w(key),
+    ellipsis: true,
+    onHeaderCell: () => ({
+      onResize: (width: number) => setColumnWidth(key, width),
+    } as any),
   });
 
   const loadData = useCallback(async () => {
@@ -344,8 +347,8 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
     stt: {
       title: <ColumnSearchHeader title="STT" dataKey="__stt" filters={columnFilters} onFilterChange={handleColumnFilter} align="center" showFilters={showFilters} />,
       key: 'stt',
-      width: w('stt'),
       align: 'center',
+      ...resizable('stt'),
       render: (_: any, r: any, idx: number) => {
         if (viewMode === 'compact') {
           return (
@@ -365,9 +368,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
       title: <ColumnSearchHeader title="Mã SP" dataKey="product_item_code" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
       dataIndex: 'product_item_code',
       key: 'product_item_code',
-      width: w('product_item_code'),
-      ellipsis: true,
-      onHeaderCell: () => resizable('product_item_code'),
+      ...resizable('product_item_code'),
       render: (v: string, r: any) => {
         if (viewMode === 'detailed' && r.isDuplicateProduct) return '';
         return <code style={{ color: '#0d9488', fontWeight: 700 }}>{v}</code>;
@@ -377,20 +378,22 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
       title: <ColumnSearchHeader title="Tên sản phẩm" dataKey="product_name" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
       dataIndex: 'product_name',
       key: 'product_name',
-      width: w('product_name'),
-      ellipsis: true,
-      onHeaderCell: () => resizable('product_name'),
+      ...resizable('product_name'),
       render: (v: string, r: any) => {
         if (viewMode === 'detailed' && r.isDuplicateProduct) return '';
-        return <span style={{ fontWeight: 500, color: '#334155' }}>{v}</span>;
+        const display = v && v.length > 50 ? `${v.substring(0, 50)}...` : v;
+        return (
+          <Tooltip title={v}>
+            <span style={{ fontWeight: 500, color: '#334155' }}>{display}</span>
+          </Tooltip>
+        );
       },
     },
     supplier_code: {
       title: <ColumnSearchHeader title="Hãng" dataKey="supplier_code" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
       dataIndex: 'supplier_code',
       key: 'supplier_code',
-      width: w('supplier_code'),
-      onHeaderCell: () => resizable('supplier_code'),
+      ...resizable('supplier_code'),
       render: (v: string, r: any) => {
         if (viewMode === 'detailed' && r.isDuplicateProduct) return '';
         return <Tag color="cyan">{v}</Tag>;
@@ -400,35 +403,37 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
       title: <ColumnSearchHeader title="Mã Tem/Nhãn" dataKey="label_item_code" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
       dataIndex: 'label_item_code',
       key: 'label_item_code',
-      width: w('label_item_code'),
-      ellipsis: true,
-      onHeaderCell: () => resizable('label_item_code'),
+      ...resizable('label_item_code'),
       render: (v: string) => <code style={{ color: '#7c3aed', fontWeight: 700 }}>{v}</code>,
     },
     label_name: {
       title: <ColumnSearchHeader title="Tên Tem/Nhãn" dataKey="label_name" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
       dataIndex: 'label_name',
       key: 'label_name',
-      width: w('label_name'),
-      ellipsis: true,
-      onHeaderCell: () => resizable('label_name'),
-      render: (v: string) => <span style={{ color: '#475569' }}>{v}</span>,
+      ...resizable('label_name'),
+      render: (v: string) => {
+        const display = v && v.length > 50 ? `${v.substring(0, 50)}...` : v;
+        return (
+          <Tooltip title={v}>
+            <span style={{ color: '#475569' }}>{display}</span>
+          </Tooltip>
+        );
+      },
     },
     quantity_per_unit: {
       title: <ColumnSearchHeader title="Số lượng / SP" dataKey="quantity_per_unit" filters={columnFilters} onFilterChange={handleColumnFilter} align="right" showFilters={showFilters} />,
       dataIndex: 'quantity_per_unit',
       key: 'quantity_per_unit',
-      width: w('quantity_per_unit'),
       align: 'right',
-      onHeaderCell: () => resizable('quantity_per_unit'),
+      ...resizable('quantity_per_unit'),
       render: (v: number) => <strong style={{ color: '#0f766e' }}>{v}</strong>,
     },
     actions: {
       title: <div style={{ fontWeight: 600, fontSize: 12, textAlign: 'center' }}>Thao tác</div>,
       key: 'actions',
-      width: w('actions'),
       fixed: 'right',
       align: 'center',
+      ...resizable('actions'),
       render: (_: any, r: any) => (
         <Space size="middle">
           <Tooltip title="Sửa số lượng">

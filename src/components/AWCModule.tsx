@@ -22,7 +22,7 @@ import { supabase } from '@/lib/supabase';
    Types
 ────────────────────────────────────────────────── */
 export interface AWCChange {
-  id?: number;
+  id: number;
   awc_code: string;
   notice_date: string;
   item_code: string;
@@ -114,8 +114,11 @@ export default function AWCModule({ userId = 'default' }: { userId?: string }) {
 
   const w = (key: string) => columnWidths[key] ?? DEFAULT_AWC_WIDTHS[key] ?? 100;
   const resizable = (key: string) => ({
-    onResize: (width: number) => setColumnWidth(key, width),
-    style: { width: w(key) },
+    width: w(key),
+    ellipsis: true,
+    onHeaderCell: () => ({
+      onResize: (width: number) => setColumnWidth(key, width),
+    } as any),
   });
 
   // Load everything
@@ -187,6 +190,7 @@ export default function AWCModule({ userId = 'default' }: { userId?: string }) {
       setIsNew(true);
       const code = `AWC-${dayjs().format('YY')}-${Math.floor(100 + Math.random() * 900)}`;
       setDetailRow({
+        id: 0,
         awc_code: code,
         notice_date: dayjs().format('YYYY-MM-DD'),
         item_code: '',
@@ -252,7 +256,7 @@ export default function AWCModule({ userId = 'default' }: { userId?: string }) {
         const { error } = await supabase
           .from('awc_changes')
           .update(dbPayload)
-          .eq('awc_code', detailRow?.awc_code);
+          .eq('id', detailRow?.id);
         if (error) throw error;
         messageApi.success('Cập nhật thay đổi Artwork thành công!');
       }
@@ -268,9 +272,9 @@ export default function AWCModule({ userId = 'default' }: { userId?: string }) {
   };
 
   // Delete record
-  const handleDelete = async (code: string) => {
+  const handleDelete = async (id: number) => {
     try {
-      const { error } = await supabase.from('awc_changes').delete().eq('awc_code', code);
+      const { error } = await supabase.from('awc_changes').delete().eq('id', id);
       if (error) throw error;
       messageApi.success('Xóa bản ghi thay đổi Artwork thành công!');
       loadData();
@@ -431,6 +435,11 @@ export default function AWCModule({ userId = 'default' }: { userId?: string }) {
         dataIndex: 'supplier_code',
         key: 'supplier_code',
         ...resizable('supplier_code'),
+        render: (val: string) => {
+          const s = masterSuppliers.find(x => x.supplier_code === val);
+          const display = s ? s.supplier_name : val;
+          return display.length > 50 ? `${display.substring(0, 50)}...` : display;
+        },
       },
       {
         title: 'Thao Tác',
@@ -450,7 +459,7 @@ export default function AWCModule({ userId = 'default' }: { userId?: string }) {
               okText="Xóa"
               cancelText="Hủy"
               okButtonProps={{ danger: true }}
-              onConfirm={() => r.awc_code && handleDelete(r.awc_code)}
+              onConfirm={() => r.id && handleDelete(r.id)}
             >
               <Button
                 type="text"
@@ -592,7 +601,7 @@ export default function AWCModule({ userId = 'default' }: { userId?: string }) {
           dataSource={processedData}
           columns={columns}
           loading={loading}
-          rowKey="awc_code"
+          rowKey="id"
           pagination={{
             current: currentPage,
             pageSize: pageSize,

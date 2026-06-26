@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import dayjs from 'dayjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Table, Button, Drawer, Input, Form, Switch, Tag, Space,
-  Popconfirm, message, Tooltip, Badge, Empty, InputNumber, Row, Col,
+  Popconfirm, message, Tooltip, Badge, Empty, InputNumber, Row, Col, Select,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useForm, Controller } from 'react-hook-form';
@@ -60,16 +60,56 @@ type MasterItemFormData = z.infer<typeof masterItemSchema>;
 // ──────────────────────────────────────────────────────────
 // Supabase CRUD functions
 // ──────────────────────────────────────────────────────────
-async function fetchMasterItems(): Promise<MasterItem[]> {
-  const { data, error } = await supabase
+async function fetchMasterItems(
+  page: number,
+  pageSize: number,
+  search: string,
+  filters: Record<string, string>
+): Promise<{ items: MasterItem[]; count: number }> {
+  let query = supabase
     .from('master_items')
-    .select('*')
-    .order('updated_at', { ascending: false });
+    .select('*', { count: 'exact' });
+
+  // 1. Apply global search
+  if (search && search.trim()) {
+    const q = `%${search.trim().toLowerCase()}%`;
+    query = query.or(`item_code.ilike.${q},item_name.ilike.${q}`);
+  }
+
+  // 2. Apply column-specific filters
+  Object.entries(filters).forEach(([key, value]) => {
+    if (!value || value.trim() === '') return;
+    const val = value.trim();
+
+    if (key === 'is_active') {
+      const valLower = val.toLowerCase();
+      if (valLower.includes('ngưng') || valLower.includes('stop') || valLower.includes('false') || valLower === '0' || valLower.includes('ngung')) {
+        query = query.eq('is_active', false);
+      } else if (valLower.includes('đang') || valLower.includes('active') || valLower.includes('true') || valLower === '1' || valLower.includes('dang') || valLower.includes('kd')) {
+        query = query.eq('is_active', true);
+      }
+    } else {
+      query = query.ilike(key, `%${val}%`);
+    }
+  });
+
+  // 3. Sorting (default descending by updated_at)
+  query = query.order('updated_at', { ascending: false });
+
+  // 4. Pagination range
+  const from = (page - 1) * pageSize;
+  const to = page * pageSize - 1;
+  query = query.range(from, to);
+
+  const { data, count, error } = await query;
 
   if (error) {
     throw new Error('Lỗi khi tải danh mục sản phẩm: ' + error.message);
   }
-  return data as MasterItem[];
+  return {
+    items: (data || []) as MasterItem[],
+    count: count || 0,
+  };
 }
 
 async function createMasterItem(data: MasterItemFormData): Promise<MasterItem> {
@@ -179,10 +219,31 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
   const [messageApi, contextHolder] = message.useMessage();
 
   const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MasterItem | null>(null);
   const [pageSize, setPageSize] = useState(10);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [debouncedFilters, setDebouncedFilters] = useState<Record<string, string>>({});
+
+  // Debounce search text
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchText);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchText]);
+
+  // Debounce column filters
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedFilters(columnFilters);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [columnFilters]);
 
   // ── Per-user persistent preferences ──
   const { prefs, save, setColumnWidth } = useTablePreferences(
@@ -194,10 +255,25 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
     setColumnFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  // ── TanStack Query ──
-  const { data: items = [], isLoading, refetch } = useQuery<MasterItem[]>({
-    queryKey: ['master_items'],
-    queryFn: fetchMasterItems,
+  // ── TanStack Query (Server-side Paginated) ──
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['master_items', currentPage, pageSize, debouncedSearch, debouncedFilters],
+    queryFn: () => fetchMasterItems(currentPage, pageSize, debouncedSearch, debouncedFilters),
+  });
+
+  const items = data?.items ?? [];
+  const totalCount = data?.count ?? 0;
+
+  const { data: suppliersList = [] } = useQuery<any[]>({
+    queryKey: ['master_suppliers_list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('master_suppliers')
+        .select('supplier_code, supplier_name')
+        .order('supplier_code', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    }
   });
 
   const createMutation = useMutation({
@@ -301,34 +377,18 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
   };
 
   // ── Search Filter (global + per-column) ──
-  const filteredItems = useMemo(() => {
-    let list = items;
-    // Global search bar
-    if (searchText.trim()) {
-      const q = searchText.toLowerCase();
-      list = list.filter(
-        (i) =>
-          i.item_code.toLowerCase().includes(q) ||
-          i.item_name.toLowerCase().includes(q)
-      );
-    }
-    // Per-column filters with wildcard support
-    const activeColFilters = Object.fromEntries(
-      Object.entries(columnFilters).filter(([, v]) => v.trim() !== '')
-    );
-    if (Object.keys(activeColFilters).length > 0) {
-      list = applyColumnFilters(list as unknown as Record<string, unknown>[], activeColFilters) as unknown as MasterItem[];
-    }
-    return list;
-  }, [items, searchText, columnFilters]);
+  const filteredItems = items;
 
   // ── Column width helper ──
   const w = (key: string) => columnWidths[key] ?? DEFAULT_WIDTHS[key];
 
   // ── onHeaderCell factory: enables resize + ResizableTitle ──
   const resizable = (key: string) => ({
-    onResize: (width: number) => setColumnWidth(key, width),
-    style: { width: w(key) },
+    width: w(key),
+    ellipsis: true,
+    onHeaderCell: () => ({
+      onResize: (width: number) => setColumnWidth(key, width),
+    } as any),
   });
 
   // ── Ant Design Table Columns (base definitions) ──
@@ -336,8 +396,8 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
     item_code: {
       title: <ColumnSearchHeader title="Mã SP" dataKey="item_code" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
       dataIndex: 'item_code', key: 'item_code',
-      width: w('item_code'), fixed: 'left' as const, ellipsis: true,
-      onHeaderCell: () => resizable('item_code'),
+      fixed: 'left' as const,
+      ...resizable('item_code'),
       render: (code: string) => (
         <code style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0d9488', background: '#f0fdfa', padding: '2px 8px', borderRadius: 6, fontSize: 13, display: 'inline-block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {code}
@@ -347,61 +407,54 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
     item_name: {
       title: <ColumnSearchHeader title="Tên sản phẩm" dataKey="item_name" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
       dataIndex: 'item_name', key: 'item_name',
-      width: w('item_name'), ellipsis: true,
-      onHeaderCell: () => resizable('item_name'),
-      render: (name: string) => (
-        <Tooltip title={name} placement="topLeft">
-          <span style={{ 
-            fontWeight: 500, color: '#1e293b', display: 'block', 
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' 
-          }}>
-            {name}
-          </span>
-        </Tooltip>
-      ),
+      ...resizable('item_name'),
+      render: (name: string) => {
+        const display = name && name.length > 50 ? `${name.substring(0, 50)}...` : name;
+        return (
+          <Tooltip title={name} placement="topLeft">
+            <span style={{ 
+              fontWeight: 500, color: '#1e293b', display: 'block', 
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' 
+            }}>
+              {display}
+            </span>
+          </Tooltip>
+        );
+      },
     },
     gross_weight: {
       title: <ColumnSearchHeader title="Gross Weight" dataKey="gross_weight" filters={columnFilters} onFilterChange={handleColumnFilter} align="right" showFilters={showFilters} />,
       dataIndex: 'gross_weight', key: 'gross_weight',
-      width: w('gross_weight'), align: 'right' as const,
-      ellipsis: true,
-      onHeaderCell: () => resizable('gross_weight'),
+      align: 'right' as const,
+      ...resizable('gross_weight'),
       render: (val: number) => <span style={{ fontFamily: 'monospace', color: '#1e293b' }}>{val.toFixed(4)}</span>,
     },
     inner_pack: {
       title: <ColumnSearchHeader title="Inner" dataKey="inner_pack" filters={columnFilters} onFilterChange={handleColumnFilter} align="right" showFilters={showFilters} />,
       dataIndex: 'inner_pack', key: 'inner_pack',
-      width: w('inner_pack'), align: 'right' as const,
-      ellipsis: true,
-      onHeaderCell: () => resizable('inner_pack'),
+      align: 'right' as const,
+      ...resizable('inner_pack'),
       render: (val: number) => <span style={{ fontWeight: 600, color: '#0d9488' }}>{val}</span>,
     },
     case_qty: {
       title: <ColumnSearchHeader title="Case" dataKey="case_qty" filters={columnFilters} onFilterChange={handleColumnFilter} align="right" showFilters={showFilters} />,
       dataIndex: 'case_qty', key: 'case_qty',
-      width: w('case_qty'), align: 'right' as const,
-      ellipsis: true,
-      onHeaderCell: () => resizable('case_qty'),
+      align: 'right' as const,
+      ...resizable('case_qty'),
       render: (val: number) => <span style={{ fontWeight: 600, color: '#0d9488' }}>{val}</span>,
     },
     pallet_qty: {
       title: <ColumnSearchHeader title="Pallet" dataKey="pallet_qty" filters={columnFilters} onFilterChange={handleColumnFilter} align="right" showFilters={showFilters} />,
       dataIndex: 'pallet_qty', key: 'pallet_qty',
-      width: w('pallet_qty'), align: 'right' as const,
-      ellipsis: true,
-      onHeaderCell: () => resizable('pallet_qty'),
+      align: 'right' as const,
+      ...resizable('pallet_qty'),
       render: (val: number) => <span style={{ fontWeight: 600, color: '#0d9488' }}>{val}</span>,
     },
     is_active: {
-      title: 'Trạng thái',
+      title: <ColumnSearchHeader title="Trạng thái" dataKey="is_active" filters={columnFilters} onFilterChange={handleColumnFilter} align="center" showFilters={showFilters} />,
       dataIndex: 'is_active', key: 'is_active',
-      width: w('is_active'), align: 'center' as const,
-      onHeaderCell: () => resizable('is_active'),
-      filters: [
-        { text: 'Đang kinh doanh', value: true },
-        { text: 'Ngưng kinh doanh', value: false },
-      ],
-      onFilter: (value: unknown, record: MasterItem) => record.is_active === value,
+      align: 'center' as const,
+      ...resizable('is_active'),
       render: (active: boolean) => active ? (
         <Badge status="success" text={<span style={{ fontSize: 12, fontWeight: 500, color: '#059669' }}>Đang KD</span>} />
       ) : (
@@ -411,8 +464,8 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
     updated_at: {
       title: 'Cập nhật lần cuối',
       dataIndex: 'updated_at', key: 'updated_at',
-      width: w('updated_at'), align: 'center' as const,
-      onHeaderCell: () => resizable('updated_at'),
+      align: 'center' as const,
+      ...resizable('updated_at'),
       render: (v: string) => (
         <span style={{ fontSize: 12, color: '#64748b' }}>
           {v ? (dayjs(v).isValid() ? dayjs(v).format('DD/MM/YYYY HH:mm:ss') : v) : '—'}
@@ -426,9 +479,9 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
   const actionsCol = {
     title: 'Thao tác',
     key: 'actions',
-    width: w('actions'),
     align: 'center' as const,
     fixed: 'right' as const,
+    ...resizable('actions'),
     render: (_: unknown, record: MasterItem) => (
       <Space size={6}>
         <Tooltip title="Sửa">
@@ -503,7 +556,7 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
               Danh mục INFOR/SAP
             </h2>
             <p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>
-              {items.length} sản phẩm · Quản lý Master Data
+              {totalCount} sản phẩm · Quản lý Master Data
             </p>
           </div>
         </div>
@@ -580,9 +633,13 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
           rowKey="item_code"
           loading={isLoading}
           pagination={{
-            current: undefined, // Let Ant handle page
+            current: currentPage,
             pageSize: pageSize,
-            onShowSizeChange: (_, size) => setPageSize(size),
+            total: totalCount,
+            onChange: (page, size) => {
+              setCurrentPage(page);
+              setPageSize(size);
+            },
             pageSizeOptions: [10, 20, 50, 100],
             showSizeChanger: true,
             showTotal: (total, range) =>
@@ -718,13 +775,20 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
               name="supplier_code"
               control={control}
               render={({ field }) => (
-                <Input
+                <Select
                   {...field}
-                  id="input-supplier-code"
-                  placeholder="VD: HYPHENS"
-                  style={{ borderRadius: 10 }}
-                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                />
+                  id="select-supplier-code"
+                  placeholder="Chọn nhà cung cấp"
+                  style={{ width: '100%', borderRadius: 10 }}
+                  showSearch
+                  optionFilterProp="children"
+                >
+                  {suppliersList.map((s: any) => (
+                    <Select.Option key={s.supplier_code} value={s.supplier_code}>
+                      {s.supplier_code} - {s.supplier_name}
+                    </Select.Option>
+                  ))}
+                </Select>
               )}
             />
           </Form.Item>

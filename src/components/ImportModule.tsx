@@ -170,8 +170,11 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
   const w = (key: string) => columnWidths[key] ?? DEFAULT_IMPORT_WIDTHS[key] ?? 100;
   const resizable = (key: string) => ({
-    onResize: (width: number) => setColumnWidth(key, width),
-    style: { width: w(key) },
+    width: w(key),
+    ellipsis: true,
+    onHeaderCell: () => ({
+      onResize: (width: number) => setColumnWidth(key, width),
+    } as any),
   });
 
   // Load shipments & master items
@@ -529,8 +532,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     stt: {
       title: <ColumnSearchHeader title="STT" dataKey="__stt" filters={columnFilters} onFilterChange={handleColumnFilter} align="center" showFilters={showFilters} />,
       key: 'stt',
-      width: w('stt'),
       align: 'center',
+      ...resizable('stt'),
       render: (_: any, __: any, idx: number) => (
         <span style={{ color: '#94a3b8', fontSize: 12 }}>
           {(currentPage - 1) * pageSize + idx + 1}
@@ -541,9 +544,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       title: <ColumnSearchHeader title="Số Invoice" dataKey="invoice_number" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
       dataIndex: 'invoice_number',
       key: 'invoice_number',
-      width: w('invoice_number'),
-      ellipsis: true,
-      onHeaderCell: () => resizable('invoice_number'),
+      ...resizable('invoice_number'),
       render: (v: string, r: ShipmentRecord) => (
         <span 
           style={{ fontWeight: 700, color: '#0d9488', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
@@ -564,17 +565,14 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       title: <ColumnSearchHeader title="Ngày lập" dataKey="created_date" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
       dataIndex: 'created_date',
       key: 'created_date',
-      width: w('created_date'),
-      onHeaderCell: () => resizable('created_date'),
+      ...resizable('created_date'),
       render: (v: string) => v ? dayjs(v).format('DD/MM/YYYY') : '—',
     },
     supplier_code: {
       title: <ColumnSearchHeader title="Nhà cung cấp" dataKey="supplier_code" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
       dataIndex: 'supplier_code',
       key: 'supplier_code',
-      width: w('supplier_code'),
-      ellipsis: true,
-      onHeaderCell: () => resizable('supplier_code'),
+      ...resizable('supplier_code'),
       render: (v: string, r: ShipmentRecord) => (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           <Tag color="cyan" style={{ fontWeight: 600, margin: 0 }}>{v}</Tag>
@@ -590,40 +588,38 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       title: <ColumnSearchHeader title="Sản phẩm" dataKey="products" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
       dataIndex: 'products',
       key: 'products',
-      width: w('products'),
-      ellipsis: true,
-      onHeaderCell: () => resizable('products'),
-      render: (v: string) => (
-        <Tooltip title={v} placement="topLeft">
-          <span style={{ color: '#334155', fontWeight: 500, fontSize: 13 }}>{v || '—'}</span>
-        </Tooltip>
-      ),
+      ...resizable('products'),
+      render: (v: string) => {
+        const displayValue = v && v.length > 50 ? `${v.substring(0, 50)}...` : v;
+        return (
+          <Tooltip title={v} placement="topLeft">
+            <span style={{ color: '#334155', fontWeight: 500, fontSize: 13 }}>{displayValue || '—'}</span>
+          </Tooltip>
+        );
+      },
     },
     coa_status: {
       title: <ColumnSearchHeader title="COA" dataKey="coa_status" filters={columnFilters} onFilterChange={handleColumnFilter} align="center" showFilters={showFilters} />,
       dataIndex: 'coa_status',
       key: 'coa_status',
-      width: w('coa_status'),
       align: 'center',
-      onHeaderCell: () => resizable('coa_status'),
+      ...resizable('coa_status'),
       render: (v: string) => <Tag color={COA_COLOR[v] || 'default'} style={{ margin: 0, fontWeight: 500 }}>{v}</Tag>,
     },
     label_status: {
       title: <ColumnSearchHeader title="Nhãn phụ" dataKey="label_status" filters={columnFilters} onFilterChange={handleColumnFilter} align="center" showFilters={showFilters} />,
       dataIndex: 'label_status',
       key: 'label_status',
-      width: w('label_status'),
       align: 'center',
-      onHeaderCell: () => resizable('label_status'),
+      ...resizable('label_status'),
       render: (v: string) => <Tag color={LABEL_COLOR[v] || 'default'} style={{ margin: 0, fontWeight: 500 }}>{v}</Tag>,
     },
     progress_status: {
       title: <ColumnSearchHeader title="Tiến độ" dataKey="progress_status" filters={columnFilters} onFilterChange={handleColumnFilter} align="center" showFilters={showFilters} />,
       dataIndex: 'progress_status',
       key: 'progress_status',
-      width: w('progress_status'),
       align: 'center',
-      onHeaderCell: () => resizable('progress_status'),
+      ...resizable('progress_status'),
       render: (v: string) => (
         <Tag color={PROGRESS_COLOR[v] || 'default'} style={{ margin: 0, fontWeight: 600 }}>
           {PROGRESS_LABEL[v] || v}
@@ -633,8 +629,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     temp_out_of_range: {
       title: <ColumnSearchHeader title="Cảnh báo nhiệt" dataKey="temp_out_of_range_details" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
       key: 'temp_out_of_range',
-      width: w('temp_out_of_range'),
-      onHeaderCell: () => resizable('temp_out_of_range'),
+      ...resizable('temp_out_of_range'),
       render: (_: any, r: ShipmentRecord) => {
         if (r.temp_out_of_range) {
           return (
@@ -654,8 +649,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     import_dates: {
       title: <ColumnSearchHeader title="Ngày nhập kho" dataKey="import_date_lh_text" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
       key: 'import_dates',
-      width: w('import_dates'),
-      onHeaderCell: () => resizable('import_dates'),
+      ...resizable('import_dates'),
       render: (_: any, r: ShipmentRecord) => {
         const lh = renderDate(r.import_date_lh, r.import_date_lh_text);
         const hn = renderDate(r.import_date_hn, r.import_date_hn_text);
@@ -670,9 +664,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     actions: {
       title: <div style={{ fontWeight: 600, fontSize: 12, textAlign: 'center' }}>Thao tác</div>,
       key: 'actions',
-      width: w('actions'),
       fixed: 'right',
       align: 'center',
+      ...resizable('actions'),
       render: (_: any, r: ShipmentRecord) => (
         <Space size={2}>
           <Tooltip title="Xem & Sửa">
@@ -777,7 +771,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#134e4a' }}>
-            Quản Lý Nhập Khẩu (IMP)
+            IMP (Nhập khẩu)
           </h2>
           <p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>
             Theo dõi tiến độ duyệt COA, nhãn phụ, dữ liệu nhiệt độ data logger và thực tế nhập kho.
