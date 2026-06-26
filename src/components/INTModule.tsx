@@ -28,6 +28,7 @@ export interface INTRecord {
   created_at?: string;
   category: string; // 'PAP' | 'Chuyển kho' | 'Nội bộ kho xử lý' | 'Yêu cầu hãng' | 'Khác'
   item_code: string;
+  item_name?: string | null;
   supplier_code: string;
   lot_number: string;
   exp_date: string;
@@ -253,10 +254,12 @@ export default function INTModule({ userId = 'default' }: { userId?: string }) {
       const values = await form.validateFields();
       setSaving(true);
 
+      const selectedItem = masterItems.find(i => i.item_code === values.item_code);
       const dbPayload = {
         int_code: values.int_code,
         category: values.category,
         item_code: values.item_code,
+        item_name: selectedItem ? selectedItem.item_name : (detailRow?.item_name || null),
         supplier_code: values.supplier_code,
         lot_number: values.lot_number,
         exp_date: values.exp_date ? values.exp_date.format('YYYY-MM-DD') : null,
@@ -364,10 +367,10 @@ export default function INTModule({ userId = 'default' }: { userId?: string }) {
         ),
         dataIndex: 'item_code',
         key: 'item_code',
-        render: (text) => {
-          const item = masterItems.find(i => i.item_code === text);
+        render: (text, record) => {
+          const display = record.item_name || masterItems.find(i => i.item_code === text)?.item_name || '';
           return (
-            <Tooltip title={item ? item.item_name : ''}>
+            <Tooltip title={display}>
               <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{text}</span>
             </Tooltip>
           );

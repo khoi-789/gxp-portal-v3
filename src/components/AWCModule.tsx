@@ -27,6 +27,7 @@ export interface AWCChange {
   awc_code: string;
   notice_date: string;
   item_code: string;
+  item_name?: string | null;
   supplier_code: string;
   new_item_code: string | null;
   status: string; // 'Alerted' | 'Pending 1st Batch' | 'Verified' | 'Closed'
@@ -246,10 +247,12 @@ export default function AWCModule({ userId = 'default' }: { userId?: string }) {
       const values = await form.validateFields();
       setSaving(true);
 
+      const selectedItem = masterItems.find(i => i.item_code === values.item_code);
       const dbPayload = {
         awc_code: values.awc_code,
         notice_date: values.notice_date ? values.notice_date.format('YYYY-MM-DD') : null,
         item_code: values.item_code,
+        item_name: selectedItem ? selectedItem.item_name : (detailRow?.item_name || null),
         supplier_code: values.supplier_code,
         new_item_code: values.new_item_code || null,
         status: values.status,
@@ -365,10 +368,10 @@ export default function AWCModule({ userId = 'default' }: { userId?: string }) {
         ),
         dataIndex: 'item_code',
         key: 'item_code',
-        render: (text) => {
-          const item = masterItems.find(i => i.item_code === text);
+        render: (text, record) => {
+          const display = record.item_name || masterItems.find(i => i.item_code === text)?.item_name || '';
           return (
-            <Tooltip title={item ? item.item_name : ''}>
+            <Tooltip title={display}>
               <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{text}</span>
             </Tooltip>
           );

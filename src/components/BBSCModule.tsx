@@ -32,6 +32,7 @@ export interface BBSCIncident {
   pic_id: string | null;
   sub_pic_id: string | null;
   item_code: string | null;
+  item_name?: string | null;
   lot_number: string;
   exp_date: string;
   quantity: number;
@@ -254,6 +255,7 @@ export default function BBSCModule({ userId = 'default' }: { userId?: string }) 
       const values = await form.validateFields();
       setSaving(true);
 
+      const selectedItem = masterItems.find(i => i.item_code === values.item_code);
       const dbPayload = {
         bbsc_code: values.bbsc_code,
         status: values.status,
@@ -262,6 +264,7 @@ export default function BBSCModule({ userId = 'default' }: { userId?: string }) 
         pic_id: values.pic_id || null,
         sub_pic_id: values.sub_pic_id || null,
         item_code: values.item_code,
+        item_name: selectedItem ? selectedItem.item_name : (detailRow?.item_name || null),
         lot_number: values.lot_number,
         exp_date: values.exp_date ? values.exp_date.format('YYYY-MM-DD') : null,
         quantity: values.quantity,
@@ -373,7 +376,14 @@ export default function BBSCModule({ userId = 'default' }: { userId?: string }) 
         ),
         dataIndex: 'item_code',
         key: 'item_code',
-        render: (text) => <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{text || 'N/A'}</span>,
+        render: (text, record) => {
+          const display = record.item_name || masterItems.find(i => i.item_code === text)?.item_name || '';
+          return (
+            <Tooltip title={display}>
+              <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{text || 'N/A'}</span>
+            </Tooltip>
+          );
+        },
         ...resizable('item_code'),
       },
       {

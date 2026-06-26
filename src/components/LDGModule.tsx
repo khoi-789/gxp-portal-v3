@@ -38,6 +38,7 @@ export interface LDGOrder {
   ldg_code: string;
   created_date: string;
   item_code: string;
+  item_name?: string | null;
   supplier_code: string;
   lot_number: string;
   exp_date: string;
@@ -305,10 +306,12 @@ export default function LDGModule({ userId = 'default' }: { userId?: string }) {
       const values = await form.validateFields();
       setSaving(true);
 
+      const selectedItem = masterItems.find(i => i.item_code === values.item_code);
       const dbPayload = {
         ldg_code: values.ldg_code,
         created_date: values.created_date ? values.created_date.format('YYYY-MM-DD') : null,
         item_code: values.item_code,
+        item_name: selectedItem ? selectedItem.item_name : (detailRow?.item_name || null),
         supplier_code: values.supplier_code,
         lot_number: values.lot_number,
         exp_date: values.exp_date ? values.exp_date.format('YYYY-MM-DD') : null,
@@ -450,10 +453,10 @@ export default function LDGModule({ userId = 'default' }: { userId?: string }) {
         ),
         dataIndex: 'item_code',
         key: 'item_code',
-        render: (text) => {
-          const item = masterItems.find(i => i.item_code === text);
+        render: (text, record) => {
+          const display = record.item_name || masterItems.find(i => i.item_code === text)?.item_name || '';
           return (
-            <Tooltip title={item ? item.item_name : ''}>
+            <Tooltip title={display}>
               <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{text}</span>
             </Tooltip>
           );
