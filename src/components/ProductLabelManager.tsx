@@ -272,7 +272,9 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
           });
         }
         
+        localStorage.removeItem('gxp_product_label_mappings_cache');
         queryClient.invalidateQueries({ queryKey: ['product_label_mappings'] });
+        queryClient.invalidateQueries({ queryKey: ['label-mappings'] });
       } catch (err: any) {
         messageApi.error({ content: 'Lỗi import file: ' + err.message, key: 'importMapping', duration: 5 });
       }
@@ -494,7 +496,9 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
         .eq('id', id);
       if (error) throw error;
       messageApi.success('Đã xóa liên kết thành công!');
+      localStorage.removeItem('gxp_product_label_mappings_cache');
       queryClient.invalidateQueries({ queryKey: ['product_label_mappings'] });
+      queryClient.invalidateQueries({ queryKey: ['label-mappings'] });
     } catch (e: any) {
       messageApi.error('Lỗi khi xóa liên kết: ' + e.message);
     }
@@ -550,7 +554,9 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
         messageApi.success('Thêm mới liên kết SP - Tem thành công!');
       }
       setIsOpen(false);
+      localStorage.removeItem('gxp_product_label_mappings_cache');
       queryClient.invalidateQueries({ queryKey: ['product_label_mappings'] });
+      queryClient.invalidateQueries({ queryKey: ['label-mappings'] });
     } catch (e: any) {
       messageApi.error('Lỗi khi lưu dữ liệu: ' + e.message);
     } finally {

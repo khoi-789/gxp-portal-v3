@@ -323,6 +323,21 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     setCurrentPage(1);
   };
 
+  const handleRefreshAll = async () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('gxp_master_items_cache');
+      localStorage.removeItem('gxp_product_label_mappings_cache');
+      localStorage.removeItem('gxp_master_suppliers_cache');
+    }
+    
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['master-items-dropdown'] }),
+      queryClient.invalidateQueries({ queryKey: ['label-mappings'] }),
+      queryClient.invalidateQueries({ queryKey: ['master-suppliers-dropdown'] }),
+      queryClient.invalidateQueries({ queryKey: impQueryKey })
+    ]);
+  };
+
   // Statistics calculation
   const stats = useMemo(() => {
     const total = totalCount;
@@ -896,7 +911,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
           <Space>
             <Button
               icon={<RefreshCw size={14} />}
-              onClick={() => loadData()}
+              onClick={handleRefreshAll}
               loading={loading}
               style={{ borderRadius: 8 }}
             >
