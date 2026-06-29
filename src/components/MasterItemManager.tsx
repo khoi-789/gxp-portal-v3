@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import dayjs from 'dayjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Table, Button, Drawer, Input, Form, Switch, Tag, Space,
-  Popconfirm, message, Tooltip, Badge, Empty, InputNumber, Row, Col, Select,
+  Table, Button, Drawer, Form, Switch, Tag, Space,
+  Popconfirm, message, Tooltip, Badge, Empty, InputNumber, Row, Col, Select, Input
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useForm, Controller } from 'react-hook-form';
@@ -13,6 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { MasterItem } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
+import * as XLSX from 'xlsx';
 import { syncMasterData } from '@/lib/masterDataSync';
 import { ColumnSearchHeader, applyColumnFilters } from '@/lib/columnSearch';
 import TableControls, { ColumnConfig } from '@/components/TableControls';
@@ -20,7 +21,7 @@ import ResizableTitle from '@/components/ResizableTitle';
 import { useTablePreferences } from '@/lib/useTablePreferences';
 import {
   Plus, Search, Edit3, Trash2, Package, RefreshCw,
-  CheckCircle, XCircle, AlertTriangle,
+  CheckCircle, XCircle, AlertTriangle, Upload, Download
 } from 'lucide-react';
 
 /**
@@ -218,6 +219,224 @@ const DEFAULT_WIDTHS: Record<string, number> = {
 export default function MasterItemManager({ userId = 'default' }: { userId?: string }) {
   const queryClient = useQueryClient();
   const [messageApi, contextHolder] = message.useMessage();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDownloadTemplate = () => {
+    const headers = [
+      {
+        item_code: 'AV1100002',
+        item_name: 'GLEMONT CT4 4MG 30.S',
+        supplier_code: 'ALLEVIARE',
+        visa_no: 'VN-22013-19',
+        gross_weight: 0.12,
+        net_weight: 0.1,
+        cube: 0.001,
+        tare_weight: 0.02,
+        pallet_qty: 2400,
+        case_qty: 160,
+        inner_pack: 1,
+        is_active: 'TRUE'
+      }
+    ];
+    const worksheet = XLSX.utils.json_to_sheet(headers);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'SP Template');
+    XLSX.writeFile(workbook, 'Template_Danh_Muc_SP.xlsx');
+    messageApi.success('Đã tải xuống template thành công!');
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    messageApi.loading({ content: 'Đang đọc và kiểm tra file Excel...', key: 'importItems' });
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const data = evt.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json<any>(sheet);
+
+        if (rows.length === 0) {
+          messageApi.warning({ content: 'File Excel trống!', key: 'importItems' });
+          return;
+        }
+
+        // Fetch all existing master items from DB
+        const { data: dbItems, error: dbError } = await supabase
+          .from('master_items')
+          .select('*');
+
+        if (dbError) {
+          throw new Error('Không thể tải danh mục sản phẩm từ database: ' + dbError.message);
+        }
+
+        const dbItemsMap = new Map(dbItems?.map(x => [String(x.item_code).trim(), x]) || []);
+
+        const itemsToUpsert: any[] = [];
+        const invalidRows: any[] = [];
+
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          const rawItemCode = String(row['item_code'] || row['Mã sản phẩm'] || row['Mã SP'] || '').trim();
+          
+          if (!rawItemCode) {
+            continue; // Skip empty rows
+          }
+
+          const dbItem = dbItemsMap.get(rawItemCode);
+
+          // Helper logic to merge fields
+          const getStr = (excelVal: any, dbVal: string | null) => {
+            if (excelVal === undefined || String(excelVal).trim() === '') return dbVal;
+            return String(excelVal).trim();
+          };
+
+          const getNum = (excelVal: any, dbVal: number | null) => {
+            if (excelVal === undefined || String(excelVal).trim() === '') return dbVal;
+            const num = Number(excelVal);
+            return isNaN(num) ? dbVal : num;
+          };
+
+          const getBool = (excelVal: any, dbVal: boolean) => {
+            if (excelVal === undefined || String(excelVal).trim() === '') return dbVal;
+            const activeStr = String(excelVal).trim().toLowerCase();
+            return activeStr === 'true' || activeStr === '1' || activeStr === 'yes' || activeStr === 'y';
+          };
+
+          const mergedItem = {
+            item_code: rawItemCode,
+            item_name: getStr(row['item_name'] || row['Tên sản phẩm'] || row['Tên SP'], dbItem?.item_name || ''),
+            supplier_code: getStr(row['supplier_code'] || row['Mã nhà cung cấp'] || row['Mã NCC'], dbItem?.supplier_code || null),
+            visa_no: getStr(row['visa_no'] || row['Số đăng ký'] || row['SĐK'], dbItem?.visa_no || null),
+            gross_weight: getNum(row['gross_weight'] || row['Trọng lượng cả bì'] || row['Gross Weight'], dbItem?.gross_weight || 0),
+            net_weight: getNum(row['net_weight'] || row['Trọng lượng tịnh'] || row['Net Weight'], dbItem?.net_weight || 0),
+            cube: getNum(row['cube'] || row['Thể tích'] || row['M3'], dbItem?.cube || 0),
+            tare_weight: getNum(row['tare_weight'] || row['Trọng lượng vỏ'] || row['Tare Weight'], dbItem?.tare_weight || 0),
+            pallet_qty: getNum(row['pallet_qty'] || row['Số lượng/Pallet'] || row['Pallet Qty'], dbItem?.pallet_qty || 0),
+            case_qty: getNum(row['case_qty'] || row['Số lượng/Thùng'] || row['Case Qty'], dbItem?.case_qty || 0),
+            inner_pack: getNum(row['inner_pack'] || row['Inner Pack'] || row['Inner'], dbItem?.inner_pack || 0),
+            is_active: getBool(row['is_active'] || row['Trạng thái hoạt động'] || row['Kích hoạt'], dbItem?.is_active ?? true),
+            updated_at: new Date().toISOString()
+          };
+
+          if (!mergedItem.item_name) {
+            invalidRows.push({ rowNum: i + 2, reason: 'Tên sản phẩm trống' });
+            continue;
+          }
+
+          itemsToUpsert.push(mergedItem);
+        }
+
+        if (itemsToUpsert.length === 0) {
+          messageApi.error({ content: 'Không có dòng dữ liệu hợp lệ nào để import!', key: 'importItems' });
+          return;
+        }
+
+        messageApi.loading({ content: `Đang tải ${itemsToUpsert.length} sản phẩm lên database...`, key: 'importItems' });
+
+        const { error: upsertError } = await supabase
+          .from('master_items')
+          .upsert(itemsToUpsert);
+
+        if (upsertError) throw upsertError;
+
+        if (invalidRows.length > 0) {
+          messageApi.warning({
+            content: `Đã import thành công ${itemsToUpsert.length} dòng. Bỏ qua ${invalidRows.length} dòng không hợp lệ!`,
+            key: 'importItems',
+            duration: 6
+          });
+        } else {
+          messageApi.success({
+            content: `Đã import thành công tất cả ${itemsToUpsert.length} sản phẩm!`,
+            key: 'importItems',
+            duration: 4
+          });
+        }
+
+        // Local storage cache invalidate
+        localStorage.removeItem('gxp_master_items_cache');
+        localStorage.removeItem('gxp_master_items_cache_timestamp');
+
+        queryClient.invalidateQueries({ queryKey: ['master_items'] });
+      } catch (err: any) {
+        messageApi.error({ content: 'Lỗi import file: ' + err.message, key: 'importItems', duration: 5 });
+      }
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = '';
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      messageApi.loading({ content: 'Đang chuẩn bị dữ liệu xuất Excel...', key: 'exportItems' });
+
+      // Fetch all matching records complying with search and filter
+      let query = supabase
+        .from('master_items')
+        .select('*');
+
+      if (debouncedSearch && debouncedSearch.trim()) {
+        query = query.ilike('item_code', `%${debouncedSearch.trim()}%`);
+      }
+
+      Object.entries(debouncedFilters).forEach(([key, value]) => {
+        if (!value || value.trim() === '') return;
+        const val = value.trim();
+        if (key === 'item_code' || key === 'item_name' || key === 'supplier_code') {
+          query = query.ilike(key, `%${val}%`);
+        }
+      });
+
+      query = query.order('item_code', { ascending: true });
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        messageApi.warning({ content: 'Không có dữ liệu để xuất!', key: 'exportItems' });
+        return;
+      }
+
+      const excelRows = data.map(item => ({
+        'Mã sản phẩm': item.item_code,
+        'Tên sản phẩm': item.item_name,
+        'Mã nhà cung cấp': item.supplier_code || '',
+        'Số đăng ký': item.visa_no || '',
+        'Trọng lượng cả bì': Number(item.gross_weight || 0),
+        'Trọng lượng tịnh': Number(item.net_weight || 0),
+        'Thể tích': Number(item.cube || 0),
+        'Trọng lượng vỏ': Number(item.tare_weight || 0),
+        'Số lượng/Pallet': Number(item.pallet_qty || 0),
+        'Số lượng/Thùng': Number(item.case_qty || 0),
+        'Inner Pack': Number(item.inner_pack || 0),
+        'Trạng thái': item.is_active ? 'Kích hoạt' : 'Khóa'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(excelRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Master Items');
+
+      const maxLens = Object.keys(excelRows[0]).map(key => {
+        let max = key.length;
+        excelRows.forEach(row => {
+          const val = String((row as any)[key] || '');
+          if (val.length > max) max = val.length;
+        });
+        return { wch: max + 2 };
+      });
+      worksheet['!cols'] = maxLens;
+
+      XLSX.writeFile(workbook, 'Danh_Sach_San_Pham.xlsx');
+      messageApi.success({ content: 'Xuất file Excel thành công!', key: 'exportItems' });
+    } catch (err: any) {
+      messageApi.error({ content: 'Lỗi xuất file: ' + err.message, key: 'exportItems' });
+    }
+  };
 
   const [searchText, setSearchText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -574,6 +793,39 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
               height: 38
             }}
           />
+          {/* Hidden File Input for Excel Import */}
+          <input
+            type="file"
+            accept=".xlsx, .xls"
+            style={{ display: 'none' }}
+            onChange={handleImportExcel}
+            ref={fileInputRef}
+          />
+
+          <Button
+            icon={<Download size={14} />}
+            onClick={handleDownloadTemplate}
+            style={{ borderRadius: 10, height: 38 }}
+          >
+            Tải Template
+          </Button>
+
+          <Button
+            icon={<Upload size={14} />}
+            onClick={() => fileInputRef.current?.click()}
+            style={{ borderRadius: 10, height: 38 }}
+          >
+            Nhập từ Excel
+          </Button>
+
+          <Button
+            icon={<Download size={14} />}
+            onClick={handleExportExcel}
+            style={{ borderRadius: 10, height: 38 }}
+          >
+            Xuất Excel
+          </Button>
+
           <Tooltip title="Làm mới dữ liệu">
             <Button
               id="btn-refresh-items"

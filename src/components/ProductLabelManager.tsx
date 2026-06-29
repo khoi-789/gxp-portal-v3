@@ -220,12 +220,38 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
           return;
         }
 
-        messageApi.loading({ content: `Đang tải ${mappingsToInsert.length} dòng dữ liệu lên database...`, key: 'importMapping' });
+        // Deduplicate pairs within the file itself to prevent inserting duplicates
+        const uniqueMappings = [];
+        const seenPairs = new Set();
+        for (const m of mappingsToInsert) {
+          const pairKey = `${m.product_item_code}||${m.label_item_code}`;
+          if (!seenPairs.has(pairKey)) {
+            seenPairs.add(pairKey);
+            uniqueMappings.push(m);
+          }
+        }
 
-        // Batch upsert to product_label_mappings
+        messageApi.loading({ content: `Đang cập nhật ${uniqueMappings.length} liên kết lên database...`, key: 'importMapping' });
+
+        // Rule: Replace all mappings for the products present in the Excel file
+        const uploadedProductCodes = Array.from(new Set(uniqueMappings.map(x => x.product_item_code)));
+
+        if (uploadedProductCodes.length > 0) {
+          // Delete existing mappings for these product codes
+          const { error: deleteError } = await supabase
+            .from('product_label_mappings')
+            .delete()
+            .in('product_item_code', uploadedProductCodes);
+
+          if (deleteError) {
+            throw new Error('Không thể xóa liên kết cũ để thay thế: ' + deleteError.message);
+          }
+        }
+
+        // Batch insert the new mappings
         const { error } = await supabase
           .from('product_label_mappings')
-          .upsert(mappingsToInsert);
+          .insert(uniqueMappings);
 
         if (error) {
           throw error;
@@ -234,13 +260,13 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
         if (invalidRows.length > 0) {
           const sample = invalidRows.slice(0, 3).map(r => `Dòng ${r.rowNum} (${r.reason})`).join('; ');
           messageApi.warning({
-            content: `Đã import ${mappingsToInsert.length} dòng. Bỏ qua ${invalidRows.length} dòng không hợp lệ: ${sample}...`,
+            content: `Đã import ${uniqueMappings.length} dòng. Bỏ qua ${invalidRows.length} dòng không hợp lệ: ${sample}...`,
             key: 'importMapping',
             duration: 8
           });
         } else {
           messageApi.success({
-            content: `Đã import thành công tất cả ${mappingsToInsert.length} liên kết sản phẩm - tem nhãn!`,
+            content: `Đã import thành công tất cả ${uniqueMappings.length} liên kết sản phẩm - tem nhãn!`,
             key: 'importMapping',
             duration: 4
           });
@@ -253,6 +279,75 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
     };
     reader.readAsBinaryString(file);
     e.target.value = '';
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      messageApi.loading({ content: 'Đang chuẩn bị dữ liệu xuất Excel...', key: 'exportMapping' });
+      
+      let query = supabase
+        .from('product_label_mappings')
+        .select(`
+          product_item_code,
+          product:master_items!product_item_code(item_name, supplier_code),
+          label_item_code,
+          label:master_items!label_item_code(item_name),
+          quantity_per_unit
+        `);
+
+      if (globalSearch && globalSearch.trim()) {
+        const q = `%${globalSearch.trim().toLowerCase()}%`;
+        query = query.or(`product_item_code.ilike.${q},label_item_code.ilike.${q}`);
+      }
+
+      Object.entries(columnFilters).forEach(([key, value]) => {
+        if (!value || value.trim() === '') return;
+        const val = value.trim();
+        if (key === 'product_item_code' || key === 'label_item_code') {
+          query = query.ilike(key, `%${val}%`);
+        }
+      });
+
+      query = query.order('product_item_code', { ascending: true });
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        messageApi.warning({ content: 'Không có dữ liệu để xuất!', key: 'exportMapping' });
+        return;
+      }
+
+      // Format data for Excel
+      const excelRows = data.map(m => ({
+        'Mã sản phẩm': m.product_item_code,
+        'Tên sản phẩm': (m.product as any)?.item_name || '',
+        'Mã nhà cung cấp': (m.product as any)?.supplier_code || '',
+        'Mã tem nhãn phụ': m.label_item_code,
+        'Tên tem nhãn phụ': (m.label as any)?.item_name || '',
+        'Số lượng / SP': Number(m.quantity_per_unit)
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(excelRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Lien Ket SP-Tem');
+      
+      // Auto-fit column widths
+      const maxLens = Object.keys(excelRows[0]).map(key => {
+        let max = key.length;
+        excelRows.forEach(row => {
+          const val = String((row as any)[key] || '');
+          if (val.length > max) max = val.length;
+        });
+        return { wch: max + 2 };
+      });
+      worksheet['!cols'] = maxLens;
+
+      XLSX.writeFile(workbook, 'Danh_Sach_Lien_Ket_SP_Tem.xlsx');
+      messageApi.success({ content: 'Xuất file Excel thành công!', key: 'exportMapping' });
+    } catch (err: any) {
+      messageApi.error({ content: 'Lỗi xuất file: ' + err.message, key: 'exportMapping' });
+    }
   };
 
   const { prefs, save: savePrefs, setColumnWidth } = useTablePreferences(
@@ -666,6 +761,14 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
             style={{ borderRadius: 6 }}
           >
             Nhập từ Excel
+          </Button>
+
+          <Button
+            icon={<Download size={14} />}
+            onClick={handleExportExcel}
+            style={{ borderRadius: 6 }}
+          >
+            Xuất Excel
           </Button>
 
           <Button

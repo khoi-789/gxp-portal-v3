@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import dayjs from 'dayjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -13,13 +13,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { MasterSupplier } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
+import * as XLSX from 'xlsx';
 import { ColumnSearchHeader, applyColumnFilters } from '@/lib/columnSearch';
 import TableControls, { ColumnConfig } from '@/components/TableControls';
 import ResizableTitle from '@/components/ResizableTitle';
 import { useTablePreferences } from '@/lib/useTablePreferences';
 import {
   Plus, Search, Edit3, Trash2, Truck, RefreshCw,
-  AlertTriangle, HelpCircle,
+  AlertTriangle, HelpCircle, Upload, Download
 } from 'lucide-react';
 
 const { Option } = Select;
@@ -184,6 +185,208 @@ const DEFAULT_WIDTHS: Record<string, number> = {
 export default function MasterSupplierManager({ userId = 'default' }: { userId?: string }) {
   const queryClient = useQueryClient();
   const [messageApi, contextHolder] = message.useMessage();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDownloadTemplate = () => {
+    const headers = [
+      {
+        supplier_code: 'ALLEVIARE',
+        supplier_name: 'Alleviare India',
+        business_type: 'Nhập khẩu, Phân phối',
+        notes: 'Ghi chú nhà cung cấp',
+        is_active: 'TRUE'
+      }
+    ];
+    const worksheet = XLSX.utils.json_to_sheet(headers);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'NCC Template');
+    XLSX.writeFile(workbook, 'Template_Danh_Muc_NCC.xlsx');
+    messageApi.success('Đã tải xuống template thành công!');
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    messageApi.loading({ content: 'Đang đọc và kiểm tra file Excel...', key: 'importSuppliers' });
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const data = evt.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json<any>(sheet);
+
+        if (rows.length === 0) {
+          messageApi.warning({ content: 'File Excel trống!', key: 'importSuppliers' });
+          return;
+        }
+
+        // Fetch all existing master suppliers from DB
+        const { data: dbSuppliers, error: dbError } = await supabase
+          .from('master_suppliers')
+          .select('*');
+
+        if (dbError) {
+          throw new Error('Không thể tải danh mục nhà cung cấp từ database: ' + dbError.message);
+        }
+
+        const dbSuppliersMap = new Map(dbSuppliers?.map(s => [String(s.supplier_code).trim(), s]) || []);
+
+        const suppliersToUpsert: any[] = [];
+        const invalidRows: any[] = [];
+
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          const rawName = String(row['supplier_name'] || row['Tên nhà cung cấp'] || row['Tên NCC'] || '').trim();
+          let rawCode = String(row['supplier_code'] || row['Mã nhà cung cấp'] || row['Mã NCC'] || '').trim();
+
+          if (!rawCode && rawName) {
+            rawCode = generateSupplierCode(rawName);
+          }
+
+          if (!rawCode) {
+            continue; // Skip completely empty rows
+          }
+
+          const dbSupp = dbSuppliersMap.get(rawCode);
+
+          // Helper logic to merge fields
+          const getStr = (excelVal: any, dbVal: string | null) => {
+            if (excelVal === undefined || String(excelVal).trim() === '') return dbVal;
+            return String(excelVal).trim();
+          };
+
+          const getBool = (excelVal: any, dbVal: boolean) => {
+            if (excelVal === undefined || String(excelVal).trim() === '') return dbVal;
+            const activeStr = String(excelVal).trim().toLowerCase();
+            return activeStr === 'true' || activeStr === '1' || activeStr === 'yes' || activeStr === 'y';
+          };
+
+          const getBusinessType = (excelVal: any, dbVal: string[]) => {
+            if (excelVal === undefined || String(excelVal).trim() === '') return dbVal;
+            return String(excelVal).split(',').map(s => s.trim()).filter(Boolean);
+          };
+
+          const mergedSupp = {
+            supplier_code: rawCode,
+            supplier_name: getStr(row['supplier_name'] || row['Tên nhà cung cấp'] || row['Tên NCC'], dbSupp?.supplier_name || rawName || rawCode),
+            business_type: getBusinessType(row['business_type'] || row['Loại hình'], dbSupp?.business_type || []),
+            notes: getStr(row['notes'] || row['Ghi chú'], dbSupp?.notes || ''),
+            is_active: getBool(row['is_active'] || row['Trạng thái hoạt động'] || row['Kích hoạt'], dbSupp?.is_active ?? true),
+            created_at: dbSupp?.created_at || new Date().toISOString()
+          };
+
+          if (!mergedSupp.supplier_name) {
+            invalidRows.push({ rowNum: i + 2, reason: 'Tên nhà cung cấp trống' });
+            continue;
+          }
+
+          suppliersToUpsert.push(mergedSupp);
+        }
+
+        if (suppliersToUpsert.length === 0) {
+          messageApi.error({ content: 'Không có dòng dữ liệu hợp lệ nào để import!', key: 'importSuppliers' });
+          return;
+        }
+
+        messageApi.loading({ content: `Đang tải ${suppliersToUpsert.length} nhà cung cấp lên database...`, key: 'importSuppliers' });
+
+        const { error: upsertError } = await supabase
+          .from('master_suppliers')
+          .upsert(suppliersToUpsert);
+
+        if (upsertError) throw upsertError;
+
+        if (invalidRows.length > 0) {
+          messageApi.warning({
+            content: `Đã import thành công ${suppliersToUpsert.length} dòng. Bỏ qua ${invalidRows.length} dòng không hợp lệ!`,
+            key: 'importSuppliers',
+            duration: 6
+          });
+        } else {
+          messageApi.success({
+            content: `Đã import thành công tất cả ${suppliersToUpsert.length} nhà cung cấp!`,
+            key: 'importSuppliers',
+            duration: 4
+          });
+        }
+
+        // Local storage cache invalidate
+        localStorage.removeItem('gxp_master_suppliers_cache');
+        localStorage.removeItem('gxp_master_suppliers_cache_timestamp');
+
+        queryClient.invalidateQueries({ queryKey: ['master_suppliers'] });
+      } catch (err: any) {
+        messageApi.error({ content: 'Lỗi import file: ' + err.message, key: 'importSuppliers', duration: 5 });
+      }
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = '';
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      messageApi.loading({ content: 'Đang chuẩn bị dữ liệu xuất Excel...', key: 'exportSuppliers' });
+
+      // Fetch all matching records complying with search and filter
+      let query = supabase
+        .from('master_suppliers')
+        .select('*');
+
+      if (searchText && searchText.trim()) {
+        const q = `%${searchText.trim().toLowerCase()}%`;
+        query = query.or(`supplier_code.ilike.${q},supplier_name.ilike.${q}`);
+      }
+
+      Object.entries(columnFilters).forEach(([key, value]) => {
+        if (!value || value.trim() === '') return;
+        const val = value.trim();
+        if (key === 'supplier_code' || key === 'supplier_name' || key === 'notes') {
+          query = query.ilike(key, `%${val}%`);
+        }
+      });
+
+      query = query.order('supplier_code', { ascending: true });
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        messageApi.warning({ content: 'Không có dữ liệu để xuất!', key: 'exportSuppliers' });
+        return;
+      }
+
+      const excelRows = data.map(item => ({
+        'Mã nhà cung cấp': item.supplier_code,
+        'Tên nhà cung cấp': item.supplier_name,
+        'Loại hình': Array.isArray(item.business_type) ? item.business_type.join(', ') : '',
+        'Ghi chú': item.notes || '',
+        'Trạng thái': item.is_active ? 'Hoạt động' : 'Khóa'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(excelRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Master Suppliers');
+
+      const maxLens = Object.keys(excelRows[0]).map(key => {
+        let max = key.length;
+        excelRows.forEach(row => {
+          const val = String((row as any)[key] || '');
+          if (val.length > max) max = val.length;
+        });
+        return { wch: max + 2 };
+      });
+      worksheet['!cols'] = maxLens;
+
+      XLSX.writeFile(workbook, 'Danh_Sach_Nha_Cung_Cap.xlsx');
+      messageApi.success({ content: 'Xuất file Excel thành công!', key: 'exportSuppliers' });
+    } catch (err: any) {
+      messageApi.error({ content: 'Lỗi xuất file: ' + err.message, key: 'exportSuppliers' });
+    }
+  };
 
   const [searchText, setSearchText] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -544,6 +747,39 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Hidden File Input for Excel Import */}
+          <input
+            type="file"
+            accept=".xlsx, .xls"
+            style={{ display: 'none' }}
+            onChange={handleImportExcel}
+            ref={fileInputRef}
+          />
+
+          <Button
+            icon={<Download size={14} />}
+            onClick={handleDownloadTemplate}
+            style={{ borderRadius: 6 }}
+          >
+            Tải Template
+          </Button>
+
+          <Button
+            icon={<Upload size={14} />}
+            onClick={() => fileInputRef.current?.click()}
+            style={{ borderRadius: 6 }}
+          >
+            Nhập từ Excel
+          </Button>
+
+          <Button
+            icon={<Download size={14} />}
+            onClick={handleExportExcel}
+            style={{ borderRadius: 6 }}
+          >
+            Xuất Excel
+          </Button>
+
           <Tooltip title="Tải lại dữ liệu">
             <Button
               shape="circle"
