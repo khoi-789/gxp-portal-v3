@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import {
@@ -9,9 +9,10 @@ import {
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
-  Plus, Search, Edit3, Trash2, RefreshCw, Link2, Info
+  Plus, Search, Edit3, Trash2, RefreshCw, Link2, Info, Upload, Download
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import * as XLSX from 'xlsx';
 import { ColumnSearchHeader, applyColumnFilters } from '@/lib/columnSearch';
 import TableControls, { ColumnConfig } from '@/components/TableControls';
 import ResizableTitle from '@/components/ResizableTitle';
@@ -122,6 +123,86 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
   const [selectedLabel, setSelectedLabel] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
   const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDownloadTemplate = () => {
+    // Generate simple blank template using XLSX
+    const headers = [
+      {
+        product_item_code: 'Mã sản phẩm (Ví dụ: TT1300364)',
+        label_item_code: 'Mã tem nhãn phụ (Ví dụ: DNNK)',
+        quantity_per_unit: 1
+      }
+    ];
+    const worksheet = XLSX.utils.json_to_sheet(headers);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'SP-Tem Template');
+    XLSX.writeFile(workbook, 'Template_Lien_Ket_SP_Tem.xlsx');
+    messageApi.success('Đã tải xuống template thành công!');
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const data = evt.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json<any>(sheet);
+
+        if (rows.length === 0) {
+          messageApi.warning('File Excel trống!');
+          return;
+        }
+
+        // Validate and map rows
+        const mappingsToInsert = [];
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          const pCode = String(row['product_item_code'] || row['Mã sản phẩm'] || row['Mã SP'] || '').trim();
+          const lCode = String(row['label_item_code'] || row['Mã tem nhãn'] || row['Mã Tem/Nhãn'] || '').trim();
+          const qty = Number(row['quantity_per_unit'] || row['Số lượng / SP'] || row['Số lượng'] || 1);
+
+          if (!pCode || !lCode) {
+            continue; // Skip invalid rows
+          }
+
+          mappingsToInsert.push({
+            product_item_code: pCode,
+            label_item_code: lCode,
+            quantity_per_unit: isNaN(qty) ? 1 : qty
+          });
+        }
+
+        if (mappingsToInsert.length === 0) {
+          messageApi.warning('Không tìm thấy dòng dữ liệu hợp lệ trong file!');
+          return;
+        }
+
+        messageApi.loading({ content: 'Đang tải dữ liệu lên database...', key: 'importMapping' });
+
+        // Batch upsert to product_label_mappings
+        const { error } = await supabase
+          .from('product_label_mappings')
+          .upsert(mappingsToInsert);
+
+        if (error) {
+          throw error;
+        }
+
+        messageApi.success({ content: `Đã import thành công ${mappingsToInsert.length} liên kết sản phẩm - tem nhãn!`, key: 'importMapping', duration: 3 });
+        queryClient.invalidateQueries({ queryKey: ['product_label_mappings'] });
+      } catch (err: any) {
+        messageApi.error({ content: 'Lỗi import file: ' + err.message, key: 'importMapping', duration: 4 });
+      }
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = '';
+  };
 
   const { prefs, save: savePrefs, setColumnWidth } = useTablePreferences(
     'product_label_mappings_table',
@@ -510,6 +591,31 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
               style={{ background: viewMode === 'detailed' ? '#0d9488' : '#94a3b8' }}
             />
           </div>
+
+          {/* Hidden File Input for Excel Import */}
+          <input
+            type="file"
+            accept=".xlsx, .xls"
+            style={{ display: 'none' }}
+            onChange={handleImportExcel}
+            ref={fileInputRef}
+          />
+
+          <Button
+            icon={<Download size={14} />}
+            onClick={handleDownloadTemplate}
+            style={{ borderRadius: 6 }}
+          >
+            Tải Template
+          </Button>
+
+          <Button
+            icon={<Upload size={14} />}
+            onClick={() => fileInputRef.current?.click()}
+            style={{ borderRadius: 6 }}
+          >
+            Nhập từ Excel
+          </Button>
 
           <Button
             icon={<RefreshCw size={14} />}

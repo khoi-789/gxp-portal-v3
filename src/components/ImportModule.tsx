@@ -11,7 +11,7 @@ import type { ColumnsType } from 'antd/es/table';
 import {
   Search, RefreshCw, Trash2, FileDown, Eye, CheckCircle2,
   AlertTriangle, Clock, Filter, Plus, FileText, ExternalLink,
-  Calendar, PlusCircle, AlertCircle, Edit, Info
+  Calendar, PlusCircle, AlertCircle, Edit, Info, Copy, Folder
 } from 'lucide-react';
 import { ColumnSearchHeader, applyColumnFilters } from '@/lib/columnSearch';
 import TableControls, { ColumnConfig } from '@/components/TableControls';
@@ -47,10 +47,13 @@ export interface ShipmentRecord {
   logger_qty: number;
   temp_out_of_range: boolean;
   temp_out_of_range_details: string | null;
-  import_date_lh: string | null;
-  import_date_hn: string | null;
-  import_date_lh_text: string | null;
-  import_date_hn_text: string | null;
+  import_date_lh?: string | null;
+  import_date_hn?: string | null;
+  import_date_lh_text?: string | null;
+  import_date_hn_text?: string | null;
+  target_warehouse?: string | null;
+  actual_import_date_note?: string | null;
+  issues?: { id: string; issue_text: string; resolution_text: string; }[];
   invoice_link: string | null;
   supplier_link: string | null;
   updated_at?: string;
@@ -183,7 +186,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   const [currentPage, setCurrentPage] = useState(1);
 
   // Simulated Persona
-  const [simulatedRole, setSimulatedRole] = useState<'SCM' | 'QA' | 'KHO'>('QA');
+  const [simulatedRole, setSimulatedRole] = useState<'QA_NHAP_KHAU' | 'QA_KHO'>('QA_NHAP_KHAU');
 
   // Master product data for select list (load all for dropdowns)
   const { data: masterItems = [] } = useQuery<any[]>({
@@ -352,10 +355,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       logger_qty: 0,
       temp_out_of_range: false,
       temp_out_of_range_details: null,
-      import_date_lh: null,
-      import_date_hn: null,
-      import_date_lh_text: null,
-      import_date_hn_text: null,
+      target_warehouse: null,
+      actual_import_date_note: null,
+      issues: [],
       invoice_link: null,
       supplier_link: null,
       imp_shipment_items: [],
@@ -445,6 +447,47 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     });
   };
 
+  const handleAddIssue = () => {
+    if (!detailRow) return;
+    const currentIssues = detailRow.issues || [];
+    setDetailRow(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        issues: [
+          ...currentIssues,
+          { id: `issue_${Date.now()}`, issue_text: '', resolution_text: '' }
+        ]
+      };
+    });
+  };
+
+  const handleRemoveIssue = (index: number) => {
+    if (!detailRow) return;
+    const currentIssues = [...(detailRow.issues || [])];
+    currentIssues.splice(index, 1);
+    setDetailRow(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        issues: currentIssues
+      };
+    });
+  };
+
+  const updateIssueField = (index: number, key: string, val: any) => {
+    if (!detailRow) return;
+    const currentIssues = [...(detailRow.issues || [])];
+    currentIssues[index] = { ...currentIssues[index], [key]: val };
+    setDetailRow(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        issues: currentIssues
+      };
+    });
+  };
+
   // Save changes to Supabase
   const handleSave = async () => {
     if (!detailRow) return;
@@ -461,6 +504,13 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     setSaving(true);
     try {
       // 1. Prepare shipment payload (Master)
+      const computedInvoiceLink = detailRow.supplier_code 
+        ? `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${detailRow.supplier_code}`
+        : null;
+      const computedSupplierLink = (detailRow.supplier_code && invoiceNumber)
+        ? `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${detailRow.supplier_code}\\5. THONG TIN NHAP - PHAN PHOI\\1. KIEM NHAP\\${invoiceNumber}`
+        : null;
+
       const shipmentPayload: any = {
         invoice_number: invoiceNumber,
         created_date: detailRow.created_date,
@@ -473,12 +523,11 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
         logger_qty: detailRow.has_data_logger ? detailRow.logger_qty : 0,
         temp_out_of_range: detailRow.temp_out_of_range,
         temp_out_of_range_details: detailRow.temp_out_of_range ? detailRow.temp_out_of_range_details : null,
-        import_date_lh: detailRow.import_date_lh || null,
-        import_date_hn: detailRow.import_date_hn || null,
-        import_date_lh_text: detailRow.import_date_lh_text || null,
-        import_date_hn_text: detailRow.import_date_hn_text || null,
-        invoice_link: detailRow.invoice_link || null,
-        supplier_link: detailRow.supplier_link || null,
+        target_warehouse: detailRow.target_warehouse || null,
+        actual_import_date_note: detailRow.actual_import_date_note || null,
+        issues: detailRow.issues || [],
+        invoice_link: computedInvoiceLink,
+        supplier_link: computedSupplierLink,
         updated_at: new Date().toISOString(),
       };
 
@@ -683,16 +732,20 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       },
     },
     import_dates: {
-      title: <ColumnSearchHeader title="Ngày nhập kho" dataKey="import_date_lh_text" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
+      title: <ColumnSearchHeader title="Ngày nhập kho" dataKey="actual_import_date_note" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
       key: 'import_dates',
       ...resizable('import_dates'),
       render: (_: any, r: ShipmentRecord) => {
-        const lh = renderDate(r.import_date_lh, r.import_date_lh_text);
-        const hn = renderDate(r.import_date_hn, r.import_date_hn_text);
         return (
           <div style={{ fontSize: 11, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <div><span style={{ color: '#64748b' }}>Long Hậu:</span> <strong>{lh}</strong></div>
-            <div><span style={{ color: '#64748b' }}>Hà Nội:</span> <strong>{hn}</strong></div>
+            {r.target_warehouse && (
+              <div>
+                <Tag color={r.target_warehouse === 'Kho Long Hậu' ? 'blue' : 'purple'} style={{ fontSize: 10, margin: 0, padding: '0 4px' }}>
+                  {r.target_warehouse}
+                </Tag>
+              </div>
+            )}
+            <div><strong>{r.actual_import_date_note || '—'}</strong></div>
           </div>
         );
       },
@@ -713,7 +766,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
               onClick={() => handleOpenDetail(r)}
             />
           </Tooltip>
-          {simulatedRole === 'SCM' && (
+          {simulatedRole === 'QA_NHAP_KHAU' && (
             <Tooltip title="Xóa">
               <Popconfirm
                 title="Xóa Invoice"
@@ -830,9 +883,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             </span>
             <Segmented
               options={[
-                { label: 'SCM / Mua hàng', value: 'SCM' },
-                { label: 'QA / Kiểm duyệt', value: 'QA' },
-                { label: 'Warehouse / Kho', value: 'KHO' }
+                { label: 'QA Nhập khẩu', value: 'QA_NHAP_KHAU' },
+                { label: 'QA Kho', value: 'QA_KHO' }
               ]}
               value={simulatedRole}
               onChange={(val) => setSimulatedRole(val as any)}
@@ -850,7 +902,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             >
               Làm mới
             </Button>
-            {simulatedRole === 'SCM' && (
+            {simulatedRole === 'QA_NHAP_KHAU' && (
               <Button
                 type="primary"
                 icon={<Plus size={14} />}
@@ -1009,7 +1061,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 {isNew ? 'Khởi tạo Lô hàng Nhập khẩu' : 'Chi tiết Lô hàng Nhập khẩu'}
               </div>
               <div style={{ fontSize: 11, color: '#64748b', fontWeight: 500 }}>
-                Đang sửa với vai trò: <strong style={{ color: '#0d9488' }}>{simulatedRole}</strong>
+                Đang sửa với vai trò: <strong style={{ color: '#0d9488' }}>{simulatedRole === 'QA_NHAP_KHAU' ? 'QA Nhập khẩu' : 'QA Kho'}</strong>
               </div>
             </div>
           </div>
@@ -1069,18 +1121,18 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                     placeholder="VD: INUK-240025"
                     value={detailRow.invoice_number}
                     onChange={(e) => updateField('invoice_number', e.target.value)}
-                    disabled={!isNew || simulatedRole !== 'SCM'}
+                    disabled={!isNew || simulatedRole !== 'QA_NHAP_KHAU'}
                     style={{ borderRadius: 6 }}
                   />
                 </Col>
 
                 {/* Created Date */}
                 <Col span={12}>
-                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Ngày lập chuyến *</div>
+                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Ngày nhận mail *</div>
                   <DatePicker
                     value={detailRow.created_date ? dayjs(detailRow.created_date) : null}
                     onChange={(date) => updateField('created_date', date ? date.format('YYYY-MM-DD') : '')}
-                    disabled={simulatedRole !== 'SCM'}
+                    disabled={simulatedRole !== 'QA_NHAP_KHAU'}
                     style={{ width: '100%', borderRadius: 6 }}
                     format="DD/MM/YYYY"
                     allowClear={false}
@@ -1089,14 +1141,14 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
                 {/* Supplier Code */}
                 <Col span={12}>
-                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Nhà cung cấp (Hãng) *</div>
+                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>NCC/ Hãng *</div>
                   <Select
                     showSearch
                     placeholder="Chọn hoặc nhập NCC"
                     optionFilterProp="label"
                     value={detailRow.supplier_code || undefined}
                     onChange={(val) => updateField('supplier_code', val)}
-                    disabled={simulatedRole !== 'SCM'}
+                    disabled={simulatedRole !== 'QA_NHAP_KHAU'}
                     style={{ width: '100%' }}
                     options={suppliersList.map(s => ({ value: s, label: s }))}
                     dropdownStyle={{ borderRadius: 8 }}
@@ -1105,25 +1157,69 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
                 {/* Document Links */}
                 <Col span={12}>
-                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Link Folder Invoice</div>
-                  <Input
-                    placeholder="Dán link drive/folder"
-                    value={detailRow.invoice_link || ''}
-                    onChange={(e) => updateField('invoice_link', e.target.value)}
-                    disabled={simulatedRole !== 'SCM'}
-                    style={{ borderRadius: 6 }}
-                  />
+                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Link INV</div>
+                  {(() => {
+                    const link = detailRow.supplier_code 
+                      ? `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${detailRow.supplier_code}`
+                      : '';
+                    return (
+                      <Input
+                        value={link}
+                        placeholder="Chọn NCC để tạo link..."
+                        disabled
+                        style={{ borderRadius: 6, background: '#f8fafc' }}
+                        suffix={
+                          link && (
+                            <Tooltip title="Copy đường dẫn">
+                              <Button
+                                type="text"
+                                size="small"
+                                icon={<Folder size={14} />}
+                                onClick={() => {
+                                  navigator.clipboard.writeText(link);
+                                  messageApi.success('Đã copy đường dẫn Link INV!');
+                                }}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              />
+                            </Tooltip>
+                          )
+                        }
+                      />
+                    );
+                  })()}
                 </Col>
 
                 <Col span={12}>
                   <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Link hãng</div>
-                  <Input
-                    placeholder="Dán link drive/website"
-                    value={detailRow.supplier_link || ''}
-                    onChange={(e) => updateField('supplier_link', e.target.value)}
-                    disabled={simulatedRole !== 'SCM'}
-                    style={{ borderRadius: 6 }}
-                  />
+                  {(() => {
+                    const link = (detailRow.supplier_code && detailRow.invoice_number)
+                      ? `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${detailRow.supplier_code}\\5. THONG TIN NHAP - PHAN PHOI\\1. KIEM NHAP\\${detailRow.invoice_number}`
+                      : '';
+                    return (
+                      <Input
+                        value={link}
+                        placeholder="Nhập Invoice & NCC để tạo link..."
+                        disabled
+                        style={{ borderRadius: 6, background: '#f8fafc' }}
+                        suffix={
+                          link && (
+                            <Tooltip title="Copy đường dẫn">
+                              <Button
+                                type="text"
+                                size="small"
+                                icon={<Folder size={14} />}
+                                onClick={() => {
+                                  navigator.clipboard.writeText(link);
+                                  messageApi.success('Đã copy đường dẫn Link Hãng!');
+                                }}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              />
+                            </Tooltip>
+                          )
+                        }
+                      />
+                    );
+                  })()}
                 </Col>
               </Row>
             </div>
@@ -1141,7 +1237,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                   <Select
                     value={detailRow.coa_status}
                     onChange={(val) => updateField('coa_status', val)}
-                    disabled={simulatedRole !== 'QA'}
+                    disabled={simulatedRole !== 'QA_NHAP_KHAU'}
                     style={{ width: '100%' }}
                     options={COA_STATUS_OPTIONS}
                   />
@@ -1153,7 +1249,6 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                   <Select
                     value={detailRow.label_status}
                     onChange={(val) => updateField('label_status', val)}
-                    disabled={simulatedRole !== 'QA'}
                     style={{ width: '100%' }}
                     options={LABEL_STATUS_OPTIONS}
                   />
@@ -1165,7 +1260,6 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                   <Select
                     value={detailRow.progress_status}
                     onChange={(val) => updateField('progress_status', val)}
-                    disabled={simulatedRole !== 'QA'}
                     style={{ width: '100%' }}
                     options={PROGRESS_STATUS_OPTIONS}
                   />
@@ -1178,9 +1272,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                       <Switch
                         checked={detailRow.has_data_logger}
                         onChange={(val) => updateField('has_data_logger', val)}
-                        disabled={simulatedRole !== 'QA'}
                       />
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>Có theo dõi Data Logger</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>Data Logger kèm hàng</span>
                     </div>
 
                     {detailRow.has_data_logger && (
@@ -1191,7 +1284,6 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                             placeholder="VD: TempTale 4"
                             value={detailRow.data_logger_type || ''}
                             onChange={(e) => updateField('data_logger_type', e.target.value)}
-                            disabled={simulatedRole !== 'QA'}
                             size="small"
                             style={{ width: 120, borderRadius: 4 }}
                           />
@@ -1202,7 +1294,6 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                             min={0}
                             value={detailRow.logger_qty}
                             onChange={(val) => updateField('logger_qty', val || 0)}
-                            disabled={simulatedRole !== 'QA'}
                             size="small"
                             style={{ width: 80, borderRadius: 4 }}
                           />
@@ -1228,7 +1319,6 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                       <Switch
                         checked={detailRow.temp_out_of_range}
                         onChange={(val) => updateField('temp_out_of_range', val)}
-                        disabled={simulatedRole !== 'QA'}
                       />
                       <span style={{ fontSize: 12, fontWeight: 600, color: detailRow.temp_out_of_range ? '#991b1b' : '#334155' }}>
                         🔴 NHIỆT ĐỘ VƯỢT NGƯỠNG (Out of Range)
@@ -1245,7 +1335,6 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           placeholder="Mô tả chi tiết thời gian và mức lệch nhiệt để QA làm báo cáo đánh giá..."
                           value={detailRow.temp_out_of_range_details || ''}
                           onChange={(e) => updateField('temp_out_of_range_details', e.target.value)}
-                          disabled={simulatedRole !== 'QA'}
                           style={{ borderRadius: 6 }}
                         />
                       </div>
@@ -1262,76 +1351,32 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
               </h3>
 
               <Row gutter={[16, 16]}>
-                {/* Long Hau Warehouse Date */}
+                {/* Warehouse Dropdown */}
                 <Col span={12}>
-                  <div style={{
-                    padding: 10,
-                    borderRadius: 8,
-                    background: '#fafafa',
-                    border: '1px solid #f1f5f9'
-                  }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 8 }}>
-                      Kho Long Hậu (LH)
-                    </span>
-                    <Space direction="vertical" style={{ width: '100%' }} size={8}>
-                      <div>
-                        <span style={{ fontSize: 10, color: '#64748b', display: 'block', marginBottom: 2 }}>Chọn ngày:</span>
-                        <DatePicker
-                          value={detailRow.import_date_lh ? dayjs(detailRow.import_date_lh) : null}
-                          onChange={(date) => updateField('import_date_lh', date ? date.format('YYYY-MM-DD') : null)}
-                          disabled={simulatedRole !== 'KHO'}
-                          style={{ width: '100%', borderRadius: 6 }}
-                          format="DD/MM/YYYY"
-                        />
-                      </div>
-                      <div>
-                        <span style={{ fontSize: 10, color: '#64748b', display: 'block', marginBottom: 2 }}>Hoặc text ghi chú khác:</span>
-                        <Input
-                          placeholder="VD: Đã nhập kho LH, Đang vận chuyển..."
-                          value={detailRow.import_date_lh_text || ''}
-                          onChange={(e) => updateField('import_date_lh_text', e.target.value)}
-                          disabled={simulatedRole !== 'KHO'}
-                          style={{ borderRadius: 6 }}
-                        />
-                      </div>
-                    </Space>
-                  </div>
+                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Kho</div>
+                  <Select
+                    placeholder="Chọn Kho nhận hàng"
+                    value={detailRow.target_warehouse || undefined}
+                    onChange={(val) => updateField('target_warehouse', val)}
+                    disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                    style={{ width: '100%' }}
+                    options={[
+                      { value: 'Kho Long Hậu', label: 'Kho Long Hậu' },
+                      { value: 'Kho Hưng Yên', label: 'Kho Hưng Yên' }
+                    ]}
+                    allowClear
+                  />
                 </Col>
 
-                {/* Hanoi Warehouse Date */}
+                {/* Actual Import Date Note */}
                 <Col span={12}>
-                  <div style={{
-                    padding: 10,
-                    borderRadius: 8,
-                    background: '#fafafa',
-                    border: '1px solid #f1f5f9'
-                  }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 8 }}>
-                      Kho Hà Nội (HN)
-                    </span>
-                    <Space direction="vertical" style={{ width: '100%' }} size={8}>
-                      <div>
-                        <span style={{ fontSize: 10, color: '#64748b', display: 'block', marginBottom: 2 }}>Chọn ngày:</span>
-                        <DatePicker
-                          value={detailRow.import_date_hn ? dayjs(detailRow.import_date_hn) : null}
-                          onChange={(date) => updateField('import_date_hn', date ? date.format('YYYY-MM-DD') : null)}
-                          disabled={simulatedRole !== 'KHO'}
-                          style={{ width: '100%', borderRadius: 6 }}
-                          format="DD/MM/YYYY"
-                        />
-                      </div>
-                      <div>
-                        <span style={{ fontSize: 10, color: '#64748b', display: 'block', marginBottom: 2 }}>Hoặc text ghi chú khác:</span>
-                        <Input
-                          placeholder="VD: Đã nhập kho HN..."
-                          value={detailRow.import_date_hn_text || ''}
-                          onChange={(e) => updateField('import_date_hn_text', e.target.value)}
-                          disabled={simulatedRole !== 'KHO'}
-                          style={{ borderRadius: 6 }}
-                        />
-                      </div>
-                    </Space>
-                  </div>
+                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Ngày nhập (Ghi chú thực tế)</div>
+                  <Input
+                    placeholder="VD: Đã nhập kho LH 25/06/2026, Đang vận chuyển..."
+                    value={detailRow.actual_import_date_note || ''}
+                    onChange={(e) => updateField('actual_import_date_note', e.target.value)}
+                    style={{ borderRadius: 6 }}
+                  />
                 </Col>
               </Row>
             </div>
@@ -1342,7 +1387,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#334155', borderLeft: '3px solid #14b8a6', paddingLeft: 8 }}>
                   DANH SÁCH CHI TIẾT SẢN PHẨM (DETAIL)
                 </h3>
-                {simulatedRole === 'SCM' && (
+                {simulatedRole === 'QA_NHAP_KHAU' && (
                   <Button
                     type="dashed"
                     size="small"
@@ -1358,7 +1403,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
               {detailRow.imp_shipment_items.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '24px 8px', border: '1px dashed #cbd5e1', borderRadius: 8, color: '#94a3b8' }}>
                   Không có sản phẩm nào trong chuyến hàng này.
-                  {simulatedRole === 'SCM' && ' Bấm "Thêm sản phẩm" ở trên để tạo mới.'}
+                  {simulatedRole === 'QA_NHAP_KHAU' && ' Bấm "Thêm sản phẩm" ở trên để tạo mới.'}
                 </div>
               ) : (
                 <Space direction="vertical" style={{ width: '100%' }} size={12}>
@@ -1374,7 +1419,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                       }}
                     >
                       {/* Delete button (SCM only) */}
-                      {simulatedRole === 'SCM' && (
+                      {simulatedRole === 'QA_NHAP_KHAU' && (
                         <Button
                           type="text"
                           danger
@@ -1397,7 +1442,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                             optionFilterProp="label"
                             value={item.item_code || undefined}
                             onChange={(val) => updateItemField(idx, 'item_code', val)}
-                            disabled={simulatedRole !== 'SCM'}
+                            disabled={simulatedRole !== 'QA_NHAP_KHAU'}
                             style={{ width: '100%' }}
                             options={masterItems.map(m => ({ value: m.item_code, label: `[${m.item_code}] ${m.item_name}` }))}
                             dropdownStyle={{ borderRadius: 8 }}
@@ -1415,7 +1460,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                             placeholder="Nhập tên chi tiết thuốc, hàm lượng, đóng gói..."
                             value={item.item_name}
                             onChange={(e) => updateItemField(idx, 'item_name', e.target.value)}
-                            disabled={simulatedRole !== 'SCM'}
+                            disabled={simulatedRole !== 'QA_NHAP_KHAU'}
                             style={{ borderRadius: 6, paddingRight: 24 }}
                           />
                         </Col>
@@ -1457,33 +1502,74 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                             })()}
                           </Col>
                         )}
+                      </Row>
+                    </div>
+                  ))}
+                </Space>
+              )}
+            </div>
 
-                        {/* Issue Notes (QA) */}
+            {/* PART 5: SHIPMENT ISSUES LIST */}
+            <div style={{ background: 'white', padding: 18, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#334155', borderLeft: '3px solid #ef4444', paddingLeft: 8 }}>
+                  DANH SÁCH VẤN ĐỀ & HƯỚNG XỬ LÝ (QA)
+                </h3>
+                <Button
+                  type="dashed"
+                  size="small"
+                  icon={<PlusCircle size={14} />}
+                  onClick={handleAddIssue}
+                  style={{ borderRadius: 6, color: '#dc2626', borderColor: '#dc2626' }}
+                >
+                  Thêm vấn đề
+                </Button>
+              </div>
+
+              {(detailRow.issues || []).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px 8px', border: '1px dashed #fca5a5', borderRadius: 8, color: '#94a3b8', fontSize: 12 }}>
+                  Không có vấn đề phát sinh nào được ghi nhận cho hóa đơn này.
+                </div>
+              ) : (
+                <Space direction="vertical" style={{ width: '100%' }} size={10}>
+                  {(detailRow.issues || []).map((issue, idx) => (
+                    <div
+                      key={issue.id || `issue-${idx}`}
+                      style={{
+                        padding: 12,
+                        border: '1px solid #fee2e2',
+                        borderRadius: 8,
+                        background: '#fff5f5',
+                        position: 'relative'
+                      }}
+                    >
+                      <Button
+                        type="text"
+                        danger
+                        size="small"
+                        icon={<Trash2 size={13} />}
+                        style={{ position: 'absolute', top: 6, right: 6, zIndex: 10 }}
+                        onClick={() => handleRemoveIssue(idx)}
+                      />
+
+                      <Row gutter={[12, 12]}>
                         <Col span={12}>
-                          <div style={{ marginBottom: 4, fontSize: 10, fontWeight: 600, color: '#475569' }}>
-                            Vấn đề phát sinh (QA ghi nhận)
-                          </div>
+                          <div style={{ marginBottom: 4, fontSize: 10, fontWeight: 600, color: '#991b1b' }}>Vấn đề *</div>
                           <Input.TextArea
                             rows={1}
-                            placeholder="VD: Lệch số lô trên hộp so với COA"
-                            value={item.issue_notes || ''}
-                            onChange={(e) => updateItemField(idx, 'issue_notes', e.target.value)}
-                            disabled={simulatedRole !== 'QA'}
+                            placeholder="Nhập chi tiết vấn đề phát sinh..."
+                            value={issue.issue_text || ''}
+                            onChange={(e) => updateIssueField(idx, 'issue_text', e.target.value)}
                             style={{ borderRadius: 6 }}
                           />
                         </Col>
-
-                        {/* Resolution Notes (QA) */}
                         <Col span={12}>
-                          <div style={{ marginBottom: 4, fontSize: 10, fontWeight: 600, color: '#475569' }}>
-                            Hướng xử lý / Ghi chú (QA duyệt)
-                          </div>
+                          <div style={{ marginBottom: 4, fontSize: 10, fontWeight: 600, color: '#991b1b' }}>Hướng xử lý</div>
                           <Input.TextArea
                             rows={1}
-                            placeholder="VD: Yêu cầu NCC gửi COA bản gốc đính kèm"
-                            value={item.resolution_notes || ''}
-                            onChange={(e) => updateItemField(idx, 'resolution_notes', e.target.value)}
-                            disabled={simulatedRole !== 'QA'}
+                            placeholder="Nhập hướng xử lý..."
+                            value={issue.resolution_text || ''}
+                            onChange={(e) => updateIssueField(idx, 'resolution_text', e.target.value)}
                             style={{ borderRadius: 6 }}
                           />
                         </Col>
