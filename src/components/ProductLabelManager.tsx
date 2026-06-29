@@ -145,6 +145,8 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
     const file = e.target.files?.[0];
     if (!file) return;
 
+    messageApi.loading({ content: 'Đang đọc và kiểm tra file Excel...', key: 'importMapping' });
+
     const reader = new FileReader();
     reader.onload = async (evt) => {
       try {
@@ -155,20 +157,50 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
         const rows = XLSX.utils.sheet_to_json<any>(sheet);
 
         if (rows.length === 0) {
-          messageApi.warning('File Excel trống!');
+          messageApi.warning({ content: 'File Excel trống!', key: 'importMapping' });
           return;
         }
 
+        // Fetch all valid item codes from DB for validation
+        const { data: allDbItems, error: dbError } = await supabase
+          .from('master_items')
+          .select('item_code');
+
+        if (dbError) {
+          throw new Error('Không thể tải danh mục sản phẩm để đối chiếu: ' + dbError.message);
+        }
+
+        const dbCodes = new Set((allDbItems || []).map(x => String(x.item_code).trim()));
+
         // Validate and map rows
         const mappingsToInsert = [];
+        const invalidRows = [];
+
         for (let i = 0; i < rows.length; i++) {
           const row = rows[i];
           const pCode = String(row['product_item_code'] || row['Mã sản phẩm'] || row['Mã SP'] || '').trim();
           const lCode = String(row['label_item_code'] || row['Mã tem nhãn'] || row['Mã Tem/Nhãn'] || '').trim();
           const qty = Number(row['quantity_per_unit'] || row['Số lượng / SP'] || row['Số lượng'] || 1);
 
+          if (!pCode && !lCode) {
+            continue; // Skip completely empty rows
+          }
+
+          const rowNum = i + 2; // Excel row starts at 2 (1-based + header)
+
           if (!pCode || !lCode) {
-            continue; // Skip invalid rows
+            invalidRows.push({ rowNum, pCode, lCode, reason: 'Mã sản phẩm hoặc mã tem nhãn bị trống' });
+            continue;
+          }
+
+          if (!dbCodes.has(pCode)) {
+            invalidRows.push({ rowNum, pCode, lCode, reason: `Mã sản phẩm [${pCode}] không tồn tại trong danh mục Master Items` });
+            continue;
+          }
+
+          if (!dbCodes.has(lCode)) {
+            invalidRows.push({ rowNum, pCode, lCode, reason: `Mã tem/nhãn [${lCode}] không tồn tại trong danh mục Master Items` });
+            continue;
           }
 
           mappingsToInsert.push({
@@ -179,11 +211,16 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
         }
 
         if (mappingsToInsert.length === 0) {
-          messageApi.warning('Không tìm thấy dòng dữ liệu hợp lệ trong file!');
+          const firstErr = invalidRows.length > 0 ? ` (Dòng ${invalidRows[0].rowNum}: ${invalidRows[0].reason})` : '';
+          messageApi.error({
+            content: `Không có liên kết nào hợp lệ để import!${firstErr}`,
+            key: 'importMapping',
+            duration: 6
+          });
           return;
         }
 
-        messageApi.loading({ content: 'Đang tải dữ liệu lên database...', key: 'importMapping' });
+        messageApi.loading({ content: `Đang tải ${mappingsToInsert.length} dòng dữ liệu lên database...`, key: 'importMapping' });
 
         // Batch upsert to product_label_mappings
         const { error } = await supabase
@@ -194,10 +231,24 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
           throw error;
         }
 
-        messageApi.success({ content: `Đã import thành công ${mappingsToInsert.length} liên kết sản phẩm - tem nhãn!`, key: 'importMapping', duration: 3 });
+        if (invalidRows.length > 0) {
+          const sample = invalidRows.slice(0, 3).map(r => `Dòng ${r.rowNum} (${r.reason})`).join('; ');
+          messageApi.warning({
+            content: `Đã import ${mappingsToInsert.length} dòng. Bỏ qua ${invalidRows.length} dòng không hợp lệ: ${sample}...`,
+            key: 'importMapping',
+            duration: 8
+          });
+        } else {
+          messageApi.success({
+            content: `Đã import thành công tất cả ${mappingsToInsert.length} liên kết sản phẩm - tem nhãn!`,
+            key: 'importMapping',
+            duration: 4
+          });
+        }
+        
         queryClient.invalidateQueries({ queryKey: ['product_label_mappings'] });
       } catch (err: any) {
-        messageApi.error({ content: 'Lỗi import file: ' + err.message, key: 'importMapping', duration: 4 });
+        messageApi.error({ content: 'Lỗi import file: ' + err.message, key: 'importMapping', duration: 5 });
       }
     };
     reader.readAsBinaryString(file);
