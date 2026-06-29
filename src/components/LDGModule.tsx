@@ -17,6 +17,7 @@ import TableControls, { ColumnConfig } from '@/components/TableControls';
 import ResizableTitle from '@/components/ResizableTitle';
 import { useTablePreferences } from '@/lib/useTablePreferences';
 import dayjs from 'dayjs';
+import { syncMasterData } from '@/lib/masterDataSync';
 import { supabase } from '@/lib/supabase';
 
 /* ──────────────────────────────────────────────────
@@ -132,20 +133,49 @@ export default function LDGModule({ userId = 'default' }: { userId?: string }) {
   const [currentPage, setCurrentPage] = useState(1);
 
   // Master Data (load-all for dropdowns)
-  const { data: masterItems = [] } = useQuery({
+  const { data: masterItems = [] } = useQuery<any[]>({
     queryKey: ['master-items-dropdown'],
     queryFn: async () => {
-      const { data } = await supabase.from('master_items').select('item_code, item_name, supplier_code').eq('is_active', true);
-      return data || [];
+      const list = await syncMasterData<any>({
+        table: 'master_items',
+        keyField: 'item_code',
+        storageKey: 'gxp_master_items_cache'
+      });
+      return list.filter(x => x.is_active);
+    },
+    initialData: () => {
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem('gxp_master_items_cache');
+        if (raw) {
+          try {
+            return JSON.parse(raw).filter((x: any) => x.is_active);
+          } catch {}
+        }
+      }
+      return undefined;
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: masterSuppliers = [] } = useQuery({
+  const { data: masterSuppliers = [] } = useQuery<any[]>({
     queryKey: ['master-suppliers-dropdown'],
     queryFn: async () => {
-      const { data } = await supabase.from('master_suppliers').select('supplier_code, supplier_name').order('supplier_code', { ascending: true });
-      return data || [];
+      return syncMasterData<any>({
+        table: 'master_suppliers',
+        keyField: 'supplier_code',
+        storageKey: 'gxp_master_suppliers_cache'
+      });
+    },
+    initialData: () => {
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem('gxp_master_suppliers_cache');
+        if (raw) {
+          try {
+            return JSON.parse(raw);
+          } catch {}
+        }
+      }
+      return undefined;
     },
     staleTime: 5 * 60 * 1000,
   });

@@ -18,6 +18,7 @@ import TableControls, { ColumnConfig } from '@/components/TableControls';
 import ResizableTitle from '@/components/ResizableTitle';
 import { useTablePreferences } from '@/lib/useTablePreferences';
 import dayjs from 'dayjs';
+import { syncMasterData } from '@/lib/masterDataSync';
 import { supabase } from '@/lib/supabase';
 
 /* ──────────────────────────────────────────────────
@@ -185,21 +186,50 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   const [simulatedRole, setSimulatedRole] = useState<'SCM' | 'QA' | 'KHO'>('QA');
 
   // Master product data for select list (load all for dropdowns)
-  const { data: masterItems = [] } = useQuery({
+  const { data: masterItems = [] } = useQuery<any[]>({
     queryKey: ['master-items-dropdown'],
     queryFn: async () => {
-      const { data } = await supabase.from('master_items').select('item_code, item_name, supplier_code').eq('is_active', true);
-      return data || [];
+      const list = await syncMasterData<any>({
+        table: 'master_items',
+        keyField: 'item_code',
+        storageKey: 'gxp_master_items_cache'
+      });
+      return list.filter(x => x.is_active);
+    },
+    initialData: () => {
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem('gxp_master_items_cache');
+        if (raw) {
+          try {
+            return JSON.parse(raw).filter((x: any) => x.is_active);
+          } catch {}
+        }
+      }
+      return undefined;
     },
     staleTime: 5 * 60 * 1000,
   });
 
   // Product label mappings
-  const { data: labelMappings = [] } = useQuery({
+  const { data: labelMappings = [] } = useQuery<any[]>({
     queryKey: ['label-mappings'],
     queryFn: async () => {
-      const { data } = await supabase.from('product_label_mappings').select('*');
-      return data || [];
+      return syncMasterData<any>({
+        table: 'product_label_mappings',
+        keyField: 'id',
+        storageKey: 'gxp_product_label_mappings_cache'
+      });
+    },
+    initialData: () => {
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem('gxp_product_label_mappings_cache');
+        if (raw) {
+          try {
+            return JSON.parse(raw);
+          } catch {}
+        }
+      }
+      return undefined;
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -255,11 +285,34 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       });
   }, [labelMappings, masterItems]);
 
-  // Unique suppliers from current page data
+  // Master suppliers list
+  const { data: masterSuppliers = [] } = useQuery<any[]>({
+    queryKey: ['master-suppliers-dropdown'],
+    queryFn: async () => {
+      return syncMasterData<any>({
+        table: 'master_suppliers',
+        keyField: 'supplier_code',
+        storageKey: 'gxp_master_suppliers_cache'
+      });
+    },
+    initialData: () => {
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem('gxp_master_suppliers_cache');
+        if (raw) {
+          try {
+            return JSON.parse(raw);
+          } catch {}
+        }
+      }
+      return undefined;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Unique suppliers from master data
   const suppliersList = useMemo(() => {
-    const set = new Set(rawData.map((r: any) => r.supplier_code).filter(Boolean));
-    return Array.from(set).sort();
-  }, [rawData]);
+    return masterSuppliers.map((s: any) => s.supplier_code).filter(Boolean).sort();
+  }, [masterSuppliers]);
 
   // Handle column filter change - reset page
   const handleColumnFilter = (key: string, value: string) => {

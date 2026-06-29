@@ -17,6 +17,7 @@ import TableControls, { ColumnConfig } from '@/components/TableControls';
 import ResizableTitle from '@/components/ResizableTitle';
 import { useTablePreferences } from '@/lib/useTablePreferences';
 import dayjs from 'dayjs';
+import { syncMasterData } from '@/lib/masterDataSync';
 import { supabase } from '@/lib/supabase';
 
 /* ──────────────────────────────────────────────────
@@ -335,13 +336,12 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
   const recalculateData = async () => {
     setLoading(true);
     try {
-      // 1. Tải danh mục sản phẩm từ Supabase
-      const { data: masterItems, error: masterError } = await supabase
-        .from('master_items')
-        .select('item_code, gross_weight, pallet_qty');
-
-      if (masterError) throw new Error(masterError.message);
-      if (!masterItems) return;
+      // 1. Tải danh mục sản phẩm từ cache/Supabase
+      const masterItems = await syncMasterData<any>({
+        table: 'master_items',
+        keyField: 'item_code',
+        storageKey: 'gxp_master_items_cache'
+      });
 
       const masterMap = new Map(masterItems.map(m => [m.item_code, m]));
 

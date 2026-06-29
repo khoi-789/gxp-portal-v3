@@ -13,6 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { MasterItem } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
+import { syncMasterData } from '@/lib/masterDataSync';
 import { ColumnSearchHeader, applyColumnFilters } from '@/lib/columnSearch';
 import TableControls, { ColumnConfig } from '@/components/TableControls';
 import ResizableTitle from '@/components/ResizableTitle';
@@ -267,13 +268,10 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
   const { data: suppliersList = [] } = useQuery<any[]>({
     queryKey: ['master_suppliers_list'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('master_suppliers')
-        .select('supplier_code, supplier_name')
-        .order('supplier_code', { ascending: true });
-      if (error) throw error;
-      return data || [];
-    }
+      const items = await syncMasterData({ table: 'master_suppliers', keyField: 'supplier_code', storageKey: 'gxp_master_suppliers_cache' });
+      return items.map((s: any) => ({ supplier_code: s.supplier_code, supplier_name: s.supplier_name }));
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({
