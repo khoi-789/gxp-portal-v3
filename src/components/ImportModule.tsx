@@ -1314,7 +1314,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
               <Row gutter={[16, 16]}>
                 {/* COA Status */}
-                <Col span={12}>
+                <Col span={4}>
                   <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Trạng thái COA</div>
                   <Select
                     value={detailRow.coa_status}
@@ -1326,7 +1326,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 </Col>
 
                 {/* Progress Status */}
-                <Col span={12}>
+                <Col span={4}>
                   <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Tiến độ tổng</div>
                   <Select
                     value={detailRow.progress_status}
@@ -1337,81 +1337,91 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 </Col>
 
                 {/* Has Data Logger */}
-                <Col span={24}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#f8fafc', padding: 12, borderRadius: 8 }}>
+                <Col span={8}>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 6,
+                    background: '#f8fafc',
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    border: '1px solid #f1f5f9',
+                    minHeight: 58,
+                    justifyContent: 'center'
+                  }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <Switch
                         checked={detailRow.has_data_logger}
                         onChange={(val) => updateField('has_data_logger', val)}
+                        size="small"
                       />
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>Data Logger kèm hàng</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: '#334155' }}>Data Logger kèm hàng</span>
                     </div>
 
                     {detailRow.has_data_logger && (
-                      <Space size="middle" style={{ marginLeft: 16 }}>
-                        <div>
-                          <span style={{ fontSize: 11, color: '#64748b', marginRight: 6 }}>Loại logger:</span>
-                          <Input
-                            placeholder="VD: TempTale 4"
-                            value={detailRow.data_logger_type || ''}
-                            onChange={(e) => updateField('data_logger_type', e.target.value)}
-                            size="small"
-                            style={{ width: 120, borderRadius: 4 }}
-                          />
-                        </div>
-                        <div>
-                          <span style={{ fontSize: 11, color: '#64748b', marginRight: 6 }}>Số lượng:</span>
-                          <InputNumber
-                            min={0}
-                            value={detailRow.logger_qty}
-                            onChange={(val) => updateField('logger_qty', val || 0)}
-                            size="small"
-                            style={{ width: 80, borderRadius: 4 }}
-                          />
-                        </div>
-                      </Space>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
+                        <Input
+                          placeholder="Loại logger"
+                          value={detailRow.data_logger_type || ''}
+                          onChange={(e) => updateField('data_logger_type', e.target.value)}
+                          size="small"
+                          style={{ flex: 1, borderRadius: 4, fontSize: 11 }}
+                        />
+                        <InputNumber
+                          min={0}
+                          placeholder="SL"
+                          value={detailRow.logger_qty}
+                          onChange={(val) => updateField('logger_qty', val || 0)}
+                          size="small"
+                          style={{ width: 60, borderRadius: 4, fontSize: 11 }}
+                        />
+                      </div>
                     )}
                   </div>
                 </Col>
 
                 {/* Temperature Out of Range */}
-                <Col span={24}>
+                <Col span={8}>
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 8,
+                    gap: 6,
                     background: detailRow.temp_out_of_range ? '#fef2f2' : '#f8fafc',
-                    padding: 12,
+                    padding: '8px 12px',
                     borderRadius: 8,
                     border: detailRow.temp_out_of_range ? '1px dashed #fca5a5' : '1px solid #f1f5f9',
+                    minHeight: 58,
+                    justifyContent: 'center',
                     transition: 'all 200ms ease'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <Switch
                         checked={detailRow.temp_out_of_range}
                         onChange={(val) => updateField('temp_out_of_range', val)}
+                        size="small"
                       />
-                      <span style={{ fontSize: 12, fontWeight: 600, color: detailRow.temp_out_of_range ? '#991b1b' : '#334155' }}>
-                        🔴 NHIỆT ĐỘ VƯỢT NGƯỠNG (Out of Range)
+                      <span style={{ fontSize: 11, fontWeight: 600, color: detailRow.temp_out_of_range ? '#991b1b' : '#334155' }}>
+                        🔴 Nhiệt độ vượt ngưỡng
                       </span>
                     </div>
-
-                    {detailRow.temp_out_of_range && (
-                      <div>
-                        <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#991b1b' }}>
-                          Chi tiết chênh lệch nhiệt độ (VD: max 30.5°C trong 4h) *
-                        </div>
-                        <Input.TextArea
-                          rows={2}
-                          placeholder="Mô tả chi tiết thời gian và mức lệch nhiệt để QA làm báo cáo đánh giá..."
-                          value={detailRow.temp_out_of_range_details || ''}
-                          onChange={(e) => updateField('temp_out_of_range_details', e.target.value)}
-                          style={{ borderRadius: 6 }}
-                        />
-                      </div>
-                    )}
                   </div>
                 </Col>
+
+                {/* Temperature Out of Range Details (Full width next row if active) */}
+                {detailRow.temp_out_of_range && (
+                  <Col span={24}>
+                    <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#991b1b' }}>
+                      Chi tiết chênh lệch nhiệt độ (VD: max 30.5°C trong 4h) *
+                    </div>
+                    <Input.TextArea
+                      rows={2}
+                      placeholder="Mô tả chi tiết thời gian và mức lệch nhiệt để QA làm báo cáo đánh giá..."
+                      value={detailRow.temp_out_of_range_details || ''}
+                      onChange={(e) => updateField('temp_out_of_range_details', e.target.value)}
+                      style={{ borderRadius: 6 }}
+                    />
+                  </Col>
+                )}
               </Row>
             </div>
 
@@ -1501,9 +1511,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                         />
                       )}
 
-                      <Row gutter={[12, 12]}>
+                      <Row gutter={[12, 12]} align="middle">
                         {/* Match Item Code */}
-                        <Col span={6}>
+                        <Col span={4}>
                           <div style={{ marginBottom: 4, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
                             Mã Danh Mục (Item Code)
                           </div>
@@ -1523,7 +1533,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                         </Col>
 
                         {/* Item Name (Free text / Auto filled) */}
-                        <Col span={18}>
+                        <Col span={10}>
                           <div style={{ marginBottom: 4, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
                             Tên sản phẩm thực tế nhập *
                           </div>
@@ -1537,9 +1547,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                         </Col>
 
                         {/* Required Stamps/Labels (Realtime from master data + Manual customization) */}
-                        {item.item_code && (
-                          <Col span={24}>
-                            {(() => {
+                        <Col span={10}>
+                          {item.item_code ? (
+                            (() => {
                               const isCustomized = !!(item.required_labels && Array.isArray(item.required_labels));
                               const reqLabels = isCustomized ? item.required_labels! : getProductLabels(item.item_code);
                               const hasLabels = reqLabels && reqLabels.length > 0;
@@ -1548,44 +1558,43 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                 <div style={{
                                   background: 'rgba(13,148,136,0.04)',
                                   border: '1px dashed rgba(13,148,136,0.3)',
-                                  padding: '8px 12px',
+                                  padding: '6px 10px',
                                   borderRadius: 8,
-                                  marginTop: 4,
-                                  marginBottom: 4
+                                  marginTop: 18
                                 }}>
-                                  <div style={{ fontSize: 11, fontWeight: 700, color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                      <span style={{ fontSize: 13 }}>🏷️</span> Tem/Nhãn bắt buộc bổ sung:
+                                  <div style={{ fontSize: 10, fontWeight: 700, color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                      🏷️ Tem nhãn bắt buộc:
                                     </span>
                                     
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                       <span style={{
-                                        fontSize: 9,
+                                        fontSize: 8,
                                         fontWeight: 600,
                                         color: isCustomized ? '#d97706' : '#0d9488',
                                         background: isCustomized ? '#fef3c7' : '#ccfbf1',
-                                        padding: '2px 6px',
-                                        borderRadius: 4
+                                        padding: '1px 4px',
+                                        borderRadius: 3
                                       }}>
-                                        {isCustomized ? 'Tùy chỉnh (Manual)' : 'Master Data Realtime'}
+                                        {isCustomized ? 'Manual' : 'Realtime'}
                                       </span>
                                       
                                       {simulatedRole === 'QA_NHAP_KHAU' && (
-                                        <Space size={4}>
+                                        <Space size={2}>
                                           <Button
                                             type="link"
                                             size="small"
                                             onClick={() => handleOpenCustomLabelModal(idx, reqLabels)}
-                                            style={{ padding: 0, height: 'auto', fontSize: 11, color: '#2563eb' }}
+                                            style={{ padding: 0, height: 'auto', fontSize: 10, color: '#2563eb' }}
                                           >
-                                            [Tùy chỉnh]
+                                            [Sửa]
                                           </Button>
                                           {isCustomized && (
                                             <Button
                                               type="link"
                                               size="small"
                                               onClick={() => handleResetLabels(idx)}
-                                              style={{ padding: 0, height: 'auto', fontSize: 11, color: '#dc2626' }}
+                                              style={{ padding: 0, height: 'auto', fontSize: 10, color: '#dc2626' }}
                                             >
                                               [Reset]
                                             </Button>
@@ -1596,24 +1605,42 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   </div>
                                   
                                   {hasLabels ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                       {reqLabels.map((lbl, lidx) => (
-                                        <div key={lidx} style={{ fontSize: 11, color: '#334155', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                                          <span>• <strong style={{ color: '#0d9488' }}>{lbl.code}</strong> - {lbl.name}</span>
-                                          <span style={{ whiteSpace: 'nowrap' }}>Tỷ lệ: <strong style={{ color: '#0f766e' }}>{lbl.qty} cái/SP</strong></span>
+                                        <div key={lidx} style={{ fontSize: 10, color: '#334155', display: 'flex', justifyContent: 'space-between', gap: 8, lineHeight: 1.2 }}>
+                                          <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                            • <strong style={{ color: '#0d9488' }}>{lbl.code}</strong> - {lbl.name}
+                                          </span>
+                                          <span style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                            Tỷ lệ: <strong style={{ color: '#0f766e' }}>{lbl.qty}</strong>
+                                          </span>
                                         </div>
                                       ))}
                                     </div>
                                   ) : (
-                                    <div style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic' }}>
+                                    <div style={{ fontSize: 10, color: '#94a3b8', fontStyle: 'italic', lineHeight: 1.2 }}>
                                       Chưa có yêu cầu tem nhãn bổ sung
                                     </div>
                                   )}
                                 </div>
                               );
-                            })()}
-                          </Col>
-                        )}
+                            })()
+                          ) : (
+                            <div style={{
+                              background: '#f8fafc',
+                              border: '1px dashed #e2e8f0',
+                              padding: '8px 10px',
+                              borderRadius: 8,
+                              fontSize: 10,
+                              color: '#94a3b8',
+                              fontStyle: 'italic',
+                              marginTop: 18,
+                              textAlign: 'center'
+                            }}>
+                              Chọn mã SP để xem tem nhãn dán bổ sung
+                            </div>
+                          )}
+                        </Col>
                       </Row>
                     </div>
                   ))}
