@@ -196,25 +196,15 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   const { data: masterItems = [] } = useQuery<any[]>({
     queryKey: ['master-items-dropdown'],
     queryFn: async () => {
-      const list = await syncMasterData<any>({
-        table: 'master_items',
-        keyField: 'item_code',
-        storageKey: 'gxp_master_items_cache'
-      });
-      return list.filter(x => x.is_active);
+      const { data, error } = await supabase
+        .from('master_items')
+        .select('*')
+        .eq('is_active', true)
+        .order('item_code', { ascending: true });
+      if (error) throw error;
+      return data || [];
     },
-    initialData: () => {
-      if (typeof window !== 'undefined') {
-        const raw = localStorage.getItem('gxp_master_items_cache');
-        if (raw) {
-          try {
-            return JSON.parse(raw).filter((x: any) => x.is_active);
-          } catch {}
-        }
-      }
-      return undefined;
-    },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
   });
 
   // Product label mappings
@@ -1557,6 +1547,13 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                 showSearch
                                 placeholder="Khớp mã SP..."
                                 optionFilterProp="label"
+                                filterOption={(input, option) => {
+                                  if (!option) return false;
+                                  const searchKey = input.toLowerCase().trim();
+                                  const labelStr = (option.label as string || '').toLowerCase();
+                                  const valStr = (option.value as string || '').toLowerCase();
+                                  return labelStr.includes(searchKey) || valStr.includes(searchKey);
+                                }}
                                 value={item.item_code || undefined}
                                 onChange={(val) => updateItemField(idx, 'item_code', val)}
                                 disabled={simulatedRole !== 'QA_NHAP_KHAU'}

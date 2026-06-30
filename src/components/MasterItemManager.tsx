@@ -363,6 +363,7 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
         localStorage.removeItem('gxp_master_items_cache_timestamp');
 
         queryClient.invalidateQueries({ queryKey: ['master_items'] });
+        queryClient.invalidateQueries({ queryKey: ['master-items-dropdown'] });
       } catch (err: any) {
         messageApi.error({ content: 'Lỗi import file: ' + err.message, key: 'importItems', duration: 5 });
       }
@@ -496,7 +497,10 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
   const createMutation = useMutation({
     mutationFn: createMasterItem,
     onSuccess: () => {
+      localStorage.removeItem('gxp_master_items_cache');
+      localStorage.removeItem('gxp_master_items_cache_timestamp');
       queryClient.invalidateQueries({ queryKey: ['master_items'] });
+      queryClient.invalidateQueries({ queryKey: ['master-items-dropdown'] });
       messageApi.success('Thêm sản phẩm thành công!');
       setDrawerOpen(false);
     },
@@ -507,7 +511,10 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
     mutationFn: ({ code, data }: { code: string; data: Partial<MasterItemFormData> }) =>
       updateMasterItem(code, data),
     onSuccess: () => {
+      localStorage.removeItem('gxp_master_items_cache');
+      localStorage.removeItem('gxp_master_items_cache_timestamp');
       queryClient.invalidateQueries({ queryKey: ['master_items'] });
+      queryClient.invalidateQueries({ queryKey: ['master-items-dropdown'] });
       messageApi.success('Cập nhật thành công!');
       setDrawerOpen(false);
     },
@@ -517,7 +524,10 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
   const deleteMutation = useMutation({
     mutationFn: deleteMasterItem,
     onSuccess: () => {
+      localStorage.removeItem('gxp_master_items_cache');
+      localStorage.removeItem('gxp_master_items_cache_timestamp');
       queryClient.invalidateQueries({ queryKey: ['master_items'] });
+      queryClient.invalidateQueries({ queryKey: ['master-items-dropdown'] });
       messageApi.success('Đã xóa sản phẩm!');
     },
     onError: (err: Error) => messageApi.error(err.message),
