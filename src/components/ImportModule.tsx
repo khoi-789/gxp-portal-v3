@@ -1386,6 +1386,18 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                         🔴 Nhiệt độ vượt ngưỡng
                       </span>
                     </div>
+
+                    {detailRow.temp_out_of_range && (
+                      <div style={{ display: 'flex', alignItems: 'center', marginTop: 2 }}>
+                        <Input
+                          placeholder="Chi tiết lệch nhiệt (VD: max 30.5°C trong 4h)"
+                          value={detailRow.temp_out_of_range_details || ''}
+                          onChange={(e) => updateField('temp_out_of_range_details', e.target.value)}
+                          size="small"
+                          style={{ borderRadius: 4, fontSize: 11 }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </Col>
 
@@ -1416,22 +1428,6 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                     style={{ borderRadius: 6 }}
                   />
                 </Col>
-
-                {/* Temperature Out of Range Details (Full width next row if active) */}
-                {detailRow.temp_out_of_range && (
-                  <Col span={24}>
-                    <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#991b1b' }}>
-                      Chi tiết chênh lệch nhiệt độ (VD: max 30.5°C trong 4h) *
-                    </div>
-                    <Input.TextArea
-                      rows={2}
-                      placeholder="Mô tả chi tiết thời gian và mức lệch nhiệt để QA làm báo cáo đánh giá..."
-                      value={detailRow.temp_out_of_range_details || ''}
-                      onChange={(e) => updateField('temp_out_of_range_details', e.target.value)}
-                      style={{ borderRadius: 6 }}
-                    />
-                  </Col>
-                )}
               </Row>
             </div>
 
