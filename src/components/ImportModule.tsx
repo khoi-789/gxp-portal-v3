@@ -259,6 +259,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   const [customLabelModalVisible, setCustomLabelModalVisible] = useState(false);
   const [editingItemIdx, setEditingItemIdx] = useState<number | null>(null);
   const [tempLabelsList, setTempLabelsList] = useState<{ code: string; name: string; qty: number }[]>([]);
+  const [selectSearchText, setSelectSearchText] = useState<Record<number, string>>({});
 
   const { prefs, save: savePrefs, setColumnWidth } = useTablePreferences(
     'import_shipments_table_v1',
@@ -360,6 +361,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   const handleOpenCustomLabelModal = (idx: number, currentLabels: any[]) => {
     setEditingItemIdx(idx);
     setTempLabelsList(JSON.parse(JSON.stringify(currentLabels || [])));
+    setSelectSearchText({});
     setCustomLabelModalVisible(true);
   };
 
@@ -1312,7 +1314,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
               <Row gutter={[16, 16]}>
                 {/* COA Status */}
-                <Col span={8}>
+                <Col span={12}>
                   <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Trạng thái COA</div>
                   <Select
                     value={detailRow.coa_status}
@@ -1323,26 +1325,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                   />
                 </Col>
 
-                {/* Label Status (Auto calculated, read-only tag) */}
-                <Col span={8}>
-                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Nhãn phụ</div>
-                  <div style={{
-                    padding: '5px 12px',
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 6,
-                    minHeight: 32,
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    <Tag color={LABEL_COLOR[computedLabelStatus] || 'default'} style={{ margin: 0, fontWeight: 500 }}>
-                      {computedLabelStatus}
-                    </Tag>
-                  </div>
-                </Col>
-
                 {/* Progress Status */}
-                <Col span={8}>
+                <Col span={12}>
                   <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Tiến độ tổng</div>
                   <Select
                     value={detailRow.progress_status}
@@ -1746,21 +1730,39 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
               <Col span={12}>
                 <Select
                   showSearch
-                  placeholder="Chọn tem nhãn"
+                  placeholder="Chọn hoặc nhập tên/mã tem..."
                   value={lbl.code || undefined}
+                  onSearch={(val) => {
+                    setSelectSearchText(prev => ({ ...prev, [lIdx]: val }));
+                  }}
                   onChange={(val) => {
                     const matchedItem = masterItems.find((x: any) => x.item_code === val);
-                    const name = matchedItem ? matchedItem.item_name : 'Không rõ tên nhãn';
+                    const name = matchedItem ? matchedItem.item_name : val;
                     const updated = [...tempLabelsList];
                     updated[lIdx] = { ...updated[lIdx], code: val, name };
                     setTempLabelsList(updated);
+                    setSelectSearchText(prev => {
+                      const copy = { ...prev };
+                      delete copy[lIdx];
+                      return copy;
+                    });
                   }}
                   optionFilterProp="label"
                   style={{ width: '100%' }}
-                  options={masterItems.map((x: any) => ({
-                    value: x.item_code,
-                    label: `[${x.item_code}] ${x.item_name}`
-                  }))}
+                  options={(() => {
+                    const opts = masterItems.map((x: any) => ({
+                      value: x.item_code,
+                      label: `[${x.item_code}] ${x.item_name}`
+                    }));
+                    const currentTyped = selectSearchText[lIdx];
+                    if (currentTyped && currentTyped.trim() && !masterItems.some(x => x.item_code === currentTyped || x.item_name === currentTyped)) {
+                      opts.unshift({
+                        value: currentTyped.trim(),
+                        label: `Nhập mới: "${currentTyped.trim()}"`
+                      });
+                    }
+                    return opts;
+                  })()}
                   dropdownStyle={{ borderRadius: 8 }}
                   popupMatchSelectWidth={false}
                 />
