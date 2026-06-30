@@ -33,6 +33,7 @@ export interface ShipmentItem {
   resolution_notes: string | null;
   created_at?: string;
   required_labels?: any[] | null; // Stored labels snapshot: { code: string, name: string, qty: number }[]
+  coa_status?: string;
 }
 
 export interface ShipmentRecord {
@@ -649,6 +650,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
           issue_notes: item.issue_notes || null,
           resolution_notes: item.resolution_notes || null,
           required_labels: (labels && labels.length > 0) ? labels : null,
+          coa_status: item.coa_status || 'Chưa có',
         };
       });
 
@@ -665,6 +667,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             issue_notes: item.issue_notes || null,
             resolution_notes: item.resolution_notes || null,
             required_labels: (labels && labels.length > 0) ? labels : null,
+            coa_status: item.coa_status || 'Chưa có',
           })
           .eq('id', item.id);
         if (updateError) throw updateError;
@@ -1166,39 +1169,39 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             </Button>
           </Space>
         }
-        bodyStyle={{ padding: '20px 24px', background: '#f8fafc' }}
+        bodyStyle={{ padding: '8px 12px', background: '#f8fafc' }}
       >
         {detailRow && (
-          <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <Space direction="vertical" size={10} style={{ width: '100%' }}>
             
             {/* Persona Notice */}
             <div style={{
               background: 'rgba(13,148,136,0.06)',
               border: '1px dashed rgba(13,148,136,0.3)',
               borderRadius: 8,
-              padding: '10px 12px',
-              fontSize: 12,
+              padding: '6px 10px',
+              fontSize: 11,
               color: '#0f766e',
               display: 'flex',
               alignItems: 'center',
               gap: 8
             }}>
-              <AlertCircle size={15} color="#0d9488" style={{ flexShrink: 0 }} />
+              <AlertCircle size={14} color="#0d9488" style={{ flexShrink: 0 }} />
               <div>
                 <strong>Lưu ý:</strong> Để sửa các trường bị mờ, vui lòng chuyển đổi <strong>Vai trò giả lập</strong> ở thanh công cụ phía trên trang.
               </div>
             </div>
 
-            {/* PART 1: MASTER SHIPMENT INFO */}
-            <div style={{ background: 'white', padding: 18, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: 13, fontWeight: 700, color: '#334155', borderLeft: '3px solid #0d9488', paddingLeft: 8 }}>
-                THÔNG TIN CHUNG (MASTER)
+            {/* MERGED PART 1, 2, 3: THÔNG TIN CHUNG */}
+            <div style={{ background: 'white', padding: '10px 14px', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 700, color: '#334155', borderLeft: '3px solid #0d9488', paddingLeft: 8 }}>
+                THÔNG TIN CHUNG
               </h3>
               
-              <Row gutter={[16, 16]}>
+              <Row gutter={[12, 8]}>
                 {/* Invoice Number */}
                 <Col span={4}>
-                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Số Invoice *</div>
+                  <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Số Invoice *</div>
                   <Input
                     placeholder="VD: INUK-240025"
                     value={detailRow.invoice_number}
@@ -1210,7 +1213,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
                 {/* Created Date */}
                 <Col span={4}>
-                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Ngày nhận mail *</div>
+                  <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Ngày nhận mail *</div>
                   <DatePicker
                     value={detailRow.created_date ? dayjs(detailRow.created_date) : null}
                     onChange={(date) => updateField('created_date', date ? date.format('YYYY-MM-DD') : '')}
@@ -1223,7 +1226,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
                 {/* Supplier Code */}
                 <Col span={4}>
-                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>NCC/ Hãng *</div>
+                  <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>NCC/ Hãng *</div>
                   <Select
                     showSearch
                     placeholder="Chọn hoặc nhập NCC"
@@ -1239,7 +1242,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
                 {/* Document Links */}
                 <Col span={6}>
-                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Link INV</div>
+                  <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Link INV</div>
                   {(() => {
                     const link = detailRow.supplier_code 
                       ? `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${detailRow.supplier_code}`
@@ -1272,7 +1275,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 </Col>
 
                 <Col span={6}>
-                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Link hãng</div>
+                  <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Link hãng</div>
                   {(() => {
                     const link = (detailRow.supplier_code && detailRow.invoice_number)
                       ? `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${detailRow.supplier_code}\\5. THONG TIN NHAP - PHAN PHOI\\1. KIEM NHAP\\${detailRow.invoice_number}`
@@ -1303,31 +1306,10 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                     );
                   })()}
                 </Col>
-              </Row>
-            </div>
-
-            {/* PART 2: QA VERIFICATION INFO */}
-            <div style={{ background: 'white', padding: 18, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: 13, fontWeight: 700, color: '#334155', borderLeft: '3px solid #3b82f6', paddingLeft: 8 }}>
-                KIỂM DUYỆT CHỨNG TỪ & NHIỆT ĐỘ (QA)
-              </h3>
-
-              <Row gutter={[16, 16]}>
-                {/* COA Status */}
-                <Col span={4}>
-                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Trạng thái COA</div>
-                  <Select
-                    value={detailRow.coa_status}
-                    onChange={(val) => updateField('coa_status', val)}
-                    disabled={simulatedRole !== 'QA_NHAP_KHAU'}
-                    style={{ width: '100%' }}
-                    options={COA_STATUS_OPTIONS}
-                  />
-                </Col>
 
                 {/* Progress Status */}
                 <Col span={4}>
-                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Tiến độ tổng</div>
+                  <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Tiến độ tổng</div>
                   <Select
                     value={detailRow.progress_status}
                     onChange={(val) => updateField('progress_status', val)}
@@ -1337,16 +1319,16 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 </Col>
 
                 {/* Has Data Logger */}
-                <Col span={8}>
+                <Col span={10}>
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 6,
+                    gap: 4,
                     background: '#f8fafc',
-                    padding: '8px 12px',
+                    padding: '4px 10px',
                     borderRadius: 8,
                     border: '1px solid #f1f5f9',
-                    minHeight: 58,
+                    minHeight: 34,
                     justifyContent: 'center'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1381,16 +1363,16 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 </Col>
 
                 {/* Temperature Out of Range */}
-                <Col span={8}>
+                <Col span={10}>
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 6,
+                    gap: 4,
                     background: detailRow.temp_out_of_range ? '#fef2f2' : '#f8fafc',
-                    padding: '8px 12px',
+                    padding: '4px 10px',
                     borderRadius: 8,
                     border: detailRow.temp_out_of_range ? '1px dashed #fca5a5' : '1px solid #f1f5f9',
-                    minHeight: 58,
+                    minHeight: 34,
                     justifyContent: 'center',
                     transition: 'all 200ms ease'
                   }}>
@@ -1407,34 +1389,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                   </div>
                 </Col>
 
-                {/* Temperature Out of Range Details (Full width next row if active) */}
-                {detailRow.temp_out_of_range && (
-                  <Col span={24}>
-                    <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#991b1b' }}>
-                      Chi tiết chênh lệch nhiệt độ (VD: max 30.5°C trong 4h) *
-                    </div>
-                    <Input.TextArea
-                      rows={2}
-                      placeholder="Mô tả chi tiết thời gian và mức lệch nhiệt để QA làm báo cáo đánh giá..."
-                      value={detailRow.temp_out_of_range_details || ''}
-                      onChange={(e) => updateField('temp_out_of_range_details', e.target.value)}
-                      style={{ borderRadius: 6 }}
-                    />
-                  </Col>
-                )}
-              </Row>
-            </div>
-
-            {/* PART 3: WAREHOUSE ACTUAL RECEIVED INFO */}
-            <div style={{ background: 'white', padding: 18, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: 13, fontWeight: 700, color: '#334155', borderLeft: '3px solid #f59e0b', paddingLeft: 8 }}>
-                THỜI GIAN NHẬP KHO THỰC TẾ (WAREHOUSE / KHO)
-              </h3>
-
-              <Row gutter={[16, 16]}>
                 {/* Warehouse Dropdown */}
                 <Col span={12}>
-                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Kho</div>
+                  <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Kho</div>
                   <Select
                     placeholder="Chọn Kho nhận hàng"
                     value={detailRow.target_warehouse || undefined}
@@ -1451,7 +1408,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
                 {/* Actual Import Date Note */}
                 <Col span={12}>
-                  <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Ngày nhập (Ghi chú thực tế)</div>
+                  <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Ngày nhập (Ghi chú thực tế)</div>
                   <Input
                     placeholder="VD: Đã nhập kho LH 25/06/2026, Đang vận chuyển..."
                     value={detailRow.actual_import_date_note || ''}
@@ -1459,12 +1416,28 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                     style={{ borderRadius: 6 }}
                   />
                 </Col>
+
+                {/* Temperature Out of Range Details (Full width next row if active) */}
+                {detailRow.temp_out_of_range && (
+                  <Col span={24}>
+                    <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#991b1b' }}>
+                      Chi tiết chênh lệch nhiệt độ (VD: max 30.5°C trong 4h) *
+                    </div>
+                    <Input.TextArea
+                      rows={2}
+                      placeholder="Mô tả chi tiết thời gian và mức lệch nhiệt để QA làm báo cáo đánh giá..."
+                      value={detailRow.temp_out_of_range_details || ''}
+                      onChange={(e) => updateField('temp_out_of_range_details', e.target.value)}
+                      style={{ borderRadius: 6 }}
+                    />
+                  </Col>
+                )}
               </Row>
             </div>
 
             {/* PART 4: DETAIL PRODUCTS SECTION */}
-            <div style={{ background: 'white', padding: 18, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ background: 'white', padding: '10px 14px', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#334155', borderLeft: '3px solid #14b8a6', paddingLeft: 8 }}>
                   DANH SÁCH CHI TIẾT SẢN PHẨM (DETAIL)
                 </h3>
@@ -1482,17 +1455,17 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
               </div>
 
               {detailRow.imp_shipment_items.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '24px 8px', border: '1px dashed #cbd5e1', borderRadius: 8, color: '#94a3b8' }}>
+                <div style={{ textAlign: 'center', padding: '16px 8px', border: '1px dashed #cbd5e1', borderRadius: 8, color: '#94a3b8', fontSize: 11 }}>
                   Không có sản phẩm nào trong chuyến hàng này.
                   {simulatedRole === 'QA_NHAP_KHAU' && ' Bấm "Thêm sản phẩm" ở trên để tạo mới.'}
                 </div>
               ) : (
-                <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                <Space direction="vertical" style={{ width: '100%' }} size={6}>
                   {detailRow.imp_shipment_items.map((item, idx) => (
                     <div
                       key={item.id || `new-item-${idx}`}
                       style={{
-                        padding: 14,
+                        padding: '6px 10px',
                         border: '1px solid #e2e8f0',
                         borderRadius: 8,
                         background: '#f8fafc',
@@ -1506,15 +1479,15 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           danger
                           size="small"
                           icon={<Trash2 size={14} />}
-                          style={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}
+                          style={{ position: 'absolute', top: 4, right: 4, zIndex: 10 }}
                           onClick={() => handleRemoveItem(idx)}
                         />
                       )}
 
-                      <Row gutter={[12, 12]} align="middle">
+                      <Row gutter={[10, 6]} align="middle">
                         {/* Match Item Code */}
                         <Col span={4}>
-                          <div style={{ marginBottom: 4, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                          <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
                             Mã Danh Mục (Item Code)
                           </div>
                           <Select
@@ -1533,12 +1506,12 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                         </Col>
 
                         {/* Item Name (Free text / Auto filled) */}
-                        <Col span={10}>
-                          <div style={{ marginBottom: 4, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                        <Col span={8}>
+                          <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
                             Tên sản phẩm thực tế nhập *
                           </div>
                           <Input
-                            placeholder="Nhập tên chi tiết thuốc, hàm lượng, đóng gói..."
+                            placeholder="Nhập tên chi tiết thuốc, hàm lượng..."
                             value={item.item_name}
                             onChange={(e) => updateItemField(idx, 'item_name', e.target.value)}
                             disabled={simulatedRole !== 'QA_NHAP_KHAU'}
@@ -1546,8 +1519,22 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           />
                         </Col>
 
+                        {/* COA Status per Item */}
+                        <Col span={4}>
+                          <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                            Trạng thái COA
+                          </div>
+                          <Select
+                            value={item.coa_status || 'Chưa có'}
+                            onChange={(val) => updateItemField(idx, 'coa_status', val)}
+                            disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                            style={{ width: '100%' }}
+                            options={COA_STATUS_OPTIONS}
+                          />
+                        </Col>
+
                         {/* Required Stamps/Labels (Realtime from master data + Manual customization) */}
-                        <Col span={10}>
+                        <Col span={8}>
                           {item.item_code ? (
                             (() => {
                               const isCustomized = !!(item.required_labels && Array.isArray(item.required_labels));
@@ -1558,9 +1545,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                 <div style={{
                                   background: 'rgba(13,148,136,0.04)',
                                   border: '1px dashed rgba(13,148,136,0.3)',
-                                  padding: '6px 10px',
+                                  padding: '4px 8px',
                                   borderRadius: 8,
-                                  marginTop: 18
+                                  marginTop: 15
                                 }}>
                                   <div style={{ fontSize: 10, fontWeight: 700, color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
                                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -1634,7 +1621,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                               fontSize: 10,
                               color: '#94a3b8',
                               fontStyle: 'italic',
-                              marginTop: 18,
+                              marginTop: 15,
                               textAlign: 'center'
                             }}>
                               Chọn mã SP để xem tem nhãn dán bổ sung
@@ -1649,8 +1636,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             </div>
 
             {/* PART 5: SHIPMENT ISSUES LIST */}
-            <div style={{ background: 'white', padding: 18, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ background: 'white', padding: '10px 14px', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#334155', borderLeft: '3px solid #ef4444', paddingLeft: 8 }}>
                   DANH SÁCH VẤN ĐỀ & HƯỚNG XỬ LÝ (QA)
                 </h3>
@@ -1666,16 +1653,16 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
               </div>
 
               {(detailRow.issues || []).length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '24px 8px', border: '1px dashed #fca5a5', borderRadius: 8, color: '#94a3b8', fontSize: 12 }}>
+                <div style={{ textAlign: 'center', padding: '12px 8px', border: '1px dashed #fca5a5', borderRadius: 8, color: '#94a3b8', fontSize: 11 }}>
                   Không có vấn đề phát sinh nào được ghi nhận cho hóa đơn này.
                 </div>
               ) : (
-                <Space direction="vertical" style={{ width: '100%' }} size={10}>
+                <Space direction="vertical" style={{ width: '100%' }} size={6}>
                   {(detailRow.issues || []).map((issue, idx) => (
                     <div
                       key={issue.id || `issue-${idx}`}
                       style={{
-                        padding: 12,
+                        padding: '6px 10px',
                         border: '1px solid #fee2e2',
                         borderRadius: 8,
                         background: '#fff5f5',
@@ -1687,13 +1674,13 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                         danger
                         size="small"
                         icon={<Trash2 size={13} />}
-                        style={{ position: 'absolute', top: 6, right: 6, zIndex: 10 }}
+                        style={{ position: 'absolute', top: 4, right: 4, zIndex: 10 }}
                         onClick={() => handleRemoveIssue(idx)}
                       />
 
-                      <Row gutter={[12, 12]}>
+                      <Row gutter={[10, 6]}>
                         <Col span={12}>
-                          <div style={{ marginBottom: 4, fontSize: 10, fontWeight: 600, color: '#991b1b' }}>Vấn đề *</div>
+                          <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#991b1b' }}>Vấn đề *</div>
                           <Input.TextArea
                             rows={1}
                             placeholder="Nhập chi tiết vấn đề phát sinh..."
@@ -1703,7 +1690,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           />
                         </Col>
                         <Col span={12}>
-                          <div style={{ marginBottom: 4, fontSize: 10, fontWeight: 600, color: '#991b1b' }}>Hướng xử lý</div>
+                          <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#991b1b' }}>Hướng xử lý</div>
                           <Input.TextArea
                             rows={1}
                             placeholder="Nhập hướng xử lý..."
