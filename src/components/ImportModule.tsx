@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Table, Button, Input, Tag, Select, Space, Tooltip,
   Badge, Drawer, InputNumber, message, Row, Col, Popconfirm,
-  Spin, Switch, DatePicker, Segmented, Card, Statistic
+  Spin, Switch, DatePicker, Segmented, Card, Statistic, Modal
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -255,6 +255,11 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   // Track original detail items for smart DB updates
   const [originalItems, setOriginalItems] = useState<ShipmentItem[]>([]);
 
+  // Custom required labels modal state
+  const [customLabelModalVisible, setCustomLabelModalVisible] = useState(false);
+  const [editingItemIdx, setEditingItemIdx] = useState<number | null>(null);
+  const [tempLabelsList, setTempLabelsList] = useState<{ code: string; name: string; qty: number }[]>([]);
+
   const { prefs, save: savePrefs, setColumnWidth } = useTablePreferences(
     'import_shipments_table_v1',
     userId,
@@ -336,6 +341,66 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       queryClient.invalidateQueries({ queryKey: ['master-suppliers-dropdown'] }),
       queryClient.invalidateQueries({ queryKey: impQueryKey })
     ]);
+  };
+
+  // Auto-calculated label status
+  const computedLabelStatus = useMemo(() => {
+    if (!detailRow) return 'Chưa có';
+    const currentItems = detailRow.imp_shipment_items || [];
+    const hasReqLabels = currentItems.some(item => {
+      const labels = (item.required_labels !== undefined && item.required_labels !== null)
+        ? item.required_labels
+        : getProductLabels(item.item_code);
+      return labels && labels.length > 0;
+    });
+    return (!hasReqLabels || detailRow.progress_status === 'Closed') ? 'Đã cập nhật' : 'Chưa có';
+  }, [detailRow, getProductLabels]);
+
+  // Open required label customizer modal
+  const handleOpenCustomLabelModal = (idx: number, currentLabels: any[]) => {
+    setEditingItemIdx(idx);
+    setTempLabelsList(JSON.parse(JSON.stringify(currentLabels || [])));
+    setCustomLabelModalVisible(true);
+  };
+
+  // Revert labels mapping to Master Data Realtime
+  const handleResetLabels = (idx: number) => {
+    setDetailRow(prev => {
+      if (!prev) return null;
+      const items = [...prev.imp_shipment_items];
+      items[idx] = {
+        ...items[idx],
+        required_labels: null,
+      };
+      return { ...prev, imp_shipment_items: items };
+    });
+    messageApi.success('Đã khôi phục tem nhãn theo Master Data realtime.');
+  };
+
+  // Save customized required labels list
+  const handleSaveCustomLabels = () => {
+    if (editingItemIdx === null) return;
+    
+    // Check for empty label codes or invalid quantities
+    const invalid = tempLabelsList.some(lbl => !lbl.code || lbl.qty <= 0);
+    if (invalid) {
+      messageApi.warning('Vui lòng chọn mã tem và số lượng hợp lệ (> 0)!');
+      return;
+    }
+
+    setDetailRow(prev => {
+      if (!prev) return null;
+      const items = [...prev.imp_shipment_items];
+      items[editingItemIdx] = {
+        ...items[editingItemIdx],
+        required_labels: tempLabelsList
+      };
+      return { ...prev, imp_shipment_items: items };
+    });
+
+    setCustomLabelModalVisible(false);
+    setEditingItemIdx(null);
+    messageApi.success('Cập nhật tùy chỉnh tem nhãn thành công!');
   };
 
   // Statistics calculation
@@ -423,7 +488,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
           if (match) {
             items[index].item_name = match.item_name;
           }
-          items[index].required_labels = getProductLabels(value);
+          items[index].required_labels = null;
         } else {
           items[index].required_labels = null;
         }
@@ -531,7 +596,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
         created_date: detailRow.created_date,
         supplier_code: detailRow.supplier_code,
         coa_status: detailRow.coa_status,
-        label_status: detailRow.label_status,
+        label_status: computedLabelStatus,
         progress_status: detailRow.progress_status,
         has_data_logger: detailRow.has_data_logger,
         data_logger_type: detailRow.has_data_logger ? detailRow.data_logger_type : null,
@@ -1258,15 +1323,22 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                   />
                 </Col>
 
-                {/* Label Status */}
+                {/* Label Status (Auto calculated, read-only tag) */}
                 <Col span={8}>
                   <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Nhãn phụ</div>
-                  <Select
-                    value={detailRow.label_status}
-                    onChange={(val) => updateField('label_status', val)}
-                    style={{ width: '100%' }}
-                    options={LABEL_STATUS_OPTIONS}
-                  />
+                  <div style={{
+                    padding: '5px 12px',
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 6,
+                    minHeight: 32,
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    <Tag color={LABEL_COLOR[computedLabelStatus] || 'default'} style={{ margin: 0, fontWeight: 500 }}>
+                      {computedLabelStatus}
+                    </Tag>
+                  </div>
                 </Col>
 
                 {/* Progress Status */}
@@ -1480,13 +1552,14 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           />
                         </Col>
 
-                        {/* Required Stamps/Labels (Calculated dynamically or loaded from snapshot) */}
+                        {/* Required Stamps/Labels (Realtime from master data + Manual customization) */}
                         {item.item_code && (
                           <Col span={24}>
                             {(() => {
-                              const isFrozen = !!(item.required_labels && Array.isArray(item.required_labels) && item.required_labels.length > 0);
-                              const reqLabels = isFrozen ? item.required_labels! : getProductLabels(item.item_code);
-                              if (reqLabels.length === 0) return null;
+                              const isCustomized = !!(item.required_labels && Array.isArray(item.required_labels));
+                              const reqLabels = isCustomized ? item.required_labels! : getProductLabels(item.item_code);
+                              const hasLabels = reqLabels && reqLabels.length > 0;
+                              
                               return (
                                 <div style={{
                                   background: 'rgba(13,148,136,0.04)',
@@ -1500,18 +1573,58 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                     <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                       <span style={{ fontSize: 13 }}>🏷️</span> Tem/Nhãn bắt buộc bổ sung:
                                     </span>
-                                    <span style={{ fontSize: 9, fontWeight: 600, color: isFrozen ? '#64748b' : '#0d9488', background: isFrozen ? '#f1f5f9' : '#ccfbf1', padding: '2px 6px', borderRadius: 4 }}>
-                                      {isFrozen ? 'Lịch sử Invoice' : 'Master Data Realtime'}
-                                    </span>
+                                    
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                      <span style={{
+                                        fontSize: 9,
+                                        fontWeight: 600,
+                                        color: isCustomized ? '#d97706' : '#0d9488',
+                                        background: isCustomized ? '#fef3c7' : '#ccfbf1',
+                                        padding: '2px 6px',
+                                        borderRadius: 4
+                                      }}>
+                                        {isCustomized ? 'Tùy chỉnh (Manual)' : 'Master Data Realtime'}
+                                      </span>
+                                      
+                                      {simulatedRole === 'QA_NHAP_KHAU' && (
+                                        <Space size={4}>
+                                          <Button
+                                            type="link"
+                                            size="small"
+                                            onClick={() => handleOpenCustomLabelModal(idx, reqLabels)}
+                                            style={{ padding: 0, height: 'auto', fontSize: 11, color: '#2563eb' }}
+                                          >
+                                            [Tùy chỉnh]
+                                          </Button>
+                                          {isCustomized && (
+                                            <Button
+                                              type="link"
+                                              size="small"
+                                              onClick={() => handleResetLabels(idx)}
+                                              style={{ padding: 0, height: 'auto', fontSize: 11, color: '#dc2626' }}
+                                            >
+                                              [Reset]
+                                            </Button>
+                                          )}
+                                        </Space>
+                                      )}
+                                    </div>
                                   </div>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                    {reqLabels.map((lbl, lidx) => (
-                                      <div key={lidx} style={{ fontSize: 11, color: '#334155', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                                        <span>• <strong style={{ color: '#0d9488' }}>{lbl.code}</strong> - {lbl.name}</span>
-                                        <span style={{ whiteSpace: 'nowrap' }}>Tỷ lệ: <strong style={{ color: '#0f766e' }}>{lbl.qty} cái/SP</strong></span>
-                                      </div>
-                                    ))}
-                                  </div>
+                                  
+                                  {hasLabels ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                      {reqLabels.map((lbl, lidx) => (
+                                        <div key={lidx} style={{ fontSize: 11, color: '#334155', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                                          <span>• <strong style={{ color: '#0d9488' }}>{lbl.code}</strong> - {lbl.name}</span>
+                                          <span style={{ whiteSpace: 'nowrap' }}>Tỷ lệ: <strong style={{ color: '#0f766e' }}>{lbl.qty} cái/SP</strong></span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic' }}>
+                                      Chưa có yêu cầu tem nhãn bổ sung
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })()}
@@ -1598,6 +1711,98 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
           </Space>
         )}
       </Drawer>
+
+      {/* Custom required labels modal */}
+      <Modal
+        title="Tùy chỉnh Tem nhãn bắt buộc"
+        open={customLabelModalVisible}
+        onOk={handleSaveCustomLabels}
+        onCancel={() => {
+          setCustomLabelModalVisible(false);
+          setEditingItemIdx(null);
+        }}
+        okText="Lưu thay đổi"
+        cancelText="Hủy"
+        width={600}
+        destroyOnClose
+      >
+        <div style={{ marginBottom: 12, fontSize: 12, color: '#64748b' }}>
+          Khai báo danh sách tem nhãn bắt buộc dán bổ sung cho dòng sản phẩm này.
+        </div>
+        
+        <Row gutter={8} style={{ marginBottom: 8, fontWeight: 600, color: '#475569', fontSize: 12 }}>
+          <Col span={12}>Chọn Tem/Nhãn (từ Master Data)</Col>
+          <Col span={8}>Tỷ lệ (Cái/SP)</Col>
+          <Col span={4} style={{ textAlign: 'center' }}>Xóa</Col>
+        </Row>
+        
+        {tempLabelsList.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '16px 8px', color: '#94a3b8', fontSize: 12, border: '1px dashed #e2e8f0', borderRadius: 8, margin: '8px 0' }}>
+            Chưa thêm tem nhãn nào. Bấm nút bên dưới để thêm.
+          </div>
+        ) : (
+          tempLabelsList.map((lbl, lIdx) => (
+            <Row gutter={8} key={lIdx} style={{ marginBottom: 8, display: 'flex', alignItems: 'center' }}>
+              <Col span={12}>
+                <Select
+                  showSearch
+                  placeholder="Chọn tem nhãn"
+                  value={lbl.code || undefined}
+                  onChange={(val) => {
+                    const matchedItem = masterItems.find((x: any) => x.item_code === val);
+                    const name = matchedItem ? matchedItem.item_name : 'Không rõ tên nhãn';
+                    const updated = [...tempLabelsList];
+                    updated[lIdx] = { ...updated[lIdx], code: val, name };
+                    setTempLabelsList(updated);
+                  }}
+                  optionFilterProp="label"
+                  style={{ width: '100%' }}
+                  options={masterItems.map((x: any) => ({
+                    value: x.item_code,
+                    label: `[${x.item_code}] ${x.item_name}`
+                  }))}
+                  dropdownStyle={{ borderRadius: 8 }}
+                  popupMatchSelectWidth={false}
+                />
+              </Col>
+              <Col span={8}>
+                <InputNumber
+                  min={1}
+                  value={lbl.qty}
+                  onChange={(val) => {
+                    const updated = [...tempLabelsList];
+                    updated[lIdx] = { ...updated[lIdx], qty: Number(val) || 1 };
+                    setTempLabelsList(updated);
+                  }}
+                  style={{ width: '100%' }}
+                />
+              </Col>
+              <Col span={4} style={{ textAlign: 'center' }}>
+                <Button
+                  type="text"
+                  danger
+                  icon={<Trash2 size={16} />}
+                  onClick={() => {
+                    const updated = tempLabelsList.filter((_, idx) => idx !== lIdx);
+                    setTempLabelsList(updated);
+                  }}
+                />
+              </Col>
+            </Row>
+          ))
+        )}
+        
+        <Button
+          type="dashed"
+          onClick={() => {
+            setTempLabelsList([...tempLabelsList, { code: '', name: '', qty: 1 }]);
+          }}
+          icon={<Plus size={14} />}
+          style={{ width: '100%', marginTop: 8 }}
+        >
+          Thêm Tem nhãn
+        </Button>
+      </Modal>
     </div>
   );
 }
