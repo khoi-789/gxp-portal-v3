@@ -34,6 +34,9 @@ export interface ShipmentItem {
   created_at?: string;
   required_labels?: any[] | null; // Stored labels snapshot: { code: string, name: string, qty: number }[]
   coa_status?: string;
+  visa_no?: string | null;
+  decision_no?: string | null;
+  valid_until?: string | null;
 }
 
 export interface ShipmentRecord {
@@ -477,6 +480,51 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     });
   };
 
+  // Helper to fetch the most recent visa, decision and validity date for a product
+  const fetchAndFillRecentItemData = async (index: number, itemCode: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('imp_shipment_items')
+        .select('visa_no, decision_no, valid_until')
+        .eq('item_code', itemCode)
+        .not('visa_no', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      let visaNo = '';
+      let decisionNo = '';
+      let validUntil = '';
+
+      if (data && data.length > 0 && data[0].visa_no) {
+        visaNo = data[0].visa_no || '';
+        decisionNo = data[0].decision_no || '';
+        validUntil = data[0].valid_until || '';
+      } else {
+        // Fallback to master item visa_no
+        const match = masterItems.find(m => m.item_code === itemCode);
+        if (match && match.visa_no) {
+          visaNo = match.visa_no;
+        }
+      }
+
+      setDetailRow(prev => {
+        if (!prev) return null;
+        const items = [...prev.imp_shipment_items];
+        if (items[index]) {
+          items[index] = {
+            ...items[index],
+            visa_no: visaNo,
+            decision_no: decisionNo,
+            valid_until: validUntil
+          };
+        }
+        return { ...prev, imp_shipment_items: items };
+      });
+    } catch (err) {
+      console.error('Error fetching recent item data:', err);
+    }
+  };
+
   // Handle Dynamic Items changes
   const updateItemField = (index: number, key: keyof ShipmentItem, value: any) => {
     setDetailRow(prev => {
@@ -492,8 +540,13 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             items[index].item_name = match.item_name;
           }
           items[index].required_labels = null;
+          // Trigger async fetch for recent visa/decision data
+          fetchAndFillRecentItemData(index, value);
         } else {
           items[index].required_labels = null;
+          items[index].visa_no = null;
+          items[index].decision_no = null;
+          items[index].valid_until = null;
         }
       }
       return { ...prev, imp_shipment_items: items };
@@ -508,6 +561,10 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       item_name: '',
       issue_notes: null,
       resolution_notes: null,
+      coa_status: 'Chưa có',
+      visa_no: null,
+      decision_no: null,
+      valid_until: null,
     };
     setDetailRow(prev => {
       if (!prev) return null;
@@ -651,6 +708,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
           resolution_notes: item.resolution_notes || null,
           required_labels: (labels && labels.length > 0) ? labels : null,
           coa_status: item.coa_status || 'Chưa có',
+          visa_no: item.visa_no || null,
+          decision_no: item.decision_no || null,
+          valid_until: item.valid_until || null,
         };
       });
 
@@ -668,6 +728,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             resolution_notes: item.resolution_notes || null,
             required_labels: (labels && labels.length > 0) ? labels : null,
             coa_status: item.coa_status || 'Chưa có',
+            visa_no: item.visa_no || null,
+            decision_no: item.decision_no || null,
+            valid_until: item.valid_until || null,
           })
           .eq('id', item.id);
         if (updateError) throw updateError;
@@ -1480,56 +1543,112 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                         />
                       )}
 
-                      <Row gutter={[10, 6]} align="middle">
-                        {/* Match Item Code */}
-                        <Col span={4}>
-                          <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
-                            Mã Danh Mục (Item Code)
-                          </div>
-                          <Select
-                            showSearch
-                            placeholder="Khớp mã SP..."
-                            optionFilterProp="label"
-                            value={item.item_code || undefined}
-                            onChange={(val) => updateItemField(idx, 'item_code', val)}
-                            disabled={simulatedRole !== 'QA_NHAP_KHAU'}
-                            style={{ width: '100%' }}
-                            options={masterItems.map(m => ({ value: m.item_code, label: `[${m.item_code}] ${m.item_name}` }))}
-                            dropdownStyle={{ borderRadius: 8 }}
-                            popupMatchSelectWidth={false}
-                            allowClear
-                          />
+                      <Row gutter={[10, 6]} align="top">
+                        {/* Left Section: Product Details & Visa/Decision (span 16) */}
+                        <Col span={16}>
+                          {/* Row 1: Code, Name, COA */}
+                          <Row gutter={[10, 6]} align="middle">
+                            {/* Match Item Code */}
+                            <Col span={6}>
+                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                                Mã Danh Mục (Item Code)
+                              </div>
+                              <Select
+                                showSearch
+                                placeholder="Khớp mã SP..."
+                                optionFilterProp="label"
+                                value={item.item_code || undefined}
+                                onChange={(val) => updateItemField(idx, 'item_code', val)}
+                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                style={{ width: '100%' }}
+                                options={masterItems.map(m => ({ value: m.item_code, label: `[${m.item_code}] ${m.item_name}` }))}
+                                dropdownStyle={{ borderRadius: 8 }}
+                                popupMatchSelectWidth={false}
+                                allowClear
+                              />
+                            </Col>
+
+                            {/* Item Name (Free text / Auto filled) */}
+                            <Col span={12}>
+                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                                Tên sản phẩm thực tế nhập *
+                              </div>
+                              <Input
+                                placeholder="Nhập tên chi tiết thuốc, hàm lượng..."
+                                value={item.item_name}
+                                onChange={(e) => updateItemField(idx, 'item_name', e.target.value)}
+                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                style={{ borderRadius: 6, paddingRight: 24 }}
+                              />
+                            </Col>
+
+                            {/* COA Status per Item */}
+                            <Col span={6}>
+                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                                Trạng thái COA
+                              </div>
+                              <Select
+                                value={item.coa_status || 'Chưa có'}
+                                onChange={(val) => updateItemField(idx, 'coa_status', val)}
+                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                style={{ width: '100%' }}
+                                options={COA_STATUS_OPTIONS}
+                              />
+                            </Col>
+                          </Row>
+
+                          {/* Row 2: Visa, Decision, Validity */}
+                          <Row gutter={[10, 6]} style={{ marginTop: 6 }}>
+                            <Col span={6} /> {/* Offset under Mã Danh Mục */}
+                            
+                            {/* Số Visa */}
+                            <Col span={6}>
+                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                                Số Visa
+                              </div>
+                              <Input
+                                placeholder="Số Visa..."
+                                value={item.visa_no || ''}
+                                onChange={(e) => updateItemField(idx, 'visa_no', e.target.value)}
+                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                size="small"
+                                style={{ borderRadius: 6 }}
+                              />
+                            </Col>
+
+                            {/* Số quyết định */}
+                            <Col span={6}>
+                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                                Số quyết định
+                              </div>
+                              <Input
+                                placeholder="Số quyết định..."
+                                value={item.decision_no || ''}
+                                onChange={(e) => updateItemField(idx, 'decision_no', e.target.value)}
+                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                size="small"
+                                style={{ borderRadius: 6 }}
+                              />
+                            </Col>
+
+                            {/* Hiệu lực đến */}
+                            <Col span={6}>
+                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                                Hiệu lực đến
+                              </div>
+                              <Input
+                                placeholder="VD: 25/12/2028..."
+                                value={item.valid_until || ''}
+                                onChange={(e) => updateItemField(idx, 'valid_until', e.target.value)}
+                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                size="small"
+                                style={{ borderRadius: 6 }}
+                              />
+                            </Col>
+                          </Row>
                         </Col>
 
-                        {/* Item Name (Free text / Auto filled) */}
-                        <Col span={8}>
-                          <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
-                            Tên sản phẩm thực tế nhập *
-                          </div>
-                          <Input
-                            placeholder="Nhập tên chi tiết thuốc, hàm lượng..."
-                            value={item.item_name}
-                            onChange={(e) => updateItemField(idx, 'item_name', e.target.value)}
-                            disabled={simulatedRole !== 'QA_NHAP_KHAU'}
-                            style={{ borderRadius: 6, paddingRight: 24 }}
-                          />
-                        </Col>
-
-                        {/* COA Status per Item */}
-                        <Col span={4}>
-                          <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
-                            Trạng thái COA
-                          </div>
-                          <Select
-                            value={item.coa_status || 'Chưa có'}
-                            onChange={(val) => updateItemField(idx, 'coa_status', val)}
-                            disabled={simulatedRole !== 'QA_NHAP_KHAU'}
-                            style={{ width: '100%' }}
-                            options={COA_STATUS_OPTIONS}
-                          />
-                        </Col>
-
-                        {/* Required Stamps/Labels (Realtime from master data + Manual customization) */}
+                        {/* Right Section: Required Stamps/Labels (span 8) */}
                         <Col span={8}>
                           {item.item_code ? (
                             (() => {
@@ -1543,7 +1662,6 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   border: '1px dashed rgba(13,148,136,0.3)',
                                   padding: '4px 8px',
                                   borderRadius: 8,
-                                  marginTop: 15
                                 }}>
                                   <div style={{ fontSize: 10, fontWeight: 700, color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
                                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -1617,7 +1735,6 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                               fontSize: 10,
                               color: '#94a3b8',
                               fontStyle: 'italic',
-                              marginTop: 15,
                               textAlign: 'center'
                             }}>
                               Chọn mã SP để xem tem nhãn dán bổ sung
