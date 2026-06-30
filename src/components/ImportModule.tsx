@@ -1148,7 +1148,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             </div>
           </div>
         }
-        width={780}
+        width="90%"
         onClose={() => setDetailRow(null)}
         open={!!detailRow}
         extra={
