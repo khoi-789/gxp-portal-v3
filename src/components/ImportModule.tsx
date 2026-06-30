@@ -1197,7 +1197,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
               
               <Row gutter={[16, 16]}>
                 {/* Invoice Number */}
-                <Col span={12}>
+                <Col span={4}>
                   <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Số Invoice *</div>
                   <Input
                     placeholder="VD: INUK-240025"
@@ -1209,7 +1209,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 </Col>
 
                 {/* Created Date */}
-                <Col span={12}>
+                <Col span={4}>
                   <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Ngày nhận mail *</div>
                   <DatePicker
                     value={detailRow.created_date ? dayjs(detailRow.created_date) : null}
@@ -1222,7 +1222,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 </Col>
 
                 {/* Supplier Code */}
-                <Col span={12}>
+                <Col span={4}>
                   <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>NCC/ Hãng *</div>
                   <Select
                     showSearch
@@ -1238,7 +1238,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 </Col>
 
                 {/* Document Links */}
-                <Col span={12}>
+                <Col span={6}>
                   <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Link INV</div>
                   {(() => {
                     const link = detailRow.supplier_code 
@@ -1271,7 +1271,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                   })()}
                 </Col>
 
-                <Col span={12}>
+                <Col span={6}>
                   <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 600, color: '#475569' }}>Link hãng</div>
                   {(() => {
                     const link = (detailRow.supplier_code && detailRow.invoice_number)
@@ -1503,7 +1503,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
                       <Row gutter={[12, 12]}>
                         {/* Match Item Code */}
-                        <Col span={10}>
+                        <Col span={6}>
                           <div style={{ marginBottom: 4, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
                             Mã Danh Mục (Item Code)
                           </div>
@@ -1523,7 +1523,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                         </Col>
 
                         {/* Item Name (Free text / Auto filled) */}
-                        <Col span={14}>
+                        <Col span={18}>
                           <div style={{ marginBottom: 4, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
                             Tên sản phẩm thực tế nhập *
                           </div>
