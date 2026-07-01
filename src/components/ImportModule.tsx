@@ -1536,14 +1536,15 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 <Space direction="vertical" style={{ width: '100%' }} size={6}>
                   {detailRow.imp_shipment_items.map((item, idx) => {
                     const isIssueVisible = showIssuesMap[idx] ?? !!(item.issue_notes || item.resolution_notes);
+                    const isRed = isIssueVisible || item.coa_status === 'Chưa có' || item.coa_status === 'Đang sai sót';
                     return (
                       <div
                         key={item.id || `new-item-${idx}`}
                         style={{
                           padding: '6px 10px',
-                          border: isIssueVisible ? '1px solid #fca5a5' : '1px solid #e2e8f0',
+                          border: isRed ? '1px solid #fca5a5' : '1px solid #e2e8f0',
                           borderRadius: 8,
-                          background: isIssueVisible ? '#fff5f5' : '#f8fafc',
+                          background: isRed ? '#fff5f5' : '#f8fafc',
                           position: 'relative'
                         }}
                       >
@@ -1608,7 +1609,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                               {/* COA Status per Item */}
                               <Col span={6}>
                                 <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
-                                  Trạng thái COA
+                                  COA
                                 </div>
                                 <Select
                                   value={item.coa_status || 'Chưa có'}
