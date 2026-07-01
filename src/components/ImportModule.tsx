@@ -254,6 +254,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   const [editingItemIdx, setEditingItemIdx] = useState<number | null>(null);
   const [tempLabelsList, setTempLabelsList] = useState<{ code: string; name: string; qty: number }[]>([]);
   const [selectSearchText, setSelectSearchText] = useState<Record<number, string>>({});
+  const [showIssuesMap, setShowIssuesMap] = useState<Record<number, boolean>>({});
 
   const { prefs, save: savePrefs, setColumnWidth } = useTablePreferences(
     'import_shipments_table_v1',
@@ -415,6 +416,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     setDetailRow(JSON.parse(JSON.stringify(record))); // Deep copy
     setOriginalItems(JSON.parse(JSON.stringify(record.imp_shipment_items || [])));
     setIsNew(false);
+    setShowIssuesMap({});
   };
 
   // Open Create Drawer
@@ -441,6 +443,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     setDetailRow(emptyRecord);
     setOriginalItems([]);
     setIsNew(true);
+    setShowIssuesMap({});
   };
 
   // Delete shipment
@@ -541,6 +544,14 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       }
       return { ...prev, imp_shipment_items: items };
     });
+  };
+
+  const handleToggleIssueVisible = (idx: number, checked: boolean) => {
+    setShowIssuesMap(prev => ({ ...prev, [idx]: checked }));
+    if (!checked) {
+      updateItemField(idx, 'issue_notes', null);
+      updateItemField(idx, 'resolution_notes', null);
+    }
   };
 
   const handleAddItem = () => {
@@ -1523,268 +1534,297 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 </div>
               ) : (
                 <Space direction="vertical" style={{ width: '100%' }} size={6}>
-                  {detailRow.imp_shipment_items.map((item, idx) => (
-                    <div
-                      key={item.id || `new-item-${idx}`}
-                      style={{
-                        padding: '6px 10px',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: 8,
-                        background: '#f8fafc',
-                        position: 'relative'
-                      }}
-                    >
-                      {/* Delete button (SCM only) */}
-                      {simulatedRole === 'QA_NHAP_KHAU' && (
-                        <Button
-                          type="text"
-                          danger
-                          size="small"
-                          icon={<Trash2 size={14} />}
-                          style={{ position: 'absolute', top: 4, right: 4, zIndex: 10 }}
-                          onClick={() => handleRemoveItem(idx)}
-                        />
-                      )}
+                  {detailRow.imp_shipment_items.map((item, idx) => {
+                    const isIssueVisible = showIssuesMap[idx] ?? !!(item.issue_notes || item.resolution_notes);
+                    return (
+                      <div
+                        key={item.id || `new-item-${idx}`}
+                        style={{
+                          padding: '6px 10px',
+                          border: isIssueVisible ? '1px solid #fca5a5' : '1px solid #e2e8f0',
+                          borderRadius: 8,
+                          background: isIssueVisible ? '#fff5f5' : '#f8fafc',
+                          position: 'relative'
+                        }}
+                      >
+                        {/* Delete button (SCM only) */}
+                        {simulatedRole === 'QA_NHAP_KHAU' && (
+                          <Button
+                            type="text"
+                            danger
+                            size="small"
+                            icon={<Trash2 size={14} />}
+                            style={{ position: 'absolute', top: 4, right: 4, zIndex: 10 }}
+                            onClick={() => handleRemoveItem(idx)}
+                          />
+                        )}
 
-                      <Row gutter={[10, 6]} align="top">
-                        {/* Left Section: Product Details, Visa/Decision & QA Issues (span 16) */}
-                        <Col span={16}>
-                          {/* Row 1: Code, Name, COA */}
-                          <Row gutter={[10, 6]} align="middle">
-                            {/* Match Item Code */}
-                            <Col span={7}>
-                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
-                                Mã Danh Mục (Item Code)
-                              </div>
-                              <Select
-                                showSearch
-                                placeholder="Khớp mã SP..."
-                                optionFilterProp="label"
-                                filterOption={(input, option) => {
-                                  if (!option) return false;
-                                  const searchKey = input.toLowerCase().trim();
-                                  const labelStr = (option.label as string || '').toLowerCase();
-                                  const valStr = (option.value as string || '').toLowerCase();
-                                  return labelStr.includes(searchKey) || valStr.includes(searchKey);
-                                }}
-                                value={item.item_code || undefined}
-                                onChange={(val) => updateItemField(idx, 'item_code', val)}
-                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
-                                style={{ width: '100%' }}
-                                options={masterItems.map(m => ({ value: m.item_code, label: `[${m.item_code}] ${m.item_name}` }))}
-                                dropdownStyle={{ borderRadius: 8 }}
-                                popupMatchSelectWidth={false}
-                                allowClear
-                              />
-                            </Col>
+                        <Row gutter={[10, 6]} align="top">
+                          {/* Left Section: Product Details, Visa/Decision & QA Issues (span 16) */}
+                          <Col span={16}>
+                            {/* Row 1: Code, Name, COA */}
+                            <Row gutter={[10, 6]} align="middle">
+                              {/* Match Item Code */}
+                              <Col span={7}>
+                                <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                                  Mã Danh Mục (Item Code)
+                                </div>
+                                <Select
+                                  showSearch
+                                  placeholder="Khớp mã SP..."
+                                  optionFilterProp="label"
+                                  filterOption={(input, option) => {
+                                    if (!option) return false;
+                                    const searchKey = input.toLowerCase().trim();
+                                    const labelStr = (option.label as string || '').toLowerCase();
+                                    const valStr = (option.value as string || '').toLowerCase();
+                                    return labelStr.includes(searchKey) || valStr.includes(searchKey);
+                                  }}
+                                  value={item.item_code || undefined}
+                                  onChange={(val) => updateItemField(idx, 'item_code', val)}
+                                  disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                  style={{ width: '100%' }}
+                                  options={masterItems.map(m => ({ value: m.item_code, label: `[${m.item_code}] ${m.item_name}` }))}
+                                  dropdownStyle={{ borderRadius: 8 }}
+                                  popupMatchSelectWidth={false}
+                                  allowClear
+                                />
+                              </Col>
 
-                            {/* Item Name (Free text / Auto filled) */}
-                            <Col span={11}>
-                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
-                                Tên sản phẩm thực tế nhập *
-                              </div>
-                              <Input
-                                placeholder="Nhập tên chi tiết thuốc, hàm lượng..."
-                                value={item.item_name}
-                                onChange={(e) => updateItemField(idx, 'item_name', e.target.value)}
-                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
-                                style={{ borderRadius: 6, paddingRight: 24 }}
-                              />
-                            </Col>
+                              {/* Item Name (Free text / Auto filled) */}
+                              <Col span={11}>
+                                <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                                  Tên sản phẩm thực tế nhập *
+                                </div>
+                                <Input
+                                  placeholder="Nhập tên chi tiết thuốc, hàm lượng..."
+                                  value={item.item_name}
+                                  onChange={(e) => updateItemField(idx, 'item_name', e.target.value)}
+                                  disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                  style={{ borderRadius: 6, paddingRight: 24 }}
+                                />
+                              </Col>
 
-                            {/* COA Status per Item */}
-                            <Col span={6}>
-                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
-                                Trạng thái COA
-                              </div>
-                              <Select
-                                value={item.coa_status || 'Chưa có'}
-                                onChange={(val) => updateItemField(idx, 'coa_status', val)}
-                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
-                                style={{ width: '100%' }}
-                                options={COA_STATUS_OPTIONS}
-                              />
-                            </Col>
-                          </Row>
+                              {/* COA Status per Item */}
+                              <Col span={6}>
+                                <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                                  Trạng thái COA
+                                </div>
+                                <Select
+                                  value={item.coa_status || 'Chưa có'}
+                                  onChange={(val) => updateItemField(idx, 'coa_status', val)}
+                                  disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                  style={{ width: '100%' }}
+                                  options={COA_STATUS_OPTIONS}
+                                />
+                              </Col>
+                            </Row>
 
-                          {/* Row 2: Visa, Decision, Validity */}
-                          <Row gutter={[10, 6]} style={{ marginTop: 6 }}>
-                            {/* Số Visa */}
-                            <Col span={7}>
-                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
-                                Số Visa
-                              </div>
-                              <Input
-                                placeholder="Số Visa..."
-                                value={item.visa_no || ''}
-                                onChange={(e) => updateItemField(idx, 'visa_no', e.target.value)}
-                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
-                                size="small"
-                                style={{ borderRadius: 6 }}
-                              />
-                            </Col>
+                            {/* Row 2: Visa, Decision, Validity */}
+                            <Row gutter={[10, 6]} style={{ marginTop: 6 }}>
+                              {/* Số Visa */}
+                              <Col span={7}>
+                                <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                                  Số Visa
+                                </div>
+                                <Input
+                                  placeholder="Số Visa..."
+                                  value={item.visa_no || ''}
+                                  onChange={(e) => updateItemField(idx, 'visa_no', e.target.value)}
+                                  disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                  size="small"
+                                  style={{ borderRadius: 6 }}
+                                />
+                              </Col>
 
-                            {/* Số quyết định */}
-                            <Col span={11}>
-                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
-                                Số quyết định
-                              </div>
-                              <Input
-                                placeholder="Số quyết định..."
-                                value={item.decision_no || ''}
-                                onChange={(e) => updateItemField(idx, 'decision_no', e.target.value)}
-                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
-                                size="small"
-                                style={{ borderRadius: 6 }}
-                              />
-                            </Col>
+                              {/* Số quyết định */}
+                              <Col span={11}>
+                                <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                                  Số quyết định
+                                </div>
+                                <Input
+                                  placeholder="Số quyết định..."
+                                  value={item.decision_no || ''}
+                                  onChange={(e) => updateItemField(idx, 'decision_no', e.target.value)}
+                                  disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                  size="small"
+                                  style={{ borderRadius: 6 }}
+                                />
+                              </Col>
 
-                            {/* Hiệu lực đến */}
-                            <Col span={6}>
-                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
-                                Hiệu lực đến
-                              </div>
-                              <Input
-                                placeholder="VD: 25/12/2028..."
-                                value={item.valid_until || ''}
-                                onChange={(e) => updateItemField(idx, 'valid_until', e.target.value)}
-                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
-                                size="small"
-                                style={{ borderRadius: 6 }}
-                              />
-                            </Col>
-                          </Row>
+                              {/* Hiệu lực đến */}
+                              <Col span={6}>
+                                <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                                  Hiệu lực đến
+                                </div>
+                                <Input
+                                  placeholder="VD: 25/12/2028..."
+                                  value={item.valid_until || ''}
+                                  onChange={(e) => updateItemField(idx, 'valid_until', e.target.value)}
+                                  disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                  size="small"
+                                  style={{ borderRadius: 6 }}
+                                />
+                              </Col>
+                            </Row>
 
-                          {/* Row 3: QA Issues (Vấn đề & Hướng xử lý) */}
-                          <Row gutter={[10, 6]} style={{ marginTop: 6 }}>
-                            {/* Vấn đề */}
-                            <Col span={12}>
-                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#b91c1c' }}>
-                                Vấn đề (nếu có)
-                              </div>
-                              <Input
-                                placeholder="Nhập chi tiết vấn đề phát sinh..."
-                                value={item.issue_notes || ''}
-                                onChange={(e) => updateItemField(idx, 'issue_notes', e.target.value)}
-                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
-                                size="small"
-                                style={{ borderRadius: 6 }}
-                              />
-                            </Col>
+                            {/* Row 3: QA Issues (Vấn đề & Hướng xử lý) */}
+                            {isIssueVisible && (
+                              <Row gutter={[10, 6]} style={{ marginTop: 6 }}>
+                                {/* Vấn đề */}
+                                <Col span={12}>
+                                  <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#b91c1c' }}>
+                                    Vấn đề (nếu có)
+                                  </div>
+                                  <Input
+                                    placeholder="Nhập chi tiết vấn đề phát sinh..."
+                                    value={item.issue_notes || ''}
+                                    onChange={(e) => updateItemField(idx, 'issue_notes', e.target.value)}
+                                    disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                    size="small"
+                                    style={{ borderRadius: 6 }}
+                                  />
+                                </Col>
 
-                            {/* Hướng xử lý */}
-                            <Col span={12}>
-                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#b91c1c' }}>
-                                Hướng xử lý
-                              </div>
-                              <Input
-                                placeholder="Nhập hướng xử lý..."
-                                value={item.resolution_notes || ''}
-                                onChange={(e) => updateItemField(idx, 'resolution_notes', e.target.value)}
-                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
-                                size="small"
-                                style={{ borderRadius: 6 }}
-                              />
-                            </Col>
-                          </Row>
-                        </Col>
+                                {/* Hướng xử lý */}
+                                <Col span={12}>
+                                  <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#b91c1c' }}>
+                                    Hướng xử lý
+                                  </div>
+                                  <Input
+                                    placeholder="Nhập hướng xử lý..."
+                                    value={item.resolution_notes || ''}
+                                    onChange={(e) => updateItemField(idx, 'resolution_notes', e.target.value)}
+                                    disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                    size="small"
+                                    style={{ borderRadius: 6 }}
+                                  />
+                                </Col>
+                              </Row>
+                            )}
+                          </Col>
 
-                        {/* Right Section: Required Stamps/Labels (span 8) */}
-                        <Col span={8}>
-                          {item.item_code ? (
-                            (() => {
-                              const isCustomized = !!(item.required_labels && Array.isArray(item.required_labels));
-                              const reqLabels = isCustomized ? item.required_labels! : getProductLabels(item.item_code);
-                              const hasLabels = reqLabels && reqLabels.length > 0;
-                              
-                              return (
-                                <div style={{
-                                  background: 'rgba(13,148,136,0.04)',
-                                  border: '1px dashed rgba(13,148,136,0.3)',
-                                  padding: '4px 8px',
-                                  borderRadius: 8,
-                                }}>
-                                  <div style={{ fontSize: 10, fontWeight: 700, color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                      🏷️ Tem nhãn bắt buộc:
-                                    </span>
-                                    
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                      <span style={{
-                                        fontSize: 8,
-                                        fontWeight: 600,
-                                        color: isCustomized ? '#d97706' : '#0d9488',
-                                        background: isCustomized ? '#fef3c7' : '#ccfbf1',
-                                        padding: '1px 4px',
-                                        borderRadius: 3
-                                      }}>
-                                        {isCustomized ? 'Manual' : 'Realtime'}
-                                      </span>
-                                      
-                                      {simulatedRole === 'QA_NHAP_KHAU' && (
-                                        <Space size={2}>
-                                          <Button
-                                            type="link"
-                                            size="small"
-                                            onClick={() => handleOpenCustomLabelModal(idx, reqLabels)}
-                                            style={{ padding: 0, height: 'auto', fontSize: 10, color: '#2563eb' }}
-                                          >
-                                            [Sửa]
-                                          </Button>
-                                          {isCustomized && (
-                                            <Button
-                                              type="link"
-                                              size="small"
-                                              onClick={() => handleResetLabels(idx)}
-                                              style={{ padding: 0, height: 'auto', fontSize: 10, color: '#dc2626' }}
-                                            >
-                                              [Reset]
-                                            </Button>
+                          {/* Right Section: Required Stamps/Labels & Toggle (span 8) */}
+                          <Col span={8}>
+                            <Space direction="vertical" style={{ width: '100%' }} size={6}>
+                              {item.item_code ? (
+                                (() => {
+                                  const isCustomized = !!(item.required_labels && Array.isArray(item.required_labels));
+                                  const reqLabels = isCustomized ? item.required_labels! : getProductLabels(item.item_code);
+                                  const hasLabels = reqLabels && reqLabels.length > 0;
+                                  
+                                  return (
+                                    <div style={{
+                                      background: 'rgba(13,148,136,0.04)',
+                                      border: '1px dashed rgba(13,148,136,0.3)',
+                                      padding: '4px 8px',
+                                      borderRadius: 8,
+                                    }}>
+                                      <div style={{ fontSize: 10, fontWeight: 700, color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                          🏷️ Tem nhãn bắt buộc:
+                                        </span>
+                                        
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                          <span style={{
+                                            fontSize: 8,
+                                            fontWeight: 600,
+                                            color: isCustomized ? '#d97706' : '#0d9488',
+                                            background: isCustomized ? '#fef3c7' : '#ccfbf1',
+                                            padding: '1px 4px',
+                                            borderRadius: 3
+                                          }}>
+                                            {isCustomized ? 'Manual' : 'Realtime'}
+                                          </span>
+                                          
+                                          {simulatedRole === 'QA_NHAP_KHAU' && (
+                                            <Space size={2}>
+                                              <Button
+                                                type="link"
+                                                size="small"
+                                                onClick={() => handleOpenCustomLabelModal(idx, reqLabels)}
+                                                style={{ padding: 0, height: 'auto', fontSize: 10, color: '#2563eb' }}
+                                              >
+                                                [Sửa]
+                                              </Button>
+                                              {isCustomized && (
+                                                <Button
+                                                  type="link"
+                                                  size="small"
+                                                  onClick={() => handleResetLabels(idx)}
+                                                  style={{ padding: 0, height: 'auto', fontSize: 10, color: '#dc2626' }}
+                                                >
+                                                  [Reset]
+                                                </Button>
+                                              )}
+                                            </Space>
                                           )}
-                                        </Space>
+                                        </div>
+                                      </div>
+                                      
+                                      {hasLabels ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                          {reqLabels.map((lbl, lidx) => (
+                                            <div key={lidx} style={{ fontSize: 10, color: '#334155', display: 'flex', justifyContent: 'space-between', gap: 8, lineHeight: 1.2 }}>
+                                              <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                                • <strong style={{ color: '#0d9488' }}>{lbl.code}</strong> - {lbl.name}
+                                              </span>
+                                              <span style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                                Tỷ lệ: <strong style={{ color: '#0f766e' }}>{lbl.qty}</strong>
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <div style={{ fontSize: 10, color: '#94a3b8', fontStyle: 'italic', lineHeight: 1.2 }}>
+                                          Chưa có yêu cầu tem nhãn bổ sung
+                                        </div>
                                       )}
                                     </div>
-                                  </div>
-                                  
-                                  {hasLabels ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                      {reqLabels.map((lbl, lidx) => (
-                                        <div key={lidx} style={{ fontSize: 10, color: '#334155', display: 'flex', justifyContent: 'space-between', gap: 8, lineHeight: 1.2 }}>
-                                          <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                                            • <strong style={{ color: '#0d9488' }}>{lbl.code}</strong> - {lbl.name}
-                                          </span>
-                                          <span style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
-                                            Tỷ lệ: <strong style={{ color: '#0f766e' }}>{lbl.qty}</strong>
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <div style={{ fontSize: 10, color: '#94a3b8', fontStyle: 'italic', lineHeight: 1.2 }}>
-                                      Chưa có yêu cầu tem nhãn bổ sung
-                                    </div>
-                                  )}
+                                  );
+                                })()
+                              ) : (
+                                <div style={{
+                                  background: '#f8fafc',
+                                  border: '1px dashed #e2e8f0',
+                                  padding: '8px 10px',
+                                  borderRadius: 8,
+                                  fontSize: 10,
+                                  color: '#94a3b8',
+                                  fontStyle: 'italic',
+                                  textAlign: 'center'
+                                }}>
+                                  Chọn mã SP để xem tem nhãn dán bổ sung
                                 </div>
-                              );
-                            })()
-                          ) : (
-                            <div style={{
-                              background: '#f8fafc',
-                              border: '1px dashed #e2e8f0',
-                              padding: '8px 10px',
-                              borderRadius: 8,
-                              fontSize: 10,
-                              color: '#94a3b8',
-                              fontStyle: 'italic',
-                              textAlign: 'center'
-                            }}>
-                              Chọn mã SP để xem tem nhãn dán bổ sung
-                            </div>
-                          )}
-                        </Col>
-                      </Row>
-                    </div>
-                  ))}
+                              )}
+
+                              {/* Toggle switch for QA Issues */}
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                background: isIssueVisible ? '#fff5f5' : '#f8fafc',
+                                border: isIssueVisible ? '1px dashed #fca5a5' : '1px solid #e2e8f0',
+                                padding: '4px 8px',
+                                borderRadius: 8,
+                                transition: 'all 200ms ease'
+                              }}>
+                                <span style={{ fontSize: 10, fontWeight: 600, color: isIssueVisible ? '#b91c1c' : '#64748b' }}>
+                                  ⚠️ Phát sinh vấn đề
+                                </span>
+                                <Switch
+                                  checked={isIssueVisible}
+                                  onChange={(val) => handleToggleIssueVisible(idx, val)}
+                                  disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                  size="small"
+                                />
+                              </div>
+                            </Space>
+                          </Col>
+                        </Row>
+                      </div>
+                    );
+                  })}
                 </Space>
               )}
             </div>
