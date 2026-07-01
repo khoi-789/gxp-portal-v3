@@ -80,7 +80,7 @@ async function fetchMasterSuppliers(
     }
   });
 
-  query = query.order('supplier_code', { ascending: true });
+  query = query.order('supplier_name', { ascending: true });
 
   const from = (page - 1) * pageSize;
   const to = page * pageSize - 1;
@@ -349,7 +349,7 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
         }
       });
 
-      query = query.order('supplier_code', { ascending: true });
+      query = query.order('supplier_name', { ascending: true });
 
       const { data, error } = await query;
       if (error) throw error;

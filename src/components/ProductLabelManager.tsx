@@ -49,7 +49,7 @@ async function fetchLabelMappings(
     }
   });
 
-  query = query.order('id', { ascending: false });
+  query = query.order('product_item_code', { ascending: true });
 
   const from = (page - 1) * pageSize;
   const to = page * pageSize - 1;

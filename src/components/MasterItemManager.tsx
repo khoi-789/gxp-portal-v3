@@ -95,8 +95,8 @@ async function fetchMasterItems(
     }
   });
 
-  // 3. Sorting (default descending by updated_at)
-  query = query.order('updated_at', { ascending: false });
+  // 3. Sorting (default ascending by item_code)
+  query = query.order('item_code', { ascending: true });
 
   // 4. Pagination range
   const from = (page - 1) * pageSize;
