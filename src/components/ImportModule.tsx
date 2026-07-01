@@ -1816,10 +1816,11 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   ⚠️ Phát sinh vấn đề
                                 </span>
                                 <Switch
+                                  checkedChildren="Có"
+                                  unCheckedChildren="Không"
                                   checked={isIssueVisible}
                                   onChange={(val) => handleToggleIssueVisible(idx, val)}
                                   disabled={simulatedRole !== 'QA_NHAP_KHAU'}
-                                  size="small"
                                 />
                               </div>
                             </Space>
