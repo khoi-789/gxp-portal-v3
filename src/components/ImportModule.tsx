@@ -727,6 +727,12 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       // ── Audit Log ──
       const changedBy = userId || 'unknown';
       const userRole = simulatedRole === 'QA_NHAP_KHAU' ? 'QA Nhập khẩu' : 'QA Kho';
+
+      // 1. Log thay đổi của header shipment
+      //    (loại bỏ imp_shipment_items khỏi snapshot để tránh so sánh nhầm)
+      const originalHeader = { ...(originalRow as any) };
+      delete originalHeader.imp_shipment_items;
+
       if (isNew) {
         writeAuditLog({
           tableName: 'imp_shipments', recordId: invoiceNumber,
@@ -736,16 +742,61 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
         });
       } else {
         const { diff, changedFields } = buildDiff(
-          originalRow as unknown as Record<string, unknown>,
+          originalHeader as Record<string, unknown>,
           shipmentPayload as Record<string, unknown>
         );
+        if (changedFields.length > 0) {
+          writeAuditLog({
+            tableName: 'imp_shipments', recordId: invoiceNumber,
+            action: 'UPDATE', changedBy, userRole,
+            oldValues: originalHeader as Record<string, unknown>,
+            newValues: shipmentPayload as Record<string, unknown>,
+            diff, changedFields,
+          });
+        }
+      }
+
+      // 2. Log từng item bị xóa
+      for (const deletedId of idsToDelete) {
+        const oldItem = originalItems.find((i: any) => i.id === deletedId);
+        if (oldItem) {
+          writeAuditLog({
+            tableName: 'imp_shipment_items', recordId: String(deletedId),
+            action: 'DELETE', changedBy, userRole,
+            oldValues: oldItem as unknown as Record<string, unknown>,
+          });
+        }
+      }
+
+      // 3. Log từng item được thêm mới
+      for (const newItem of toInsert) {
         writeAuditLog({
-          tableName: 'imp_shipments', recordId: invoiceNumber,
-          action: 'UPDATE', changedBy, userRole,
-          oldValues: originalRow as unknown as Record<string, unknown>,
-          newValues: shipmentPayload as Record<string, unknown>,
-          diff, changedFields,
+          tableName: 'imp_shipment_items', recordId: `${invoiceNumber}-${newItem.item_code || 'new'}`,
+          action: 'INSERT', changedBy, userRole,
+          newValues: newItem as unknown as Record<string, unknown>,
+          changedFields: Object.keys(newItem),
         });
+      }
+
+      // 4. Log từng item được cập nhật (chỉ ghi khi có thay đổi thực sự)
+      for (const item of toUpdate) {
+        const oldItem = originalItems.find((i: any) => i.id === item.id);
+        if (oldItem) {
+          const { diff: itemDiff, changedFields: itemChanged } = buildDiff(
+            oldItem as unknown as Record<string, unknown>,
+            item as unknown as Record<string, unknown>
+          );
+          if (itemChanged.length > 0) {
+            writeAuditLog({
+              tableName: 'imp_shipment_items', recordId: String(item.id),
+              action: 'UPDATE', changedBy, userRole,
+              oldValues: oldItem as unknown as Record<string, unknown>,
+              newValues: item as unknown as Record<string, unknown>,
+              diff: itemDiff,
+              changedFields: itemChanged,
+            });
+          }
+        }
       }
 
       messageApi.success(`Lưu thông tin Invoice ${invoiceNumber} thành công!`);
