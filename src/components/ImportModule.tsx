@@ -1327,7 +1327,14 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             {/* History Tab */}
             {!isNew && drawerTab === 'history' && (
               <div style={{ background: 'white', borderRadius: 12, padding: '12px 16px' }}>
-                <AuditLogTimeline tableName="imp_shipments" recordId={detailRow.invoice_number} />
+                <AuditLogTimeline
+                  tableName="imp_shipments"
+                  recordId={detailRow.invoice_number}
+                  additionalQuery={[{
+                    tableName: 'imp_shipment_items',
+                    recordIds: (detailRow.imp_shipment_items || []).map((item: any) => item.id).filter(Boolean),
+                  }]}
+                />
               </div>
             )}
 

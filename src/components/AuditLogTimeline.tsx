@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { Timeline, Tag, Spin, Empty, Typography, Tooltip } from 'antd';
@@ -25,6 +25,8 @@ interface AuditLogEntry {
 interface AuditLogTimelineProps {
   tableName: string;
   recordId: string | number;
+  /** Optional extra tables to query (useful for parent+child records like imp_shipments + imp_shipment_items) */
+  additionalQuery?: { tableName: string; recordIds: (string | number)[] }[];
   maxItems?: number;
 }
 
@@ -85,7 +87,7 @@ function formatValue(val: unknown): string {
 }
 
 export default function AuditLogTimeline({
-  tableName, recordId, maxItems = 50,
+  tableName, recordId, additionalQuery = [], maxItems = 50,
 }: AuditLogTimelineProps) {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,18 +95,44 @@ export default function AuditLogTimeline({
   useEffect(() => {
     const fetchLogs = async () => {
       setLoading(true);
-      const { data, error } = await supabase
+      // Fetch primary table logs
+      const { data: primaryData, error: primaryError } = await supabase
         .from('audit_logs')
         .select('*')
         .eq('table_name', tableName)
         .eq('record_id', String(recordId))
         .order('changed_at', { ascending: false })
         .limit(maxItems);
-      if (!error) setLogs(data || []);
+
+      if (primaryError) {
+        console.warn('[AuditLogTimeline] Primary fetch error:', primaryError.message);
+      }
+
+      let allLogs = primaryData || [];
+
+      // Fetch additional tables
+      for (const extra of additionalQuery) {
+        if (!extra.recordIds || extra.recordIds.length === 0) continue;
+        const { data: extraData } = await supabase
+          .from('audit_logs')
+          .select('*')
+          .eq('table_name', extra.tableName)
+          .in('record_id', extra.recordIds.map(String))
+          .order('changed_at', { ascending: false })
+          .limit(maxItems);
+        if (extraData) {
+          allLogs = allLogs.concat(extraData);
+        }
+      }
+
+      // Sort merged logs by changed_at desc
+      allLogs.sort((a, b) => new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime());
+      // Keep only maxItems total
+      setLogs(allLogs.slice(0, maxItems));
       setLoading(false);
     };
     fetchLogs();
-  }, [tableName, recordId, maxItems]);
+  }, [tableName, recordId, maxItems, JSON.stringify(additionalQuery)]);
 
   if (loading) return (
     <div style={{ textAlign: 'center', padding: 32 }}>
