@@ -750,6 +750,17 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     return textStr || '—';
   };
 
+  const parseImportDate = (val: string | null | undefined) => {
+    if (!val) return null;
+    let d = dayjs(val, 'DD/MM/YYYY', true);
+    if (d.isValid()) return d;
+    d = dayjs(val, 'YYYY-MM-DD', true);
+    if (d.isValid()) return d;
+    d = dayjs(val);
+    if (d.isValid()) return d;
+    return null;
+  };
+
   // Table Columns Definition
   const allColumnDefs: Record<string, any> = {
     stt: {
@@ -1360,8 +1371,38 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                   })()}
                 </Col>
 
+                {/* Warehouse Dropdown */}
+                <Col span={8}>
+                  <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Kho</div>
+                  <Select
+                    placeholder="Chọn Kho nhận hàng"
+                    value={detailRow.target_warehouse || undefined}
+                    onChange={(val) => updateField('target_warehouse', val)}
+                    disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                    style={{ width: '100%' }}
+                    options={[
+                      { value: 'Kho Long Hậu', label: 'Kho Long Hậu' },
+                      { value: 'Kho Hưng Yên', label: 'Kho Hưng Yên' }
+                    ]}
+                    allowClear
+                  />
+                </Col>
+
+                {/* Actual Import Date Note (DatePicker with DD/MM/YYYY formatting) */}
+                <Col span={10}>
+                  <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Ngày nhập (Ghi chú thực tế)</div>
+                  <DatePicker
+                    placeholder="Chọn hoặc nhập ngày (DD/MM/YYYY)"
+                    value={parseImportDate(detailRow.actual_import_date_note)}
+                    onChange={(date) => updateField('actual_import_date_note', date ? date.format('DD/MM/YYYY') : '')}
+                    style={{ width: '100%', borderRadius: 6 }}
+                    format="DD/MM/YYYY"
+                    allowClear
+                  />
+                </Col>
+
                 {/* Progress Status */}
-                <Col span={4}>
+                <Col span={6}>
                   <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Tiến độ tổng</div>
                   <Select
                     value={detailRow.progress_status}
@@ -1372,7 +1413,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 </Col>
 
                 {/* Has Data Logger */}
-                <Col span={10}>
+                <Col span={12}>
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -1416,7 +1457,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 </Col>
 
                 {/* Temperature Out of Range */}
-                <Col span={10}>
+                <Col span={12}>
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -1452,34 +1493,6 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                       </div>
                     )}
                   </div>
-                </Col>
-
-                {/* Warehouse Dropdown */}
-                <Col span={12}>
-                  <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Kho</div>
-                  <Select
-                    placeholder="Chọn Kho nhận hàng"
-                    value={detailRow.target_warehouse || undefined}
-                    onChange={(val) => updateField('target_warehouse', val)}
-                    disabled={simulatedRole !== 'QA_NHAP_KHAU'}
-                    style={{ width: '100%' }}
-                    options={[
-                      { value: 'Kho Long Hậu', label: 'Kho Long Hậu' },
-                      { value: 'Kho Hưng Yên', label: 'Kho Hưng Yên' }
-                    ]}
-                    allowClear
-                  />
-                </Col>
-
-                {/* Actual Import Date Note */}
-                <Col span={12}>
-                  <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Ngày nhập (Ghi chú thực tế)</div>
-                  <Input
-                    placeholder="VD: Đã nhập kho LH 25/06/2026, Đang vận chuyển..."
-                    value={detailRow.actual_import_date_note || ''}
-                    onChange={(e) => updateField('actual_import_date_note', e.target.value)}
-                    style={{ borderRadius: 6 }}
-                  />
                 </Col>
               </Row>
             </div>
