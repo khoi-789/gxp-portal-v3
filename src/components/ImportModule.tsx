@@ -21,6 +21,8 @@ import dayjs from 'dayjs';
 import { syncMasterData } from '@/lib/masterDataSync';
 import { supabase } from '@/lib/supabase';
 import { useMasterItems, useMasterSuppliers } from '@/lib/useMasterData';
+import { buildDiff, writeAuditLog } from '@/lib/auditLog';
+import AuditLogTimeline from '@/components/AuditLogTimeline';
 
 /* ──────────────────────────────────────────────────
    Types
@@ -238,6 +240,10 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   
   // Track original detail items for smart DB updates
   const [originalItems, setOriginalItems] = useState<ShipmentItem[]>([]);
+  // Snapshot of original master row for Audit Log diff
+  const [originalRow, setOriginalRow] = useState<ShipmentRecord | null>(null);
+  // Active drawer tab
+  const [drawerTab, setDrawerTab] = useState<'info' | 'history'>('info');
 
   // Custom required labels modal state
   const [customLabelModalVisible, setCustomLabelModalVisible] = useState(false);
@@ -384,7 +390,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   const handleOpenDetail = (record: ShipmentRecord) => {
     setDetailRow(JSON.parse(JSON.stringify(record))); // Deep copy
     setOriginalItems(JSON.parse(JSON.stringify(record.imp_shipment_items || [])));
+    setOriginalRow(JSON.parse(JSON.stringify(record))); // Snapshot for audit log
     setIsNew(false);
+    setDrawerTab('info');
     setShowIssuesMap({});
   };
 
@@ -411,7 +419,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     };
     setDetailRow(emptyRecord);
     setOriginalItems([]);
+    setOriginalRow(null);
     setIsNew(true);
+    setDrawerTab('info');
     setShowIssuesMap({});
   };
 
@@ -712,6 +722,30 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
           .from('imp_shipment_items')
           .insert(toInsert);
         if (insertError) throw insertError;
+      }
+
+      // ── Audit Log ──
+      const changedBy = userId || 'unknown';
+      const userRole = simulatedRole === 'QA_NHAP_KHAU' ? 'QA Nhập khẩu' : 'QA Kho';
+      if (isNew) {
+        writeAuditLog({
+          tableName: 'imp_shipments', recordId: invoiceNumber,
+          action: 'INSERT', changedBy, userRole,
+          newValues: shipmentPayload as Record<string, unknown>,
+          changedFields: Object.keys(shipmentPayload),
+        });
+      } else {
+        const { diff, changedFields } = buildDiff(
+          originalRow as unknown as Record<string, unknown>,
+          shipmentPayload as Record<string, unknown>
+        );
+        writeAuditLog({
+          tableName: 'imp_shipments', recordId: invoiceNumber,
+          action: 'UPDATE', changedBy, userRole,
+          oldValues: originalRow as unknown as Record<string, unknown>,
+          newValues: shipmentPayload as Record<string, unknown>,
+          diff, changedFields,
+        });
       }
 
       messageApi.success(`Lưu thông tin Invoice ${invoiceNumber} thành công!`);
@@ -1196,7 +1230,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
           </div>
         }
         width="90%"
-        onClose={() => setDetailRow(null)}
+        onClose={() => { setDetailRow(null); setOriginalRow(null); }}
         open={!!detailRow}
         extra={
           <Space>
@@ -1217,7 +1251,38 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       >
         {detailRow && (
           <Space direction="vertical" size={10} style={{ width: '100%' }}>
-            
+
+            {/* Tabs: Thông tin / Lịch sử */}
+            {!isNew && (
+              <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+                {(['info', 'history'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setDrawerTab(tab)}
+                    style={{
+                      padding: '5px 14px', fontSize: 12, fontWeight: 600,
+                      borderRadius: 20, border: 'none', cursor: 'pointer',
+                      background: drawerTab === tab ? '#0d9488' : '#e2e8f0',
+                      color: drawerTab === tab ? '#fff' : '#475569',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {tab === 'info' ? '📋 Thông tin' : '🕒 Lịch sử'}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* History Tab */}
+            {!isNew && drawerTab === 'history' && (
+              <div style={{ background: 'white', borderRadius: 12, padding: '12px 16px' }}>
+                <AuditLogTimeline tableName="imp_shipments" recordId={detailRow.invoice_number} />
+              </div>
+            )}
+
+            {/* Main Info (hidden when on history tab) */}
+            {(isNew || drawerTab === 'info') && (
+            <div style={{ display: 'contents' }}>
             {/* Persona Notice */}
             <div style={{
               background: 'rgba(13,148,136,0.06)',
@@ -1788,6 +1853,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 </Space>
               )}
             </div>
+            </div>
+            )}
 
 
 

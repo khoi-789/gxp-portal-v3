@@ -17,6 +17,8 @@ import { ColumnSearchHeader, applyColumnFilters } from '@/lib/columnSearch';
 import TableControls, { ColumnConfig } from '@/components/TableControls';
 import ResizableTitle from '@/components/ResizableTitle';
 import { useTablePreferences } from '@/lib/useTablePreferences';
+import { buildDiff, writeAuditLog } from '@/lib/auditLog';
+import AuditLogTimeline from '@/components/AuditLogTimeline';
 
 async function fetchLabelMappings(
   page: number,
@@ -112,6 +114,8 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
   const queryClient = useQueryClient();
   const [globalSearch, setGlobalSearch] = useState('');
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [drawerTab, setDrawerTab] = useState<'info' | 'history'>('info');
+  const [editingRecord, setEditingRecord] = useState<any>(null);
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('compact');
@@ -471,7 +475,9 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
 
   // Open Create mapping
   const handleCreateNew = () => {
+    setDrawerTab('info');
     setEditingId(null);
+    setEditingRecord(null);
     setSelectedProduct('');
     setSelectedLabel('');
     setQuantity(1);
@@ -480,7 +486,9 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
 
   // Open Edit mapping
   const handleEdit = (record: any) => {
+    setDrawerTab('info');
     setEditingId(record.id);
+    setEditingRecord(record);
     setSelectedProduct(record.product_item_code);
     setSelectedLabel(record.label_item_code);
     setQuantity(record.quantity_per_unit);
@@ -488,13 +496,18 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
   };
 
   // Delete mapping
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (record: any) => {
     try {
       const { error } = await supabase
         .from('product_label_mappings')
         .delete()
-        .eq('id', id);
+        .eq('id', record.id);
       if (error) throw error;
+      writeAuditLog({
+        tableName: 'product_label_mappings', recordId: record.id,
+        action: 'DELETE', changedBy: userId, userRole: 'Admin',
+        oldValues: record,
+      });
       messageApi.success('Đã xóa liên kết thành công!');
       localStorage.removeItem('gxp_product_label_mappings_cache');
       queryClient.invalidateQueries({ queryKey: ['product_label_mappings'] });
@@ -519,14 +532,27 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
     try {
       if (editingId) {
         // Edit existing mapping (update qty)
+        const dbPayload = {
+          quantity_per_unit: quantity,
+        };
         const { error } = await supabase
           .from('product_label_mappings')
-          .update({
-            quantity_per_unit: quantity,
-          })
+          .update(dbPayload)
           .eq('id', editingId);
 
         if (error) throw error;
+
+        const { diff, changedFields } = buildDiff(
+          editingRecord,
+          { ...editingRecord, ...dbPayload }
+        );
+        writeAuditLog({
+          tableName: 'product_label_mappings', recordId: editingId,
+          action: 'UPDATE', changedBy: userId, userRole: 'Admin',
+          oldValues: editingRecord,
+          newValues: { ...editingRecord, ...dbPayload },
+          diff, changedFields,
+        });
         messageApi.success('Đã cập nhật số lượng dán nhãn thành công!');
       } else {
         // Check duplicate
@@ -540,17 +566,23 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
         }
 
         // Insert new mapping
+        const dbPayload = {
+          product_item_code: selectedProduct,
+          label_item_code: selectedLabel,
+          quantity_per_unit: quantity,
+        };
         const { error } = await supabase
           .from('product_label_mappings')
-          .insert([
-            {
-              product_item_code: selectedProduct,
-              label_item_code: selectedLabel,
-              quantity_per_unit: quantity,
-            },
-          ]);
+          .insert([dbPayload]);
 
         if (error) throw error;
+
+        writeAuditLog({
+          tableName: 'product_label_mappings', recordId: `${selectedProduct}-${selectedLabel}`,
+          action: 'INSERT', changedBy: userId, userRole: 'Admin',
+          newValues: dbPayload,
+          changedFields: Object.keys(dbPayload),
+        });
         messageApi.success('Thêm mới liên kết SP - Tem thành công!');
       }
       setIsOpen(false);
@@ -670,7 +702,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
             <Popconfirm
               title="Xóa liên kết SP - Tem"
               description="Bạn có chắc chắn muốn xóa liên kết này?"
-              onConfirm={() => handleDelete(r.id)}
+              onConfirm={() => handleDelete(r)}
               okText="Xóa"
               cancelText="Hủy"
               okButtonProps={{ danger: true }}
@@ -894,7 +926,34 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
         }
         bodyStyle={{ padding: 24, background: '#f8fafc' }}
       >
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%' }}>
+          {/* Tabs for Info / History */}
+          {editingId && (
+            <div style={{ display: 'flex', gap: 4, padding: '0 4px' }}>
+              {(['info', 'history'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setDrawerTab(tab)}
+                  style={{
+                    padding: '5px 14px', fontSize: 12, fontWeight: 600,
+                    borderRadius: 20, border: 'none', cursor: 'pointer',
+                    background: drawerTab === tab ? '#0d9488' : '#e2e8f0',
+                    color: drawerTab === tab ? '#fff' : '#475569',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {tab === 'info' ? '📋 Thông tin' : '🕒 Lịch sử'}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {editingId && drawerTab === 'history' ? (
+            <div style={{ padding: '0 4px', overflowY: 'auto', flex: 1 }}>
+              <AuditLogTimeline tableName="product_label_mappings" recordId={editingId} />
+            </div>
+          ) : (
+            <Space direction="vertical" size="large" style={{ width: '100%', flex: 1, overflowY: 'auto' }}>
           
           <div style={{ background: 'white', padding: 18, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
             <Row gutter={[16, 16]}>
@@ -960,6 +1019,8 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
           </div>
 
         </Space>
+          )}
+        </div>
       </Drawer>
 
     </div>

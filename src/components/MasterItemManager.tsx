@@ -23,6 +23,8 @@ import {
   Plus, Search, Edit3, Trash2, Package, RefreshCw,
   CheckCircle, XCircle, AlertTriangle, Upload, Download
 } from 'lucide-react';
+import { buildDiff, writeAuditLog } from '@/lib/auditLog';
+import AuditLogTimeline from '@/components/AuditLogTimeline';
 
 /**
  * URS §4.3: <MasterItemManager>
@@ -447,6 +449,7 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
   const [pageSize, setPageSize] = useState(10);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [debouncedFilters, setDebouncedFilters] = useState<Record<string, string>>({});
+  const [drawerTab, setDrawerTab] = useState<'info' | 'history'>('info');
 
   // Debounce search text
   useEffect(() => {
@@ -494,9 +497,15 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
     staleTime: 5 * 60 * 1000,
   });
 
-  const createMutation = useMutation({
+   const createMutation = useMutation({
     mutationFn: createMasterItem,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      writeAuditLog({
+        tableName: 'master_items', recordId: data.item_code,
+        action: 'INSERT', changedBy: userId, userRole: 'Admin',
+        newValues: data as unknown as Record<string, unknown>,
+        changedFields: Object.keys(data),
+      });
       localStorage.removeItem('gxp_master_items_cache');
       localStorage.removeItem('gxp_master_items_cache_timestamp');
       queryClient.invalidateQueries({ queryKey: ['master_items'] });
@@ -510,7 +519,18 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
   const updateMutation = useMutation({
     mutationFn: ({ code, data }: { code: string; data: Partial<MasterItemFormData> }) =>
       updateMasterItem(code, data),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      const { diff, changedFields } = buildDiff(
+        editingItem as unknown as Record<string, unknown>,
+        data as unknown as Record<string, unknown>
+      );
+      writeAuditLog({
+        tableName: 'master_items', recordId: data.item_code,
+        action: 'UPDATE', changedBy: userId, userRole: 'Admin',
+        oldValues: editingItem as unknown as Record<string, unknown>,
+        newValues: data as unknown as Record<string, unknown>,
+        diff, changedFields,
+      });
       localStorage.removeItem('gxp_master_items_cache');
       localStorage.removeItem('gxp_master_items_cache_timestamp');
       queryClient.invalidateQueries({ queryKey: ['master_items'] });
@@ -522,8 +542,13 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteMasterItem,
-    onSuccess: () => {
+    mutationFn: (item: MasterItem) => deleteMasterItem(item.item_code),
+    onSuccess: (data, item) => {
+      writeAuditLog({
+        tableName: 'master_items', recordId: item.item_code,
+        action: 'DELETE', changedBy: userId, userRole: 'Admin',
+        oldValues: item as unknown as Record<string, unknown>,
+      });
       localStorage.removeItem('gxp_master_items_cache');
       localStorage.removeItem('gxp_master_items_cache_timestamp');
       queryClient.invalidateQueries({ queryKey: ['master_items'] });
@@ -558,6 +583,7 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
   });
 
   const openDrawerForCreate = () => {
+    setDrawerTab('info');
     setEditingItem(null);
     reset({
       item_code: '',
@@ -577,6 +603,7 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
   };
 
   const openDrawerForEdit = (item: MasterItem) => {
+    setDrawerTab('info');
     setEditingItem(item);
     reset({
       item_code: item.item_code,
@@ -717,7 +744,7 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
         <Popconfirm
           title="Xóa sản phẩm"
           description={`Xác nhận xóa "${record.item_name}"?`}
-          onConfirm={() => deleteMutation.mutate(record.item_code)}
+          onConfirm={() => deleteMutation.mutate(record)}
           okText="Xóa" cancelText="Huỷ" okButtonProps={{ danger: true }}
         >
           <Button type="text" size="small" id={`btn-delete-${record.item_code}`} icon={<Trash2 size={15} color="#ef4444" />} style={{ borderRadius: 8 }} />
@@ -968,7 +995,34 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
           </div>
         }
       >
-        <Form layout="vertical" component="div" style={{ padding: '4px 0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%' }}>
+          {/* Tabs for Info / History */}
+          {editingItem && (
+            <div style={{ display: 'flex', gap: 4, padding: '0 4px' }}>
+              {(['info', 'history'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setDrawerTab(tab)}
+                  style={{
+                    padding: '5px 14px', fontSize: 12, fontWeight: 600,
+                    borderRadius: 20, border: 'none', cursor: 'pointer',
+                    background: drawerTab === tab ? '#0d9488' : '#e2e8f0',
+                    color: drawerTab === tab ? '#fff' : '#475569',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {tab === 'info' ? '📋 Thông tin' : '🕒 Lịch sử'}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {editingItem && drawerTab === 'history' ? (
+            <div style={{ padding: '0 4px', overflowY: 'auto', flex: 1 }}>
+              <AuditLogTimeline tableName="master_items" recordId={editingItem.item_code} />
+            </div>
+          ) : (
+            <Form layout="vertical" component="div" style={{ padding: '4px 0', flex: 1, overflowY: 'auto' }}>
 
           {/* item_code — BẮT BUỘC */}
           <Form.Item
@@ -1161,6 +1215,8 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
             </Row>
           </div>
         </Form>
+          )}
+        </div>
       </Drawer>
 
       {/* Striped row style */}

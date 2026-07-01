@@ -20,6 +20,8 @@ import dayjs from 'dayjs';
 import { syncMasterData } from '@/lib/masterDataSync';
 import { supabase } from '@/lib/supabase';
 import { useMasterItems, useMasterSuppliers } from '@/lib/useMasterData';
+import { buildDiff, writeAuditLog } from '@/lib/auditLog';
+import AuditLogTimeline from '@/components/AuditLogTimeline';
 
 /* ──────────────────────────────────────────────────
    Types
@@ -141,6 +143,7 @@ export default function INTModule({ userId = 'default' }: { userId?: string }) {
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [drawerTab, setDrawerTab] = useState<'info' | 'history'>('info');
 
   // Master Data (load-all for dropdowns)
   const { data: masterItemsRaw = [] } = useMasterItems();
@@ -200,6 +203,7 @@ export default function INTModule({ userId = 'default' }: { userId?: string }) {
 
   // Open Drawer for Add/Edit
   const handleOpenDrawer = (record?: INTRecord) => {
+    setDrawerTab('info');
     if (record) {
       setIsNew(false);
       setDetailRow(record);
@@ -266,6 +270,12 @@ export default function INTModule({ userId = 'default' }: { userId?: string }) {
       if (isNew) {
         const { error } = await supabase.from('int_records').insert(dbPayload);
         if (error) throw error;
+        writeAuditLog({
+          tableName: 'int_records', recordId: values.int_code,
+          action: 'INSERT', changedBy: userId, userRole: 'QA',
+          newValues: dbPayload as Record<string, unknown>,
+          changedFields: Object.keys(dbPayload),
+        });
         messageApi.success('Thêm mới biên bản nội bộ INT thành công!');
       } else {
         const { error } = await supabase
@@ -273,6 +283,18 @@ export default function INTModule({ userId = 'default' }: { userId?: string }) {
           .update(dbPayload)
           .eq('id', detailRow?.id);
         if (error) throw error;
+
+        const { diff, changedFields } = buildDiff(
+          detailRow as unknown as Record<string, unknown>,
+          dbPayload as Record<string, unknown>
+        );
+        writeAuditLog({
+          tableName: 'int_records', recordId: values.int_code,
+          action: 'UPDATE', changedBy: userId, userRole: 'QA',
+          oldValues: detailRow as unknown as Record<string, unknown>,
+          newValues: dbPayload as Record<string, unknown>,
+          diff, changedFields,
+        });
         messageApi.success('Cập nhật biên bản nội bộ INT thành công!');
       }
 
@@ -289,8 +311,18 @@ export default function INTModule({ userId = 'default' }: { userId?: string }) {
   // Delete record
   const handleDelete = async (id: number) => {
     try {
+      const { data: recordToDelete } = await supabase.from('int_records').select('*').eq('id', id).single();
       const { error } = await supabase.from('int_records').delete().eq('id', id);
       if (error) throw error;
+      
+      if (recordToDelete) {
+        writeAuditLog({
+          tableName: 'int_records', recordId: recordToDelete.int_code,
+          action: 'DELETE', changedBy: userId, userRole: 'QA',
+          oldValues: recordToDelete,
+        });
+      }
+      
       messageApi.success('Xóa biên bản INT thành công!');
       queryClient.invalidateQueries({ queryKey: ['int_records'] });
     } catch (e: any) {
@@ -655,7 +687,32 @@ export default function INTModule({ userId = 'default' }: { userId?: string }) {
         }
       >
         {detailRow && (
-          <Form form={form} layout="vertical" initialValues={detailRow}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Tabs for Info / History */}
+            {!isNew && (
+              <div style={{ display: 'flex', gap: 4 }}>
+                {(['info', 'history'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setDrawerTab(tab)}
+                    style={{
+                      padding: '5px 14px', fontSize: 12, fontWeight: 600,
+                      borderRadius: 20, border: 'none', cursor: 'pointer',
+                      background: drawerTab === tab ? '#0d9488' : '#e2e8f0',
+                      color: drawerTab === tab ? '#fff' : '#475569',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {tab === 'info' ? '📋 Thông tin' : '🕒 Lịch sử'}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {!isNew && drawerTab === 'history' ? (
+              <AuditLogTimeline tableName="int_records" recordId={detailRow.int_code} />
+            ) : (
+              <Form form={form} layout="vertical" initialValues={detailRow}>
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
@@ -802,7 +859,9 @@ export default function INTModule({ userId = 'default' }: { userId?: string }) {
                 </Form.Item>
               </Col>
             </Row>
-          </Form>
+              </Form>
+            )}
+          </div>
         )}
       </Drawer>
     </div>

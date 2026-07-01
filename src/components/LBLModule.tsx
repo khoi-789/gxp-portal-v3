@@ -20,6 +20,8 @@ import dayjs from 'dayjs';
 import { syncMasterData } from '@/lib/masterDataSync';
 import { supabase } from '@/lib/supabase';
 import { useMasterItems, useMasterSuppliers } from '@/lib/useMasterData';
+import { buildDiff, writeAuditLog } from '@/lib/auditLog';
+import AuditLogTimeline from '@/components/AuditLogTimeline';
 
 /* ──────────────────────────────────────────────────
    Types
@@ -120,6 +122,7 @@ export default function LBLModule({ userId = 'default' }: { userId?: string }) {
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [drawerTab, setDrawerTab] = useState<'info' | 'history'>('info');
 
   // Master Data (load-all for dropdowns)
   const { data: masterItemsRaw = [] } = useMasterItems();
@@ -178,6 +181,7 @@ export default function LBLModule({ userId = 'default' }: { userId?: string }) {
 
   // Open Drawer for Add/Edit
   const handleOpenDrawer = (record?: LBLLabel) => {
+    setDrawerTab('info');
     if (record) {
       setIsNew(false);
       setDetailRow(record);
@@ -245,6 +249,12 @@ export default function LBLModule({ userId = 'default' }: { userId?: string }) {
       if (isNew) {
         const { error } = await supabase.from('lbl_labels').insert(dbPayload);
         if (error) throw error;
+        writeAuditLog({
+          tableName: 'lbl_labels', recordId: values.base_label_code || values.item_code,
+          action: 'INSERT', changedBy: userId, userRole: 'QA',
+          newValues: dbPayload as Record<string, unknown>,
+          changedFields: Object.keys(dbPayload),
+        });
         messageApi.success('Thêm mới phiên bản nhãn phụ thành công!');
       } else {
         const { error } = await supabase
@@ -252,6 +262,18 @@ export default function LBLModule({ userId = 'default' }: { userId?: string }) {
           .update(dbPayload)
           .eq('id', detailRow?.id);
         if (error) throw error;
+
+        const { diff, changedFields } = buildDiff(
+          detailRow as unknown as Record<string, unknown>,
+          dbPayload as Record<string, unknown>
+        );
+        writeAuditLog({
+          tableName: 'lbl_labels', recordId: values.base_label_code || values.item_code,
+          action: 'UPDATE', changedBy: userId, userRole: 'QA',
+          oldValues: detailRow as unknown as Record<string, unknown>,
+          newValues: dbPayload as Record<string, unknown>,
+          diff, changedFields,
+        });
         messageApi.success('Cập nhật phiên bản nhãn phụ thành công!');
       }
 
@@ -268,8 +290,18 @@ export default function LBLModule({ userId = 'default' }: { userId?: string }) {
   // Delete record
   const handleDelete = async (id: number) => {
     try {
+      const { data: recordToDelete } = await supabase.from('lbl_labels').select('*').eq('id', id).single();
       const { error } = await supabase.from('lbl_labels').delete().eq('id', id);
       if (error) throw error;
+      
+      if (recordToDelete) {
+        writeAuditLog({
+          tableName: 'lbl_labels', recordId: recordToDelete.base_label_code || recordToDelete.item_code,
+          action: 'DELETE', changedBy: userId, userRole: 'QA',
+          oldValues: recordToDelete,
+        });
+      }
+      
       messageApi.success('Xóa nhãn phụ thành công!');
       queryClient.invalidateQueries({ queryKey: ['lbl_labels'] });
     } catch (e: any) {
@@ -617,7 +649,32 @@ export default function LBLModule({ userId = 'default' }: { userId?: string }) {
         }
       >
         {detailRow && (
-          <Form form={form} layout="vertical" initialValues={detailRow}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Tabs for Info / History */}
+            {!isNew && (
+              <div style={{ display: 'flex', gap: 4 }}>
+                {(['info', 'history'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setDrawerTab(tab)}
+                    style={{
+                      padding: '5px 14px', fontSize: 12, fontWeight: 600,
+                      borderRadius: 20, border: 'none', cursor: 'pointer',
+                      background: drawerTab === tab ? '#0d9488' : '#e2e8f0',
+                      color: drawerTab === tab ? '#fff' : '#475569',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {tab === 'info' ? '📋 Thông tin' : '🕒 Lịch sử'}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {!isNew && drawerTab === 'history' ? (
+              <AuditLogTimeline tableName="lbl_labels" recordId={detailRow.base_label_code || detailRow.item_code} />
+            ) : (
+              <Form form={form} layout="vertical" initialValues={detailRow}>
             <Form.Item
               label="Sản Phẩm"
               name="item_code"
@@ -735,7 +792,9 @@ export default function LBLModule({ userId = 'default' }: { userId?: string }) {
             <Form.Item label="Link Ảnh Xem Nhanh (Preview)" name="preview_image_url">
               <Input prefix={<Link size={14} color="#64748b" />} placeholder="Link ảnh xem trước nhanh (PNG/JPG)..." style={{ borderRadius: 6 }} />
             </Form.Item>
-          </Form>
+              </Form>
+            )}
+          </div>
         )}
       </Drawer>
     </div>

@@ -22,6 +22,8 @@ import {
   Plus, Search, Edit3, Trash2, Truck, RefreshCw,
   AlertTriangle, HelpCircle, Upload, Download
 } from 'lucide-react';
+import { buildDiff, writeAuditLog } from '@/lib/auditLog';
+import AuditLogTimeline from '@/components/AuditLogTimeline';
 
 const { Option } = Select;
 
@@ -394,6 +396,7 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [drawerTab, setDrawerTab] = useState<'info' | 'history'>('info');
 
   // ── Per-user table preferences ──
   const { prefs, save, setColumnWidth } = useTablePreferences(
@@ -423,7 +426,13 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
 
   const createMutation = useMutation({
     mutationFn: createMasterSupplier,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      writeAuditLog({
+        tableName: 'master_suppliers', recordId: data.supplier_code,
+        action: 'INSERT', changedBy: userId, userRole: 'Admin',
+        newValues: data as unknown as Record<string, unknown>,
+        changedFields: Object.keys(data),
+      });
       queryClient.invalidateQueries({ queryKey: ['master_suppliers'] });
       messageApi.success('Thêm nhà cung cấp mới thành công!');
       setDrawerOpen(false);
@@ -434,7 +443,18 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
   const updateMutation = useMutation({
     mutationFn: ({ code, data }: { code: string; data: Partial<MasterSupplierFormData> }) =>
       updateMasterSupplier(code, data),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      const { diff, changedFields } = buildDiff(
+        editingSupplier as unknown as Record<string, unknown>,
+        data as unknown as Record<string, unknown>
+      );
+      writeAuditLog({
+        tableName: 'master_suppliers', recordId: data.supplier_code,
+        action: 'UPDATE', changedBy: userId, userRole: 'Admin',
+        oldValues: editingSupplier as unknown as Record<string, unknown>,
+        newValues: data as unknown as Record<string, unknown>,
+        diff, changedFields,
+      });
       queryClient.invalidateQueries({ queryKey: ['master_suppliers'] });
       messageApi.success('Cập nhật nhà cung cấp thành công!');
       setDrawerOpen(false);
@@ -443,8 +463,13 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteMasterSupplier,
-    onSuccess: () => {
+    mutationFn: (item: MasterSupplier) => deleteMasterSupplier(item.supplier_code),
+    onSuccess: (data, item) => {
+      writeAuditLog({
+        tableName: 'master_suppliers', recordId: item.supplier_code,
+        action: 'DELETE', changedBy: userId, userRole: 'Admin',
+        oldValues: item as unknown as Record<string, unknown>,
+      });
       queryClient.invalidateQueries({ queryKey: ['master_suppliers'] });
       messageApi.success('Xóa nhà cung cấp thành công!');
     },
@@ -468,6 +493,7 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
   });
 
   const openDrawerForCreate = () => {
+    setDrawerTab('info');
     setEditingSupplier(null);
     reset({
       supplier_code: '',
@@ -479,6 +505,7 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
   };
 
   const openDrawerForEdit = (supplier: MasterSupplier) => {
+    setDrawerTab('info');
     setEditingSupplier(supplier);
     reset({
       supplier_code: supplier.supplier_code,
@@ -669,7 +696,7 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
         <Popconfirm
           title="Xóa nhà cung cấp"
           description={`Xác nhận xóa nhà cung cấp "${record.supplier_name}"?`}
-          onConfirm={() => deleteMutation.mutate(record.supplier_code)}
+          onConfirm={() => deleteMutation.mutate(record)}
           okText="Xóa"
           cancelText="Huỷ"
           okButtonProps={{ danger: true }}
@@ -886,8 +913,35 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
         open={drawerOpen}
         styles={{ body: { paddingBottom: 80 } }}
       >
-        <Form layout="vertical" onFinish={handleSubmit(onSubmit)}>
-          <Row gutter={16}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%' }}>
+          {/* Tabs for Info / History */}
+          {editingSupplier && (
+            <div style={{ display: 'flex', gap: 4, padding: '0 4px' }}>
+              {(['info', 'history'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setDrawerTab(tab)}
+                  style={{
+                    padding: '5px 14px', fontSize: 12, fontWeight: 600,
+                    borderRadius: 20, border: 'none', cursor: 'pointer',
+                    background: drawerTab === tab ? '#0d9488' : '#e2e8f0',
+                    color: drawerTab === tab ? '#fff' : '#475569',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {tab === 'info' ? '📋 Thông tin' : '🕒 Lịch sử'}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {editingSupplier && drawerTab === 'history' ? (
+            <div style={{ padding: '0 4px', overflowY: 'auto', flex: 1 }}>
+              <AuditLogTimeline tableName="master_suppliers" recordId={editingSupplier.supplier_code} />
+            </div>
+          ) : (
+            <Form layout="vertical" onFinish={handleSubmit(onSubmit)} style={{ flex: 1, overflowY: 'auto' }}>
+              <Row gutter={16}>
 
             <Col span={24}>
               <Form.Item
@@ -990,8 +1044,10 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
             >
               {editingSupplier ? 'Lưu thay đổi' : 'Thêm mới'}
             </Button>
-          </div>
-        </Form>
+            </div>
+          </Form>
+          )}
+        </div>
       </Drawer>
     </div>
   );
