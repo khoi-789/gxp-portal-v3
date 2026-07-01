@@ -1657,13 +1657,15 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                 <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
                                   Hiệu lực đến
                                 </div>
-                                <Input
-                                  placeholder="VD: 25/12/2028..."
-                                  value={item.valid_until || ''}
-                                  onChange={(e) => updateItemField(idx, 'valid_until', e.target.value)}
+                                <DatePicker
+                                  placeholder="DD/MM/YYYY"
+                                  value={parseImportDate(item.valid_until)}
+                                  onChange={(date) => updateItemField(idx, 'valid_until', date ? date.format('DD/MM/YYYY') : null)}
                                   disabled={simulatedRole !== 'QA_NHAP_KHAU'}
                                   size="small"
-                                  style={{ borderRadius: 6 }}
+                                  style={{ width: '100%', borderRadius: 6 }}
+                                  format="DD/MM/YYYY"
+                                  allowClear
                                 />
                               </Col>
                             </Row>
