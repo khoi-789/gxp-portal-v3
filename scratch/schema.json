@@ -1,0 +1,6210 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "",
+    "title": "standard public schema",
+    "version": "14.5"
+  },
+  "host": "slwpwztwgvixoatefbjv.supabase.co:443",
+  "basePath": "/",
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json",
+    "application/vnd.pgrst.object+json;nulls=stripped",
+    "application/vnd.pgrst.object+json",
+    "text/csv"
+  ],
+  "produces": [
+    "application/json",
+    "application/vnd.pgrst.object+json;nulls=stripped",
+    "application/vnd.pgrst.object+json",
+    "text/csv"
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "produces": [
+          "application/openapi+json",
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "OpenAPI description (this document)",
+        "tags": [
+          "Introspection"
+        ]
+      }
+    },
+    "/bbsc_incidents": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.bbsc_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.department_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.pic_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.sub_pic_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.lot_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.exp_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.lpn_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.defect_description"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.custom_fields"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.resolution_action"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.item_name"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/bbsc_incidents"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "bbsc_incidents"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.bbsc_incidents"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "bbsc_incidents"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.bbsc_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.department_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.pic_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.sub_pic_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.lot_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.exp_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.lpn_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.defect_description"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.custom_fields"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.resolution_action"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.item_name"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "bbsc_incidents"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.bbsc_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.department_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.pic_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.sub_pic_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.lot_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.exp_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.lpn_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.defect_description"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.custom_fields"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.resolution_action"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.bbsc_incidents.item_name"
+          },
+          {
+            "$ref": "#/parameters/body.bbsc_incidents"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "bbsc_incidents"
+        ]
+      }
+    },
+    "/vendor_rules": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.vendor_rules.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.vendor_rules.prefix"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.vendor_rules.label"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.vendor_rules.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/vendor_rules"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "vendor_rules"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.vendor_rules"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "vendor_rules"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.vendor_rules.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.vendor_rules.prefix"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.vendor_rules.label"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.vendor_rules.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "vendor_rules"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.vendor_rules.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.vendor_rules.prefix"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.vendor_rules.label"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.vendor_rules.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.vendor_rules"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "vendor_rules"
+        ]
+      }
+    },
+    "/destruction_records": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.owner"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.item"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.descr"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.location"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.lpn"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.on_hand"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.available"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.visa"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.lot_no"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.exp_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.so_batch"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.ly_do_hold"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.loai_hold"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.ngay_hold"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.nguoi_hold"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.ghi_chu"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.gross_wgt"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.net_wgt"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.tare"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.cube"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.inner_pack"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.case_cnt"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.pallet"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.uom"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.decision"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.so_luong_huy"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.ly_do_qd"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.nguoi_duyet"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.ngay_duyet"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/destruction_records"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "destruction_records"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.destruction_records"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "destruction_records"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.owner"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.item"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.descr"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.location"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.lpn"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.on_hand"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.available"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.visa"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.lot_no"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.exp_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.so_batch"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.ly_do_hold"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.loai_hold"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.ngay_hold"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.nguoi_hold"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.ghi_chu"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.gross_wgt"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.net_wgt"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.tare"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.cube"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.inner_pack"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.case_cnt"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.pallet"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.uom"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.decision"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.so_luong_huy"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.ly_do_qd"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.nguoi_duyet"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.ngay_duyet"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "destruction_records"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.owner"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.item"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.descr"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.location"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.lpn"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.on_hand"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.available"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.visa"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.lot_no"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.exp_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.so_batch"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.ly_do_hold"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.loai_hold"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.ngay_hold"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.nguoi_hold"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.ghi_chu"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.gross_wgt"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.net_wgt"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.tare"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.cube"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.inner_pack"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.case_cnt"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.pallet"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.uom"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.decision"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.so_luong_huy"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.ly_do_qd"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.nguoi_duyet"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.destruction_records.ngay_duyet"
+          },
+          {
+            "$ref": "#/parameters/body.destruction_records"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "destruction_records"
+        ]
+      }
+    },
+    "/ldg_lpns": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.ldg_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.lpn_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.released_qty"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.incident_note"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.incident_ref"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/ldg_lpns"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "ldg_lpns"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.ldg_lpns"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "ldg_lpns"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.ldg_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.lpn_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.released_qty"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.incident_note"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.incident_ref"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "ldg_lpns"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.ldg_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.lpn_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.released_qty"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.incident_note"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.incident_ref"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_lpns.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.ldg_lpns"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "ldg_lpns"
+        ]
+      }
+    },
+    "/awc_changes": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.awc_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.notice_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.new_item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.old_info"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.new_change_info"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.expected_batch"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.estimated_receive"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.actual_batch"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.actual_receive"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.evidence_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.impact_analysis"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.item_name"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/awc_changes"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "awc_changes"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.awc_changes"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "awc_changes"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.awc_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.notice_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.new_item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.old_info"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.new_change_info"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.expected_batch"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.estimated_receive"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.actual_batch"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.actual_receive"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.evidence_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.impact_analysis"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.item_name"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "awc_changes"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.awc_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.notice_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.new_item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.old_info"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.new_change_info"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.expected_batch"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.estimated_receive"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.actual_batch"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.actual_receive"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.evidence_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.impact_analysis"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.awc_changes.item_name"
+          },
+          {
+            "$ref": "#/parameters/body.awc_changes"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "awc_changes"
+        ]
+      }
+    },
+    "/imp_shipment_items": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.invoice_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.item_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.issue_notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.resolution_notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.required_labels"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/imp_shipment_items"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "imp_shipment_items"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.imp_shipment_items"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "imp_shipment_items"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.invoice_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.item_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.issue_notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.resolution_notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.required_labels"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "imp_shipment_items"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.invoice_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.item_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.issue_notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.resolution_notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipment_items.required_labels"
+          },
+          {
+            "$ref": "#/parameters/body.imp_shipment_items"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "imp_shipment_items"
+        ]
+      }
+    },
+    "/portal_apps": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.app_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.app_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.type"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.target_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.parent_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.allowed_depts"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.is_testing"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.order_index"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/portal_apps"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "portal_apps"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.portal_apps"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "portal_apps"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.app_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.app_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.type"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.target_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.parent_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.allowed_depts"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.is_testing"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.order_index"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "portal_apps"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.app_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.app_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.type"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.target_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.parent_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.allowed_depts"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.is_testing"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.order_index"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.portal_apps.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.portal_apps"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "portal_apps"
+        ]
+      }
+    },
+    "/master_items": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.master_items.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.item_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.visa_no"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.is_active"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.updated_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.gross_weight"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.net_weight"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.cube"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.tare_weight"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.pallet_qty"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.case_qty"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.inner_pack"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/master_items"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "master_items"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.master_items"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "master_items"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.master_items.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.item_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.visa_no"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.is_active"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.updated_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.gross_weight"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.net_weight"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.cube"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.tare_weight"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.pallet_qty"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.case_qty"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.inner_pack"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "master_items"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.master_items.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.item_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.visa_no"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.is_active"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.updated_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.gross_weight"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.net_weight"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.cube"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.tare_weight"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.pallet_qty"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.case_qty"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_items.inner_pack"
+          },
+          {
+            "$ref": "#/parameters/body.master_items"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "master_items"
+        ]
+      }
+    },
+    "/int_records": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.int_records.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.int_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.category"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.lot_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.exp_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.lpn_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.incident_content"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.handling_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.action_notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.ref_link"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.folder_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.is_in_stock"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.wms_doc_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.item_name"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/int_records"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "int_records"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.int_records"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "int_records"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.int_records.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.int_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.category"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.lot_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.exp_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.lpn_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.incident_content"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.handling_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.action_notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.ref_link"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.folder_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.is_in_stock"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.wms_doc_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.item_name"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "int_records"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.int_records.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.int_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.category"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.lot_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.exp_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.lpn_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.incident_content"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.handling_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.action_notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.ref_link"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.folder_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.is_in_stock"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.wms_doc_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.int_records.item_name"
+          },
+          {
+            "$ref": "#/parameters/body.int_records"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "int_records"
+        ]
+      }
+    },
+    "/product_label_mappings": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.product_label_mappings.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.product_label_mappings.product_item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.product_label_mappings.label_item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.product_label_mappings.quantity_per_unit"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.product_label_mappings.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/product_label_mappings"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "product_label_mappings"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.product_label_mappings"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "product_label_mappings"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.product_label_mappings.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.product_label_mappings.product_item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.product_label_mappings.label_item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.product_label_mappings.quantity_per_unit"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.product_label_mappings.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "product_label_mappings"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.product_label_mappings.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.product_label_mappings.product_item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.product_label_mappings.label_item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.product_label_mappings.quantity_per_unit"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.product_label_mappings.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.product_label_mappings"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "product_label_mappings"
+        ]
+      }
+    },
+    "/lbl_labels": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.product_category"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.base_label_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.version_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.effective_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.change_reason"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.original_file_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.preview_image_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/lbl_labels"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "lbl_labels"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.lbl_labels"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "lbl_labels"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.product_category"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.base_label_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.version_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.effective_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.change_reason"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.original_file_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.preview_image_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "lbl_labels"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.product_category"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.base_label_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.version_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.effective_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.change_reason"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.original_file_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.preview_image_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.lbl_labels.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.lbl_labels"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "lbl_labels"
+        ]
+      }
+    },
+    "/ldg_orders": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.ldg_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.created_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.lot_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.exp_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.batch_size"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.packaging_req"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.label_version_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.six_sides_photo"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.general_notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.updated_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.item_name"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/ldg_orders"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "ldg_orders"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.ldg_orders"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "ldg_orders"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.ldg_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.created_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.lot_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.exp_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.batch_size"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.packaging_req"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.label_version_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.six_sides_photo"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.general_notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.updated_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.item_name"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "ldg_orders"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.ldg_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.created_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.lot_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.exp_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.batch_size"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.packaging_req"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.label_version_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.six_sides_photo"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.general_notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.updated_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ldg_orders.item_name"
+          },
+          {
+            "$ref": "#/parameters/body.ldg_orders"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "ldg_orders"
+        ]
+      }
+    },
+    "/imp_shipments": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.invoice_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.created_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.coa_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.label_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.progress_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.has_data_logger"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.data_logger_type"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.logger_qty"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.temp_out_of_range"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.temp_out_of_range_details"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.import_date_lh"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.import_date_hn"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.import_date_lh_text"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.import_date_hn_text"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.invoice_link"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.supplier_link"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.updated_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.target_warehouse"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.actual_import_date_note"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.issues"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/imp_shipments"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "imp_shipments"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.imp_shipments"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "imp_shipments"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.invoice_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.created_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.coa_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.label_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.progress_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.has_data_logger"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.data_logger_type"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.logger_qty"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.temp_out_of_range"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.temp_out_of_range_details"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.import_date_lh"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.import_date_hn"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.import_date_lh_text"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.import_date_hn_text"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.invoice_link"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.supplier_link"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.updated_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.target_warehouse"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.actual_import_date_note"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.issues"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "imp_shipments"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.invoice_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.created_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.coa_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.label_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.progress_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.has_data_logger"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.data_logger_type"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.logger_qty"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.temp_out_of_range"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.temp_out_of_range_details"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.import_date_lh"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.import_date_hn"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.import_date_lh_text"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.import_date_hn_text"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.invoice_link"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.supplier_link"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.updated_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.target_warehouse"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.actual_import_date_note"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.imp_shipments.issues"
+          },
+          {
+            "$ref": "#/parameters/body.imp_shipments"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "imp_shipments"
+        ]
+      }
+    },
+    "/cc_complaints": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.cc_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.complaint_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.customer_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.customer_address"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.lot_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.mfg_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.exp_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.unit"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.lpn_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.asn_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.complaint_reason"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.root_cause"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.is_info_secured"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.receive_method"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.supplier_action"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.received_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.samples_sent_to_supplier"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.item_name"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/cc_complaints"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "cc_complaints"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.cc_complaints"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "cc_complaints"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.cc_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.complaint_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.customer_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.customer_address"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.lot_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.mfg_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.exp_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.unit"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.lpn_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.asn_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.complaint_reason"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.root_cause"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.is_info_secured"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.receive_method"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.supplier_action"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.received_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.samples_sent_to_supplier"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.item_name"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "cc_complaints"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.cc_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.complaint_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.customer_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.customer_address"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.item_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.lot_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.mfg_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.exp_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.unit"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.lpn_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.asn_number"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.complaint_reason"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.root_cause"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.is_info_secured"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.receive_method"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.supplier_action"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.received_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.samples_sent_to_supplier"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.cc_complaints.item_name"
+          },
+          {
+            "$ref": "#/parameters/body.cc_complaints"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "cc_complaints"
+        ]
+      }
+    },
+    "/master_suppliers": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.master_suppliers.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_suppliers.supplier_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_suppliers.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_suppliers.notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_suppliers.business_type"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/master_suppliers"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "master_suppliers"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.master_suppliers"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "master_suppliers"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.master_suppliers.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_suppliers.supplier_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_suppliers.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_suppliers.notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_suppliers.business_type"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "master_suppliers"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.master_suppliers.supplier_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_suppliers.supplier_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_suppliers.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_suppliers.notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.master_suppliers.business_type"
+          },
+          {
+            "$ref": "#/parameters/body.master_suppliers"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "master_suppliers"
+        ]
+      }
+    },
+    "/users": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.users.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.users.email"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.users.full_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.users.department_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.users.system_role"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.users.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/users"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.users"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.users.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.users.email"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.users.full_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.users.department_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.users.system_role"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.users.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.users.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.users.email"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.users.full_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.users.department_code"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.users.system_role"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.users.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.users"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "bbsc_incidents": {
+      "required": [
+        "id",
+        "bbsc_code",
+        "created_at",
+        "status",
+        "supplier_code",
+        "department_id",
+        "lot_number",
+        "exp_date",
+        "quantity",
+        "defect_description"
+      ],
+      "properties": {
+        "id": {
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "bigint",
+          "type": "integer"
+        },
+        "bbsc_code": {
+          "format": "text",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "status": {
+          "default": "Khởi tạo",
+          "format": "text",
+          "type": "string"
+        },
+        "supplier_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_suppliers.supplier_code`.<fk table='master_suppliers' column='supplier_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "department_id": {
+          "format": "text",
+          "type": "string"
+        },
+        "pic_id": {
+          "description": "Note:\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "sub_pic_id": {
+          "description": "Note:\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "item_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_items.item_code`.<fk table='master_items' column='item_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "lot_number": {
+          "format": "text",
+          "type": "string"
+        },
+        "exp_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "quantity": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "lpn_code": {
+          "format": "text",
+          "type": "string"
+        },
+        "defect_description": {
+          "format": "text",
+          "type": "string"
+        },
+        "custom_fields": {
+          "format": "jsonb"
+        },
+        "resolution_action": {
+          "format": "text",
+          "type": "string"
+        },
+        "item_name": {
+          "format": "text",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "vendor_rules": {
+      "required": [
+        "id",
+        "prefix",
+        "label",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "bigint",
+          "type": "integer"
+        },
+        "prefix": {
+          "format": "text",
+          "type": "string"
+        },
+        "label": {
+          "format": "text",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "destruction_records": {
+      "required": [
+        "id",
+        "owner",
+        "item",
+        "descr",
+        "location",
+        "lpn",
+        "on_hand",
+        "available",
+        "status",
+        "lot_no",
+        "exp_date",
+        "so_batch",
+        "gross_wgt",
+        "net_wgt",
+        "tare",
+        "cube",
+        "inner_pack",
+        "case_cnt",
+        "pallet",
+        "uom"
+      ],
+      "properties": {
+        "id": {
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "bigint",
+          "type": "integer"
+        },
+        "owner": {
+          "format": "text",
+          "type": "string"
+        },
+        "item": {
+          "format": "text",
+          "type": "string"
+        },
+        "descr": {
+          "format": "text",
+          "type": "string"
+        },
+        "location": {
+          "format": "text",
+          "type": "string"
+        },
+        "lpn": {
+          "format": "text",
+          "type": "string"
+        },
+        "on_hand": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "available": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "status": {
+          "format": "text",
+          "type": "string"
+        },
+        "visa": {
+          "format": "text",
+          "type": "string"
+        },
+        "lot_no": {
+          "format": "text",
+          "type": "string"
+        },
+        "exp_date": {
+          "format": "text",
+          "type": "string"
+        },
+        "so_batch": {
+          "format": "text",
+          "type": "string"
+        },
+        "ly_do_hold": {
+          "format": "text",
+          "type": "string"
+        },
+        "loai_hold": {
+          "format": "text",
+          "type": "string"
+        },
+        "ngay_hold": {
+          "format": "text",
+          "type": "string"
+        },
+        "nguoi_hold": {
+          "format": "text",
+          "type": "string"
+        },
+        "ghi_chu": {
+          "format": "text",
+          "type": "string"
+        },
+        "gross_wgt": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "net_wgt": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "tare": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "cube": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "inner_pack": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "case_cnt": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "pallet": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "uom": {
+          "format": "text",
+          "type": "string"
+        },
+        "decision": {
+          "default": "",
+          "format": "text",
+          "type": "string"
+        },
+        "so_luong_huy": {
+          "default": 0,
+          "format": "numeric",
+          "type": "number"
+        },
+        "ly_do_qd": {
+          "default": "",
+          "format": "text",
+          "type": "string"
+        },
+        "nguoi_duyet": {
+          "format": "text",
+          "type": "string"
+        },
+        "ngay_duyet": {
+          "format": "text",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ldg_lpns": {
+      "required": [
+        "id",
+        "ldg_code",
+        "lpn_code",
+        "quantity",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "bigint",
+          "type": "integer"
+        },
+        "ldg_code": {
+          "description": "Note:\nThis is a Foreign Key to `ldg_orders.ldg_code`.<fk table='ldg_orders' column='ldg_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "lpn_code": {
+          "format": "text",
+          "type": "string"
+        },
+        "quantity": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "released_qty": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "incident_note": {
+          "format": "text",
+          "type": "string"
+        },
+        "incident_ref": {
+          "format": "text",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "awc_changes": {
+      "required": [
+        "awc_code",
+        "notice_date",
+        "item_code",
+        "supplier_code",
+        "status",
+        "created_at",
+        "id"
+      ],
+      "properties": {
+        "awc_code": {
+          "format": "text",
+          "type": "string"
+        },
+        "notice_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "item_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_items.item_code`.<fk table='master_items' column='item_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "supplier_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_suppliers.supplier_code`.<fk table='master_suppliers' column='supplier_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "new_item_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_items.item_code`.<fk table='master_items' column='item_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "status": {
+          "default": "Alerted",
+          "format": "text",
+          "type": "string"
+        },
+        "old_info": {
+          "format": "text",
+          "type": "string"
+        },
+        "new_change_info": {
+          "format": "text",
+          "type": "string"
+        },
+        "expected_batch": {
+          "format": "text",
+          "type": "string"
+        },
+        "estimated_receive": {
+          "format": "date",
+          "type": "string"
+        },
+        "actual_batch": {
+          "format": "text",
+          "type": "string"
+        },
+        "actual_receive": {
+          "format": "date",
+          "type": "string"
+        },
+        "evidence_url": {
+          "format": "text",
+          "type": "string"
+        },
+        "impact_analysis": {
+          "format": "jsonb"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "id": {
+          "format": "bigint",
+          "type": "integer"
+        },
+        "item_name": {
+          "format": "text",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "imp_shipment_items": {
+      "required": [
+        "id",
+        "invoice_number",
+        "item_name",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "bigint",
+          "type": "integer"
+        },
+        "invoice_number": {
+          "description": "Note:\nThis is a Foreign Key to `imp_shipments.invoice_number`.<fk table='imp_shipments' column='invoice_number'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "item_code": {
+          "format": "text",
+          "type": "string"
+        },
+        "item_name": {
+          "format": "text",
+          "type": "string"
+        },
+        "issue_notes": {
+          "format": "text",
+          "type": "string"
+        },
+        "resolution_notes": {
+          "format": "text",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "required_labels": {
+          "format": "jsonb"
+        }
+      },
+      "type": "object"
+    },
+    "portal_apps": {
+      "required": [
+        "app_id",
+        "app_name",
+        "type",
+        "allowed_depts",
+        "is_testing",
+        "created_at"
+      ],
+      "properties": {
+        "app_id": {
+          "default": "gen_random_uuid()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "app_name": {
+          "format": "text",
+          "type": "string"
+        },
+        "type": {
+          "format": "text",
+          "type": "string"
+        },
+        "target_url": {
+          "format": "text",
+          "type": "string"
+        },
+        "parent_id": {
+          "description": "Note:\nThis is a Foreign Key to `portal_apps.app_id`.<fk table='portal_apps' column='app_id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "allowed_depts": {
+          "format": "text[]",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "is_testing": {
+          "default": false,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "order_index": {
+          "default": 0,
+          "format": "integer",
+          "type": "integer"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "master_items": {
+      "required": [
+        "item_code",
+        "item_name",
+        "is_active",
+        "updated_at"
+      ],
+      "properties": {
+        "item_code": {
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "text",
+          "type": "string"
+        },
+        "item_name": {
+          "format": "text",
+          "type": "string"
+        },
+        "supplier_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_suppliers.supplier_code`.<fk table='master_suppliers' column='supplier_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "visa_no": {
+          "format": "text",
+          "type": "string"
+        },
+        "is_active": {
+          "default": true,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "updated_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "gross_weight": {
+          "default": 0,
+          "format": "numeric",
+          "type": "number"
+        },
+        "net_weight": {
+          "default": 0,
+          "format": "numeric",
+          "type": "number"
+        },
+        "cube": {
+          "default": 0,
+          "format": "numeric",
+          "type": "number"
+        },
+        "tare_weight": {
+          "default": 0,
+          "format": "numeric",
+          "type": "number"
+        },
+        "pallet_qty": {
+          "default": 0,
+          "format": "numeric",
+          "type": "number"
+        },
+        "case_qty": {
+          "default": 0,
+          "format": "numeric",
+          "type": "number"
+        },
+        "inner_pack": {
+          "default": 0,
+          "format": "numeric",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "int_records": {
+      "required": [
+        "id",
+        "int_code",
+        "created_at",
+        "category",
+        "item_code",
+        "supplier_code",
+        "lot_number",
+        "exp_date",
+        "lpn_code",
+        "quantity",
+        "incident_content",
+        "handling_status",
+        "is_in_stock"
+      ],
+      "properties": {
+        "id": {
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "bigint",
+          "type": "integer"
+        },
+        "int_code": {
+          "format": "text",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "category": {
+          "format": "text",
+          "type": "string"
+        },
+        "item_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_items.item_code`.<fk table='master_items' column='item_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "supplier_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_suppliers.supplier_code`.<fk table='master_suppliers' column='supplier_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "lot_number": {
+          "format": "text",
+          "type": "string"
+        },
+        "exp_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "lpn_code": {
+          "format": "text",
+          "type": "string"
+        },
+        "quantity": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "incident_content": {
+          "format": "text",
+          "type": "string"
+        },
+        "handling_status": {
+          "default": "Chờ xác định",
+          "format": "text",
+          "type": "string"
+        },
+        "action_notes": {
+          "format": "text",
+          "type": "string"
+        },
+        "ref_link": {
+          "format": "text",
+          "type": "string"
+        },
+        "folder_url": {
+          "format": "text",
+          "type": "string"
+        },
+        "is_in_stock": {
+          "default": true,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "wms_doc_number": {
+          "format": "text",
+          "type": "string"
+        },
+        "item_name": {
+          "format": "text",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "product_label_mappings": {
+      "required": [
+        "id",
+        "product_item_code",
+        "label_item_code",
+        "quantity_per_unit",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "bigint",
+          "type": "integer"
+        },
+        "product_item_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_items.item_code`.<fk table='master_items' column='item_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "label_item_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_items.item_code`.<fk table='master_items' column='item_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "quantity_per_unit": {
+          "default": 1,
+          "format": "numeric",
+          "type": "number"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "lbl_labels": {
+      "required": [
+        "id",
+        "item_code",
+        "product_category",
+        "supplier_code",
+        "base_label_code",
+        "version_number",
+        "status",
+        "effective_date",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "bigint",
+          "type": "integer"
+        },
+        "item_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_items.item_code`.<fk table='master_items' column='item_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "product_category": {
+          "format": "text",
+          "type": "string"
+        },
+        "supplier_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_suppliers.supplier_code`.<fk table='master_suppliers' column='supplier_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "base_label_code": {
+          "format": "text",
+          "type": "string"
+        },
+        "version_number": {
+          "format": "text",
+          "type": "string"
+        },
+        "status": {
+          "default": "Draft",
+          "format": "text",
+          "type": "string"
+        },
+        "effective_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "change_reason": {
+          "format": "text",
+          "type": "string"
+        },
+        "original_file_url": {
+          "format": "text",
+          "type": "string"
+        },
+        "preview_image_url": {
+          "format": "text",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ldg_orders": {
+      "required": [
+        "ldg_code",
+        "created_date",
+        "item_code",
+        "supplier_code",
+        "lot_number",
+        "exp_date",
+        "batch_size",
+        "status",
+        "updated_at"
+      ],
+      "properties": {
+        "ldg_code": {
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "text",
+          "type": "string"
+        },
+        "created_date": {
+          "default": "CURRENT_DATE",
+          "format": "date",
+          "type": "string"
+        },
+        "item_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_items.item_code`.<fk table='master_items' column='item_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "supplier_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_suppliers.supplier_code`.<fk table='master_suppliers' column='supplier_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "lot_number": {
+          "format": "text",
+          "type": "string"
+        },
+        "exp_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "batch_size": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "packaging_req": {
+          "format": "text",
+          "type": "string"
+        },
+        "label_version_id": {
+          "description": "Note:\nThis is a Foreign Key to `lbl_labels.id`.<fk table='lbl_labels' column='id'/>",
+          "format": "bigint",
+          "type": "integer"
+        },
+        "six_sides_photo": {
+          "format": "text",
+          "type": "string"
+        },
+        "status": {
+          "default": "Draft",
+          "format": "text",
+          "type": "string"
+        },
+        "general_notes": {
+          "format": "text",
+          "type": "string"
+        },
+        "updated_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "item_name": {
+          "format": "text",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "imp_shipments": {
+      "required": [
+        "invoice_number",
+        "created_date",
+        "supplier_code",
+        "coa_status",
+        "label_status",
+        "progress_status",
+        "has_data_logger",
+        "temp_out_of_range",
+        "updated_at",
+        "issues"
+      ],
+      "properties": {
+        "invoice_number": {
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "text",
+          "type": "string"
+        },
+        "created_date": {
+          "default": "CURRENT_DATE",
+          "format": "date",
+          "type": "string"
+        },
+        "supplier_code": {
+          "format": "text",
+          "type": "string"
+        },
+        "coa_status": {
+          "default": "Chưa có",
+          "format": "text",
+          "type": "string"
+        },
+        "label_status": {
+          "default": "Chưa có",
+          "format": "text",
+          "type": "string"
+        },
+        "progress_status": {
+          "default": "Created",
+          "format": "text",
+          "type": "string"
+        },
+        "has_data_logger": {
+          "default": false,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "data_logger_type": {
+          "format": "text",
+          "type": "string"
+        },
+        "logger_qty": {
+          "default": 0,
+          "format": "numeric",
+          "type": "number"
+        },
+        "temp_out_of_range": {
+          "default": false,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "temp_out_of_range_details": {
+          "format": "text",
+          "type": "string"
+        },
+        "import_date_lh": {
+          "format": "date",
+          "type": "string"
+        },
+        "import_date_hn": {
+          "format": "date",
+          "type": "string"
+        },
+        "import_date_lh_text": {
+          "format": "text",
+          "type": "string"
+        },
+        "import_date_hn_text": {
+          "format": "text",
+          "type": "string"
+        },
+        "invoice_link": {
+          "format": "text",
+          "type": "string"
+        },
+        "supplier_link": {
+          "format": "text",
+          "type": "string"
+        },
+        "updated_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "target_warehouse": {
+          "format": "text",
+          "type": "string"
+        },
+        "actual_import_date_note": {
+          "format": "text",
+          "type": "string"
+        },
+        "issues": {
+          "format": "jsonb"
+        }
+      },
+      "type": "object"
+    },
+    "cc_complaints": {
+      "required": [
+        "id",
+        "cc_code",
+        "complaint_date",
+        "customer_name",
+        "item_code",
+        "supplier_code",
+        "lot_number",
+        "exp_date",
+        "unit",
+        "quantity",
+        "complaint_reason",
+        "status",
+        "is_info_secured",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "bigint",
+          "type": "integer"
+        },
+        "cc_code": {
+          "format": "text",
+          "type": "string"
+        },
+        "complaint_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "customer_name": {
+          "format": "text",
+          "type": "string"
+        },
+        "customer_address": {
+          "format": "text",
+          "type": "string"
+        },
+        "item_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_items.item_code`.<fk table='master_items' column='item_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "supplier_code": {
+          "description": "Note:\nThis is a Foreign Key to `master_suppliers.supplier_code`.<fk table='master_suppliers' column='supplier_code'/>",
+          "format": "text",
+          "type": "string"
+        },
+        "lot_number": {
+          "format": "text",
+          "type": "string"
+        },
+        "mfg_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "exp_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "unit": {
+          "format": "text",
+          "type": "string"
+        },
+        "quantity": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "lpn_code": {
+          "format": "text",
+          "type": "string"
+        },
+        "asn_number": {
+          "format": "text",
+          "type": "string"
+        },
+        "complaint_reason": {
+          "format": "text",
+          "type": "string"
+        },
+        "root_cause": {
+          "format": "text",
+          "type": "string"
+        },
+        "status": {
+          "default": "Khởi tạo",
+          "format": "text",
+          "type": "string"
+        },
+        "is_info_secured": {
+          "default": false,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "receive_method": {
+          "format": "text",
+          "type": "string"
+        },
+        "supplier_action": {
+          "format": "text",
+          "type": "string"
+        },
+        "received_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "samples_sent_to_supplier": {
+          "format": "text",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "item_name": {
+          "format": "text",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "master_suppliers": {
+      "required": [
+        "supplier_code",
+        "supplier_name",
+        "created_at"
+      ],
+      "properties": {
+        "supplier_code": {
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "text",
+          "type": "string"
+        },
+        "supplier_name": {
+          "format": "text",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "notes": {
+          "format": "text",
+          "type": "string"
+        },
+        "business_type": {
+          "format": "text[]",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "users": {
+      "required": [
+        "id",
+        "email",
+        "department_code",
+        "system_role",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "email": {
+          "format": "text",
+          "type": "string"
+        },
+        "full_name": {
+          "format": "text",
+          "type": "string"
+        },
+        "department_code": {
+          "format": "text",
+          "type": "string"
+        },
+        "system_role": {
+          "format": "text",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "parameters": {
+    "preferParams": {
+      "name": "Prefer",
+      "description": "Preference",
+      "required": false,
+      "in": "header",
+      "type": "string"
+    },
+    "preferReturn": {
+      "name": "Prefer",
+      "description": "Preference",
+      "required": false,
+      "enum": [
+        "return=representation",
+        "return=minimal",
+        "return=none"
+      ],
+      "in": "header",
+      "type": "string"
+    },
+    "preferCount": {
+      "name": "Prefer",
+      "description": "Preference",
+      "required": false,
+      "enum": [
+        "count=none"
+      ],
+      "in": "header",
+      "type": "string"
+    },
+    "preferPost": {
+      "name": "Prefer",
+      "description": "Preference",
+      "required": false,
+      "enum": [
+        "return=representation",
+        "return=minimal",
+        "return=none",
+        "resolution=ignore-duplicates",
+        "resolution=merge-duplicates"
+      ],
+      "in": "header",
+      "type": "string"
+    },
+    "select": {
+      "name": "select",
+      "description": "Filtering Columns",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "on_conflict": {
+      "name": "on_conflict",
+      "description": "On Conflict",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "order": {
+      "name": "order",
+      "description": "Ordering",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "range": {
+      "name": "Range",
+      "description": "Limiting and Pagination",
+      "required": false,
+      "in": "header",
+      "type": "string"
+    },
+    "rangeUnit": {
+      "name": "Range-Unit",
+      "description": "Limiting and Pagination",
+      "required": false,
+      "default": "items",
+      "in": "header",
+      "type": "string"
+    },
+    "offset": {
+      "name": "offset",
+      "description": "Limiting and Pagination",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "limit": {
+      "name": "limit",
+      "description": "Limiting and Pagination",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.bbsc_incidents": {
+      "name": "bbsc_incidents",
+      "description": "bbsc_incidents",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/bbsc_incidents"
+      }
+    },
+    "rowFilter.bbsc_incidents.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.bbsc_code": {
+      "name": "bbsc_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.status": {
+      "name": "status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.supplier_code": {
+      "name": "supplier_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.department_id": {
+      "name": "department_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.pic_id": {
+      "name": "pic_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.sub_pic_id": {
+      "name": "sub_pic_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.item_code": {
+      "name": "item_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.lot_number": {
+      "name": "lot_number",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.exp_date": {
+      "name": "exp_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.quantity": {
+      "name": "quantity",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.lpn_code": {
+      "name": "lpn_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.defect_description": {
+      "name": "defect_description",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.custom_fields": {
+      "name": "custom_fields",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.resolution_action": {
+      "name": "resolution_action",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.bbsc_incidents.item_name": {
+      "name": "item_name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.vendor_rules": {
+      "name": "vendor_rules",
+      "description": "vendor_rules",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/vendor_rules"
+      }
+    },
+    "rowFilter.vendor_rules.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.vendor_rules.prefix": {
+      "name": "prefix",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.vendor_rules.label": {
+      "name": "label",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.vendor_rules.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.destruction_records": {
+      "name": "destruction_records",
+      "description": "destruction_records",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/destruction_records"
+      }
+    },
+    "rowFilter.destruction_records.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.owner": {
+      "name": "owner",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.item": {
+      "name": "item",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.descr": {
+      "name": "descr",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.location": {
+      "name": "location",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.lpn": {
+      "name": "lpn",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.on_hand": {
+      "name": "on_hand",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.available": {
+      "name": "available",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.status": {
+      "name": "status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.visa": {
+      "name": "visa",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.lot_no": {
+      "name": "lot_no",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.exp_date": {
+      "name": "exp_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.so_batch": {
+      "name": "so_batch",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.ly_do_hold": {
+      "name": "ly_do_hold",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.loai_hold": {
+      "name": "loai_hold",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.ngay_hold": {
+      "name": "ngay_hold",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.nguoi_hold": {
+      "name": "nguoi_hold",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.ghi_chu": {
+      "name": "ghi_chu",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.gross_wgt": {
+      "name": "gross_wgt",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.net_wgt": {
+      "name": "net_wgt",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.tare": {
+      "name": "tare",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.cube": {
+      "name": "cube",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.inner_pack": {
+      "name": "inner_pack",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.case_cnt": {
+      "name": "case_cnt",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.pallet": {
+      "name": "pallet",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.uom": {
+      "name": "uom",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.decision": {
+      "name": "decision",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.so_luong_huy": {
+      "name": "so_luong_huy",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.ly_do_qd": {
+      "name": "ly_do_qd",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.nguoi_duyet": {
+      "name": "nguoi_duyet",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.destruction_records.ngay_duyet": {
+      "name": "ngay_duyet",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.ldg_lpns": {
+      "name": "ldg_lpns",
+      "description": "ldg_lpns",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/ldg_lpns"
+      }
+    },
+    "rowFilter.ldg_lpns.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_lpns.ldg_code": {
+      "name": "ldg_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_lpns.lpn_code": {
+      "name": "lpn_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_lpns.quantity": {
+      "name": "quantity",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_lpns.released_qty": {
+      "name": "released_qty",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_lpns.incident_note": {
+      "name": "incident_note",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_lpns.incident_ref": {
+      "name": "incident_ref",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_lpns.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.awc_changes": {
+      "name": "awc_changes",
+      "description": "awc_changes",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/awc_changes"
+      }
+    },
+    "rowFilter.awc_changes.awc_code": {
+      "name": "awc_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.notice_date": {
+      "name": "notice_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.item_code": {
+      "name": "item_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.supplier_code": {
+      "name": "supplier_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.new_item_code": {
+      "name": "new_item_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.status": {
+      "name": "status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.old_info": {
+      "name": "old_info",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.new_change_info": {
+      "name": "new_change_info",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.expected_batch": {
+      "name": "expected_batch",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.estimated_receive": {
+      "name": "estimated_receive",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.actual_batch": {
+      "name": "actual_batch",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.actual_receive": {
+      "name": "actual_receive",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.evidence_url": {
+      "name": "evidence_url",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.impact_analysis": {
+      "name": "impact_analysis",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.awc_changes.item_name": {
+      "name": "item_name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.imp_shipment_items": {
+      "name": "imp_shipment_items",
+      "description": "imp_shipment_items",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/imp_shipment_items"
+      }
+    },
+    "rowFilter.imp_shipment_items.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipment_items.invoice_number": {
+      "name": "invoice_number",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipment_items.item_code": {
+      "name": "item_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipment_items.item_name": {
+      "name": "item_name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipment_items.issue_notes": {
+      "name": "issue_notes",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipment_items.resolution_notes": {
+      "name": "resolution_notes",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipment_items.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipment_items.required_labels": {
+      "name": "required_labels",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.portal_apps": {
+      "name": "portal_apps",
+      "description": "portal_apps",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/portal_apps"
+      }
+    },
+    "rowFilter.portal_apps.app_id": {
+      "name": "app_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.portal_apps.app_name": {
+      "name": "app_name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.portal_apps.type": {
+      "name": "type",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.portal_apps.target_url": {
+      "name": "target_url",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.portal_apps.parent_id": {
+      "name": "parent_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.portal_apps.allowed_depts": {
+      "name": "allowed_depts",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.portal_apps.is_testing": {
+      "name": "is_testing",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.portal_apps.order_index": {
+      "name": "order_index",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.portal_apps.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.master_items": {
+      "name": "master_items",
+      "description": "master_items",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/master_items"
+      }
+    },
+    "rowFilter.master_items.item_code": {
+      "name": "item_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_items.item_name": {
+      "name": "item_name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_items.supplier_code": {
+      "name": "supplier_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_items.visa_no": {
+      "name": "visa_no",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_items.is_active": {
+      "name": "is_active",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_items.updated_at": {
+      "name": "updated_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_items.gross_weight": {
+      "name": "gross_weight",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_items.net_weight": {
+      "name": "net_weight",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_items.cube": {
+      "name": "cube",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_items.tare_weight": {
+      "name": "tare_weight",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_items.pallet_qty": {
+      "name": "pallet_qty",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_items.case_qty": {
+      "name": "case_qty",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_items.inner_pack": {
+      "name": "inner_pack",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.int_records": {
+      "name": "int_records",
+      "description": "int_records",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/int_records"
+      }
+    },
+    "rowFilter.int_records.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.int_code": {
+      "name": "int_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.category": {
+      "name": "category",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.item_code": {
+      "name": "item_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.supplier_code": {
+      "name": "supplier_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.lot_number": {
+      "name": "lot_number",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.exp_date": {
+      "name": "exp_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.lpn_code": {
+      "name": "lpn_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.quantity": {
+      "name": "quantity",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.incident_content": {
+      "name": "incident_content",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.handling_status": {
+      "name": "handling_status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.action_notes": {
+      "name": "action_notes",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.ref_link": {
+      "name": "ref_link",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.folder_url": {
+      "name": "folder_url",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.is_in_stock": {
+      "name": "is_in_stock",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.wms_doc_number": {
+      "name": "wms_doc_number",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.int_records.item_name": {
+      "name": "item_name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.product_label_mappings": {
+      "name": "product_label_mappings",
+      "description": "product_label_mappings",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/product_label_mappings"
+      }
+    },
+    "rowFilter.product_label_mappings.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.product_label_mappings.product_item_code": {
+      "name": "product_item_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.product_label_mappings.label_item_code": {
+      "name": "label_item_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.product_label_mappings.quantity_per_unit": {
+      "name": "quantity_per_unit",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.product_label_mappings.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.lbl_labels": {
+      "name": "lbl_labels",
+      "description": "lbl_labels",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/lbl_labels"
+      }
+    },
+    "rowFilter.lbl_labels.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.lbl_labels.item_code": {
+      "name": "item_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.lbl_labels.product_category": {
+      "name": "product_category",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.lbl_labels.supplier_code": {
+      "name": "supplier_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.lbl_labels.base_label_code": {
+      "name": "base_label_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.lbl_labels.version_number": {
+      "name": "version_number",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.lbl_labels.status": {
+      "name": "status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.lbl_labels.effective_date": {
+      "name": "effective_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.lbl_labels.change_reason": {
+      "name": "change_reason",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.lbl_labels.original_file_url": {
+      "name": "original_file_url",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.lbl_labels.preview_image_url": {
+      "name": "preview_image_url",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.lbl_labels.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.ldg_orders": {
+      "name": "ldg_orders",
+      "description": "ldg_orders",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/ldg_orders"
+      }
+    },
+    "rowFilter.ldg_orders.ldg_code": {
+      "name": "ldg_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_orders.created_date": {
+      "name": "created_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_orders.item_code": {
+      "name": "item_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_orders.supplier_code": {
+      "name": "supplier_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_orders.lot_number": {
+      "name": "lot_number",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_orders.exp_date": {
+      "name": "exp_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_orders.batch_size": {
+      "name": "batch_size",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_orders.packaging_req": {
+      "name": "packaging_req",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_orders.label_version_id": {
+      "name": "label_version_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_orders.six_sides_photo": {
+      "name": "six_sides_photo",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_orders.status": {
+      "name": "status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_orders.general_notes": {
+      "name": "general_notes",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_orders.updated_at": {
+      "name": "updated_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ldg_orders.item_name": {
+      "name": "item_name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.imp_shipments": {
+      "name": "imp_shipments",
+      "description": "imp_shipments",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/imp_shipments"
+      }
+    },
+    "rowFilter.imp_shipments.invoice_number": {
+      "name": "invoice_number",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.created_date": {
+      "name": "created_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.supplier_code": {
+      "name": "supplier_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.coa_status": {
+      "name": "coa_status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.label_status": {
+      "name": "label_status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.progress_status": {
+      "name": "progress_status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.has_data_logger": {
+      "name": "has_data_logger",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.data_logger_type": {
+      "name": "data_logger_type",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.logger_qty": {
+      "name": "logger_qty",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.temp_out_of_range": {
+      "name": "temp_out_of_range",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.temp_out_of_range_details": {
+      "name": "temp_out_of_range_details",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.import_date_lh": {
+      "name": "import_date_lh",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.import_date_hn": {
+      "name": "import_date_hn",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.import_date_lh_text": {
+      "name": "import_date_lh_text",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.import_date_hn_text": {
+      "name": "import_date_hn_text",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.invoice_link": {
+      "name": "invoice_link",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.supplier_link": {
+      "name": "supplier_link",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.updated_at": {
+      "name": "updated_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.target_warehouse": {
+      "name": "target_warehouse",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.actual_import_date_note": {
+      "name": "actual_import_date_note",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.imp_shipments.issues": {
+      "name": "issues",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.cc_complaints": {
+      "name": "cc_complaints",
+      "description": "cc_complaints",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/cc_complaints"
+      }
+    },
+    "rowFilter.cc_complaints.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.cc_code": {
+      "name": "cc_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.complaint_date": {
+      "name": "complaint_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.customer_name": {
+      "name": "customer_name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.customer_address": {
+      "name": "customer_address",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.item_code": {
+      "name": "item_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.supplier_code": {
+      "name": "supplier_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.lot_number": {
+      "name": "lot_number",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.mfg_date": {
+      "name": "mfg_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.exp_date": {
+      "name": "exp_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.unit": {
+      "name": "unit",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.quantity": {
+      "name": "quantity",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.lpn_code": {
+      "name": "lpn_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.asn_number": {
+      "name": "asn_number",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.complaint_reason": {
+      "name": "complaint_reason",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.root_cause": {
+      "name": "root_cause",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.status": {
+      "name": "status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.is_info_secured": {
+      "name": "is_info_secured",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.receive_method": {
+      "name": "receive_method",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.supplier_action": {
+      "name": "supplier_action",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.received_date": {
+      "name": "received_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.samples_sent_to_supplier": {
+      "name": "samples_sent_to_supplier",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.cc_complaints.item_name": {
+      "name": "item_name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.master_suppliers": {
+      "name": "master_suppliers",
+      "description": "master_suppliers",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/master_suppliers"
+      }
+    },
+    "rowFilter.master_suppliers.supplier_code": {
+      "name": "supplier_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_suppliers.supplier_name": {
+      "name": "supplier_name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_suppliers.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_suppliers.notes": {
+      "name": "notes",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.master_suppliers.business_type": {
+      "name": "business_type",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.users": {
+      "name": "users",
+      "description": "users",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/users"
+      }
+    },
+    "rowFilter.users.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.users.email": {
+      "name": "email",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.users.full_name": {
+      "name": "full_name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.users.department_code": {
+      "name": "department_code",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.users.system_role": {
+      "name": "system_role",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.users.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    }
+  },
+  "externalDocs": {
+    "description": "PostgREST Documentation",
+    "url": "https://postgrest.org/en/v14/references/api.html"
+  }
+}

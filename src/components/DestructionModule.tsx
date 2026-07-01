@@ -19,6 +19,7 @@ import { useTablePreferences } from '@/lib/useTablePreferences';
 import dayjs from 'dayjs';
 import { syncMasterData } from '@/lib/masterDataSync';
 import { supabase } from '@/lib/supabase';
+import { useMasterItems } from '@/lib/useMasterData';
 
 /* ──────────────────────────────────────────────────
    Types
@@ -115,23 +116,41 @@ const DEFAULT_DESTR_WIDTHS: Record<string, number> = {
   lpn: 110, onHand: 80, expDate: 100, lyDoHold: 150, ghiChu: 180, decision: 130, actions: 50,
 };
 
+const DESTR_DB_COLUMNS: Record<string, string> = {
+  owner: 'owner',
+  item: 'item',
+  descr: 'descr',
+  location: 'location',
+  lpn: 'lpn',
+  onHand: 'on_hand',
+  expDate: 'exp_date',
+  lyDoHold: 'ly_do_hold',
+  ghiChu: 'ghi_chu',
+  decision: 'decision'
+};
+
 /* ──────────────────────────────────────────────────
    Main Component
 ────────────────────────────────────────────────── */
 export default function DestructionModule({ userId = 'default' }: { userId?: string }) {
   const [messageApi, ctx] = message.useMessage();
-  const [rawData, setRawData] = useState<DestructionRecord[]>([]);
   const [data, setData] = useState<DestructionRecord[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [summaryData, setSummaryData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('list');
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [detailRow, setDetailRow] = useState<DestructionRecord | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<number[]>([]);
   const [batchDecision, setBatchDecision] = useState<string>('');
-  const [pageSize, setPageSize] = useState(10);
   const [isMounted, setIsMounted] = useState(false);
   const [lastCalculatedAt, setLastCalculatedAt] = useState<string | null>(null);
   const [vendorRules, setVendorRules] = useState<{prefix: string, label: string}[]>([]);
+
+  const { data: masterItemsRaw = [] } = useMasterItems();
+  const masterItems = useMemo(() => masterItemsRaw.filter(x => x.is_active), [masterItemsRaw]);
 
   const SNAPSHOT_KEY = 'destruction-snapshot-v1';
   const SNAPSHOT_TIME_KEY = 'destruction-snapshot-time-v1';
@@ -145,95 +164,122 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
     return itemCode.substring(0, 2).toUpperCase();
   }, [vendorRules]);
 
-  // ── Load rules & raw data from Supabase ──
+  // Load Rules on mount
   useEffect(() => {
-    const loadInitData = async () => {
-      setLoading(true);
+    const loadRules = async () => {
       try {
-        // 1. Load Rules
         const { data: rules, error: rulesError } = await supabase
           .from('vendor_rules')
           .select('*')
           .order('id', { ascending: true });
         
-        let activeRules = rules || [];
         if (rulesError) {
           console.warn('Lỗi load rules:', rulesError.message);
         } else {
-          setVendorRules(activeRules);
-        }
-
-        // Helper to compute vendor label inline
-        const getVendorLabelInline = (itemCode: string, rulesList: typeof activeRules) => {
-          if (!itemCode) return '';
-          const sortedRules = [...rulesList].sort((a, b) => b.prefix.length - a.prefix.length);
-          for (const rule of sortedRules) {
-            if (itemCode.startsWith(rule.prefix)) return rule.label;
-          }
-          return itemCode.substring(0, 2).toUpperCase();
-        };
-
-        // 2. Load Destruction Records
-        const { data: records, error: recordsError } = await supabase
-          .from('destruction_records')
-          .select('*')
-          .order('id', { ascending: true });
-
-        if (recordsError) {
-          throw new Error('Lỗi load records: ' + recordsError.message);
-        }
-
-        if (records) {
-          const mapped: DestructionRecord[] = records.map(r => ({
-            id: Number(r.id),
-            owner: r.owner,
-            item: r.item,
-            descr: r.descr,
-            location: r.location,
-            lpn: r.lpn,
-            onHand: Number(r.on_hand),
-            available: Number(r.available),
-            status: r.status,
-            visa: r.visa,
-            lotNo: r.lot_no,
-            expDate: r.exp_date,
-            soBatch: r.so_batch,
-            lyDoHold: r.ly_do_hold,
-            loaiHold: r.loai_hold,
-            ngayHold: r.ngay_hold,
-            nguoiHold: r.nguoi_hold,
-            ghiChu: r.ghi_chu,
-            grossWgt: Number(r.gross_wgt),
-            netWgt: Number(r.net_wgt),
-            tare: Number(r.tare),
-            cube: Number(r.cube),
-            innerPack: Number(r.inner_pack),
-            caseCnt: Number(r.case_cnt),
-            pallet: Number(r.pallet),
-            uom: r.uom,
-            decision: r.decision || '',
-            soLuongHuy: Number(r.so_luong_huy) || 0,
-            lyDoQD: r.ly_do_qd || '',
-            nguoiDuyet: r.nguoi_duyet || '',
-            ngayDuyet: r.ngay_duyet || '',
-            vendor: getVendorLabelInline(r.item, activeRules),
-          }));
-          setRawData(mapped);
-          
-          const snapTime = localStorage.getItem(SNAPSHOT_TIME_KEY) || dayjs().format('DD/MM/YYYY HH:mm:ss');
-          setLastCalculatedAt(snapTime);
+          setVendorRules(rules || []);
         }
       } catch (err: any) {
-        messageApi.error(err.message || 'Lỗi kết nối database!');
-      } finally {
-        setLoading(false);
+        console.error('Lỗi kết nối database để tải rules:', err);
       }
     };
-
     if (isMounted) {
-      loadInitData();
+      loadRules();
     }
-  }, [isMounted, messageApi]);
+  }, [isMounted]);
+
+  const loadPageData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // 1. Fetch paginated records from DB with server-side filters
+      let query = supabase
+        .from('destruction_records')
+        .select('*', { count: 'exact' });
+
+      // Apply column filters
+      for (const [key, value] of Object.entries(columnFilters)) {
+        if (!value || value.trim() === '') continue;
+        
+        if (key === 'vendor') {
+          const matchingRules = vendorRules.filter(r => r.label.toLowerCase().includes(value.toLowerCase().trim()));
+          if (matchingRules.length > 0) {
+            const orClauses = matchingRules.map(r => `item.ilike.${r.prefix}%`).join(',');
+            query = query.or(orClauses);
+          } else {
+            query = query.ilike('item', `%${value.trim()}%`);
+          }
+        } else {
+          const dbCol = DESTR_DB_COLUMNS[key] || key;
+          query = query.ilike(dbCol, `%${value.trim()}%`);
+        }
+      }
+
+      query = query.order('id', { ascending: true });
+      const from = (currentPage - 1) * pageSize;
+      query = query.range(from, from + pageSize - 1);
+
+      const { data: records, count, error } = await query;
+      if (error) throw error;
+
+      if (records) {
+        const mapped: DestructionRecord[] = records.map(r => ({
+          id: Number(r.id),
+          owner: r.owner,
+          item: r.item,
+          descr: r.descr,
+          location: r.location,
+          lpn: r.lpn,
+          onHand: Number(r.on_hand),
+          available: Number(r.available),
+          status: r.status,
+          visa: r.visa,
+          lotNo: r.lot_no,
+          expDate: r.exp_date,
+          soBatch: r.so_batch,
+          lyDoHold: r.ly_do_hold,
+          loaiHold: r.loai_hold,
+          ngayHold: r.ngay_hold,
+          nguoiHold: r.nguoi_hold,
+          ghiChu: r.ghi_chu,
+          grossWgt: Number(r.gross_wgt),
+          netWgt: Number(r.net_wgt),
+          tare: Number(r.tare),
+          cube: Number(r.cube),
+          innerPack: Number(r.inner_pack),
+          caseCnt: Number(r.case_cnt),
+          pallet: Number(r.pallet),
+          uom: r.uom,
+          decision: r.decision || '',
+          soLuongHuy: Number(r.so_luong_huy) || 0,
+          lyDoQD: r.ly_do_qd || '',
+          nguoiDuyet: r.nguoi_duyet || '',
+          ngayDuyet: r.ngay_duyet || '',
+          vendor: getVendorLabel(r.item),
+        }));
+        setData(mapped);
+        setTotalCount(count || 0);
+      }
+
+      // 2. Fetch lightweight summary for stats and zone calculations
+      const { data: summary, error: summaryErr } = await supabase
+        .from('destruction_records')
+        .select('id, owner, decision, location, on_hand, gross_wgt, pallet, lpn');
+      if (summaryErr) throw summaryErr;
+      setSummaryData(summary || []);
+
+      const snapTime = localStorage.getItem(SNAPSHOT_TIME_KEY) || dayjs().format('DD/MM/YYYY HH:mm:ss');
+      setLastCalculatedAt(snapTime);
+    } catch (err: any) {
+      messageApi.error(err.message || 'Lỗi tải dữ liệu!');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, pageSize, columnFilters, vendorRules, getVendorLabel, messageApi]);
+
+  useEffect(() => {
+    if (isMounted && vendorRules.length >= 0) {
+      loadPageData();
+    }
+  }, [isMounted, currentPage, pageSize, columnFilters, vendorRules, loadPageData]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -247,6 +293,7 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
 
   const handleColumnFilter = (key: string, value: string) => {
     setColumnFilters(prev => ({ ...prev, [key]: value }));
+    setCurrentPage(1);
   };
 
   // ── Column width helper ──
@@ -261,7 +308,8 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
 
   /* persist decision changes in Supabase */
   const updateRecord = useCallback(async (id: number, patch: Partial<DestructionRecord>) => {
-    setRawData(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r));
+    setData(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r));
+    setSummaryData(prev => prev.map(r => r.id === id ? { ...r, decision: patch.decision ?? r.decision } : r));
 
     const dbPatch: Record<string, any> = {};
     if (patch.decision !== undefined) dbPatch.decision = patch.decision;
@@ -281,8 +329,8 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
   }, [messageApi]);
 
   const owners = useMemo(() =>
-    Array.from(new Set(rawData.map(r => r.owner))).sort(),
-    [rawData]);
+    Array.from(new Set(summaryData.map(r => r.owner))).sort(),
+    [summaryData]);
 
   /* Zone Stats Calculation */
   const zoneStats = useMemo(() => {
@@ -296,64 +344,49 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
     ];
 
     return zones.map(z => {
-      const records = rawData.filter(r => z.match(r.location));
-      const totalQty = records.reduce((sum, r) => sum + (r.onHand || 0), 0);
+      const records = summaryData.filter(r => z.match(r.location || ''));
+      const totalQty = records.reduce((sum, r) => sum + (r.on_hand || 0), 0);
       const uniqueLPNs = new Set(records.map(r => r.lpn)).size;
-      const totalWeight = records.reduce((sum, r) => sum + ((r.onHand || 0) * (r.grossWgt || 0)), 0);
+      const totalWeight = records.reduce((sum, r) => sum + ((r.on_hand || 0) * (r.gross_wgt || 0)), 0);
       
       const estPallets = records.reduce((sum, r) => {
         if (!r.pallet || r.pallet <= 0) return sum;
-        return sum + (r.onHand || 0) / r.pallet;
+        return sum + (r.on_hand || 0) / r.pallet;
       }, 0);
 
       return { ...z, totalQty, uniqueLPNs, totalWeight, estPallets };
     });
-  }, [rawData]);
-
-  /* filters */
-  useEffect(() => {
-    let list = rawData;
-    // Per-column filters with wildcard support
-    const activeColFilters = Object.fromEntries(
-      Object.entries(columnFilters).filter(([, v]) => v.trim() !== '')
-    );
-    if (Object.keys(activeColFilters).length > 0) {
-      list = applyColumnFilters(list as unknown as Record<string, unknown>[], activeColFilters) as unknown as DestructionRecord[];
-    }
-    setData(list);
-  }, [rawData, columnFilters]);
+  }, [summaryData]);
 
   /* stats */
   const stats = useMemo(() => ({
-    total: rawData.length,
-    huy: rawData.filter(r => r.decision === 'HUY').length,
-    giu: rawData.filter(r => r.decision === 'GIU').length,
-    tra: rawData.filter(r => r.decision === 'TRA').length,
-    chuaQD: rawData.filter(r => !r.decision).length,
-  }), [rawData]);
+    total: summaryData.length,
+    huy: summaryData.filter(r => r.decision === 'HUY').length,
+    giu: summaryData.filter(r => r.decision === 'GIU').length,
+    tra: summaryData.filter(r => r.decision === 'TRA').length,
+    chuaQD: summaryData.filter(r => !r.decision).length,
+  }), [summaryData]);
 
   /* Recalculate based on current Master Data */
   const recalculateData = async () => {
     setLoading(true);
     try {
-      // 1. Tải danh mục sản phẩm từ cache/Supabase
-      const masterItems = await syncMasterData<any>({
-        table: 'master_items',
-        keyField: 'item_code',
-        storageKey: 'gxp_master_items_cache'
-      });
-
       const masterMap = new Map(masterItems.map(m => [m.item_code, m]));
 
+      // 1. Tải toàn bộ destruction records từ database để cập nhật
+      const { data: records, error: fetchErr } = await supabase
+        .from('destruction_records')
+        .select('*');
+      if (fetchErr) throw fetchErr;
+
       // 2. Cập nhật dữ liệu tạm trong memory
-      const updatedRecords = rawData.map(r => {
+      const updatedRecords = (records || []).map(r => {
         const masterItem = masterMap.get(r.item);
         if (masterItem) {
           return {
             ...r,
-            vendor: getVendorLabel(r.item),
+            gross_wgt: Number(masterItem.gross_weight) || r.gross_wgt,
             pallet: Number(masterItem.pallet_qty) || r.pallet,
-            grossWgt: Number(masterItem.gross_weight) || r.grossWgt,
           };
         }
         return r;
@@ -362,39 +395,7 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
       // 3. Upsert hàng loạt (batch upsert) lên Supabase để ghi nhận
       const batchSize = 100;
       for (let i = 0; i < updatedRecords.length; i += batchSize) {
-        const batch = updatedRecords.slice(i, i + batchSize).map(r => ({
-          id: r.id,
-          owner: r.owner,
-          item: r.item,
-          descr: r.descr,
-          location: r.location,
-          lpn: r.lpn,
-          on_hand: r.onHand,
-          available: r.available,
-          status: r.status,
-          visa: r.visa || null,
-          lot_no: r.lotNo,
-          exp_date: r.expDate,
-          so_batch: r.soBatch,
-          ly_do_hold: r.lyDoHold || null,
-          loai_hold: r.loaiHold || null,
-          ngay_hold: r.ngayHold || null,
-          nguoi_hold: r.nguoiHold || null,
-          ghi_chu: r.ghiChu || null,
-          gross_wgt: r.grossWgt || 0,
-          net_wgt: r.netWgt || 0,
-          tare: r.tare || 0,
-          cube: r.cube || 0,
-          inner_pack: r.innerPack || 0,
-          case_cnt: r.caseCnt || 0,
-          pallet: r.pallet || 0,
-          uom: r.uom,
-          decision: r.decision || '',
-          so_luong_huy: r.soLuongHuy || 0,
-          ly_do_qd: r.lyDoQD || '',
-          nguoi_duyet: r.nguoiDuyet || null,
-          ngay_duyet: r.ngayDuyet || null
-        }));
+        const batch = updatedRecords.slice(i, i + batchSize);
 
         const { error: upsertError } = await supabase
           .from('destruction_records')
@@ -403,7 +404,7 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
         if (upsertError) throw upsertError;
       }
 
-      setRawData(updatedRecords);
+      await loadPageData();
       const nowStr = dayjs().format('DD/MM/YYYY HH:mm:ss');
       localStorage.setItem(SNAPSHOT_TIME_KEY, nowStr);
       setLastCalculatedAt(nowStr);
@@ -819,9 +820,13 @@ export default function DestructionModule({ userId = 'default' }: { userId?: str
                       onChange: keys => setSelectedKeys(keys as number[]),
                     }}
                     pagination={{
-                      current: undefined,
+                      current: currentPage,
                       pageSize: pageSize,
-                      onShowSizeChange: (_, size) => setPageSize(size),
+                      total: totalCount,
+                      onChange: (p, s) => {
+                        setCurrentPage(p);
+                        setPageSize(s);
+                      },
                       showSizeChanger: true,
                       pageSizeOptions: [10, 20, 50, 100],
                       showTotal: (total, range) => `${range[0]}-${range[1]} / ${total} dòng`,

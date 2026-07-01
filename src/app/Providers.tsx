@@ -5,6 +5,13 @@ import { useState, ReactNode } from 'react';
 import { ConfigProvider } from 'antd';
 import viVN from 'antd/locale/vi_VN';
 
+import { useInitMasterDataRealtime } from '../lib/useMasterData';
+
+function MasterDataRealtimeBinder({ children }: { children: ReactNode }) {
+  useInitMasterDataRealtime();
+  return <>{children}</>;
+}
+
 /**
  * Providers bao gồm:
  * - TanStack React Query (fetch & cache theo URS §4.2)
@@ -25,32 +32,34 @@ export default function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ConfigProvider
-        locale={viVN}
-        theme={{
-          token: {
-            colorPrimary: '#0d9488',
-            colorInfo: '#0d9488',
-            borderRadius: 10,
-            fontFamily: "'Inter', system-ui, sans-serif",
-          },
-          components: {
-            Button: {
+      <MasterDataRealtimeBinder>
+        <ConfigProvider
+          locale={viVN}
+          theme={{
+            token: {
               colorPrimary: '#0d9488',
-              algorithm: true,
+              colorInfo: '#0d9488',
+              borderRadius: 10,
+              fontFamily: "'Inter', system-ui, sans-serif",
             },
-            Table: {
-              headerBg: '#f0fdfa',
-              headerColor: '#134e4a',
+            components: {
+              Button: {
+                colorPrimary: '#0d9488',
+                algorithm: true,
+              },
+              Table: {
+                headerBg: '#f0fdfa',
+                headerColor: '#134e4a',
+              },
+              Drawer: {
+                colorBgElevated: '#ffffff',
+              },
             },
-            Drawer: {
-              colorBgElevated: '#ffffff',
-            },
-          },
-        }}
-      >
-        {children}
-      </ConfigProvider>
+          }}
+        >
+          {children}
+        </ConfigProvider>
+      </MasterDataRealtimeBinder>
     </QueryClientProvider>
   );
 }

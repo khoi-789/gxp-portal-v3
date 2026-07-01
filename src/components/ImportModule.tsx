@@ -20,6 +20,7 @@ import { useTablePreferences } from '@/lib/useTablePreferences';
 import dayjs from 'dayjs';
 import { syncMasterData } from '@/lib/masterDataSync';
 import { supabase } from '@/lib/supabase';
+import { useMasterItems, useMasterSuppliers } from '@/lib/useMasterData';
 
 /* ──────────────────────────────────────────────────
    Types
@@ -193,19 +194,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   const [simulatedRole, setSimulatedRole] = useState<'QA_NHAP_KHAU' | 'QA_KHO'>('QA_NHAP_KHAU');
 
   // Master product data for select list (load all for dropdowns)
-  const { data: masterItems = [] } = useQuery<any[]>({
-    queryKey: ['master-items-dropdown'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('master_items')
-        .select('*')
-        .eq('is_active', true)
-        .order('item_code', { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
-    staleTime: 30 * 1000,
-  });
+  const { data: masterItemsRaw = [] } = useMasterItems();
+  const masterItems = useMemo(() => masterItemsRaw.filter(x => x.is_active), [masterItemsRaw]);
 
   // Product label mappings
   const { data: labelMappings = [] } = useQuery<any[]>({
@@ -290,28 +280,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   }, [labelMappings, masterItems]);
 
   // Master suppliers list
-  const { data: masterSuppliers = [] } = useQuery<any[]>({
-    queryKey: ['master-suppliers-dropdown'],
-    queryFn: async () => {
-      return syncMasterData<any>({
-        table: 'master_suppliers',
-        keyField: 'supplier_code',
-        storageKey: 'gxp_master_suppliers_cache'
-      });
-    },
-    initialData: () => {
-      if (typeof window !== 'undefined') {
-        const raw = localStorage.getItem('gxp_master_suppliers_cache');
-        if (raw) {
-          try {
-            return JSON.parse(raw);
-          } catch {}
-        }
-      }
-      return undefined;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: masterSuppliers = [] } = useMasterSuppliers();
 
   // Unique suppliers from master data
   const suppliersList = useMemo(() => {

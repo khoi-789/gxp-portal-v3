@@ -19,6 +19,7 @@ import { useTablePreferences } from '@/lib/useTablePreferences';
 import dayjs from 'dayjs';
 import { syncMasterData } from '@/lib/masterDataSync';
 import { supabase } from '@/lib/supabase';
+import { useMasterItems, useMasterSuppliers } from '@/lib/useMasterData';
 
 /* ──────────────────────────────────────────────────
    Types
@@ -140,52 +141,10 @@ export default function CCModule({ userId = 'default' }: { userId?: string }) {
   const [currentPage, setCurrentPage] = useState(1);
 
   // Master Data (load-all for dropdowns)
-  const { data: masterItems = [] } = useQuery<any[]>({
-    queryKey: ['master-items-dropdown'],
-    queryFn: async () => {
-      const list = await syncMasterData<any>({
-        table: 'master_items',
-        keyField: 'item_code',
-        storageKey: 'gxp_master_items_cache'
-      });
-      return list.filter(x => x.is_active);
-    },
-    initialData: () => {
-      if (typeof window !== 'undefined') {
-        const raw = localStorage.getItem('gxp_master_items_cache');
-        if (raw) {
-          try {
-            return JSON.parse(raw).filter((x: any) => x.is_active);
-          } catch {}
-        }
-      }
-      return undefined;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: masterItemsRaw = [] } = useMasterItems();
+  const masterItems = useMemo(() => masterItemsRaw.filter(x => x.is_active), [masterItemsRaw]);
 
-  const { data: masterSuppliers = [] } = useQuery<any[]>({
-    queryKey: ['master-suppliers-dropdown'],
-    queryFn: async () => {
-      return syncMasterData<any>({
-        table: 'master_suppliers',
-        keyField: 'supplier_code',
-        storageKey: 'gxp_master_suppliers_cache'
-      });
-    },
-    initialData: () => {
-      if (typeof window !== 'undefined') {
-        const raw = localStorage.getItem('gxp_master_suppliers_cache');
-        if (raw) {
-          try {
-            return JSON.parse(raw);
-          } catch {}
-        }
-      }
-      return undefined;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: masterSuppliers = [] } = useMasterSuppliers();
 
   // Server-side paginated table data
   const ccQueryKey = ['cc_complaints', currentPage, pageSize, globalSearch, columnFilters];
