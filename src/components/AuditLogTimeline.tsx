@@ -258,9 +258,14 @@ function LogDetailPanel({ log, versionNum }: { log: AuditLogEntry; versionNum: n
             🔹 Sản phẩm: <strong style={{ color: '#0f766e' }}>{String(itemContext)}</strong>
           </Text>
         )}
-        <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#64748b' }}>
-          <span>🕒 {timeStr}</span>
-          <span><User size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />{userName}</span>
+        <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#64748b', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            🕒 {timeStr}
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <User size={12} />
+            {userName}
+          </span>
         </div>
       </div>
 
