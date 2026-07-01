@@ -761,7 +761,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
         const oldItem = originalItems.find((i: any) => i.id === deletedId);
         if (oldItem) {
           writeAuditLog({
-            tableName: 'imp_shipment_items', recordId: String(deletedId),
+            tableName: 'imp_shipment_items', recordId: `${invoiceNumber}::${deletedId}`,
             action: 'DELETE', changedBy, userRole,
             oldValues: oldItem as unknown as Record<string, unknown>,
           });
@@ -771,7 +771,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       // 3. Log từng item được thêm mới
       for (const newItem of toInsert) {
         writeAuditLog({
-          tableName: 'imp_shipment_items', recordId: `${invoiceNumber}-${newItem.item_code || 'new'}`,
+          tableName: 'imp_shipment_items', recordId: `${invoiceNumber}::new-${newItem.item_code || Date.now()}`,
           action: 'INSERT', changedBy, userRole,
           newValues: newItem as unknown as Record<string, unknown>,
           changedFields: Object.keys(newItem),
@@ -788,7 +788,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
           );
           if (itemChanged.length > 0) {
             writeAuditLog({
-              tableName: 'imp_shipment_items', recordId: String(item.id),
+              tableName: 'imp_shipment_items', recordId: `${invoiceNumber}::${item.id}`,
               action: 'UPDATE', changedBy, userRole,
               oldValues: oldItem as unknown as Record<string, unknown>,
               newValues: item as unknown as Record<string, unknown>,
@@ -1332,7 +1332,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                   recordId={detailRow.invoice_number}
                   additionalQuery={[{
                     tableName: 'imp_shipment_items',
-                    recordIds: (detailRow.imp_shipment_items || []).map((item: any) => item.id).filter(Boolean),
+                    recordIdPrefix: `${detailRow.invoice_number}::`,
                   }]}
                 />
               </div>

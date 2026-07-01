@@ -26,7 +26,13 @@ interface AuditLogTimelineProps {
   tableName: string;
   recordId: string | number;
   /** Optional extra tables to query (useful for parent+child records like imp_shipments + imp_shipment_items) */
-  additionalQuery?: { tableName: string; recordIds: (string | number)[] }[];
+  additionalQuery?: {
+    tableName: string;
+    /** Use recordIds for exact match (.in query) */
+    recordIds?: (string | number)[];
+    /** Use recordIdPrefix for prefix LIKE match — fetches all records starting with this prefix */
+    recordIdPrefix?: string;
+  }[];
   maxItems?: number;
 }
 
@@ -112,16 +118,29 @@ export default function AuditLogTimeline({
 
       // Fetch additional tables
       for (const extra of additionalQuery) {
-        if (!extra.recordIds || extra.recordIds.length === 0) continue;
-        const { data: extraData } = await supabase
-          .from('audit_logs')
-          .select('*')
-          .eq('table_name', extra.tableName)
-          .in('record_id', extra.recordIds.map(String))
-          .order('changed_at', { ascending: false })
-          .limit(maxItems);
-        if (extraData) {
-          allLogs = allLogs.concat(extraData);
+        // Support prefix LIKE query (for fetching all items of an invoice including deleted ones)
+        if (extra.recordIdPrefix) {
+          const { data: extraData } = await supabase
+            .from('audit_logs')
+            .select('*')
+            .eq('table_name', extra.tableName)
+            .like('record_id', `${extra.recordIdPrefix}%`)
+            .order('changed_at', { ascending: false })
+            .limit(maxItems);
+          if (extraData) {
+            allLogs = allLogs.concat(extraData);
+          }
+        } else if (extra.recordIds && extra.recordIds.length > 0) {
+          const { data: extraData } = await supabase
+            .from('audit_logs')
+            .select('*')
+            .eq('table_name', extra.tableName)
+            .in('record_id', extra.recordIds.map(String))
+            .order('changed_at', { ascending: false })
+            .limit(maxItems);
+          if (extraData) {
+            allLogs = allLogs.concat(extraData);
+          }
         }
       }
 
