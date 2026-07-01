@@ -1534,12 +1534,12 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                       )}
 
                       <Row gutter={[10, 6]} align="top">
-                        {/* Left Section: Product Details & Visa/Decision (span 16) */}
+                        {/* Left Section: Product Details, Visa/Decision & QA Issues (span 16) */}
                         <Col span={16}>
                           {/* Row 1: Code, Name, COA */}
                           <Row gutter={[10, 6]} align="middle">
                             {/* Match Item Code */}
-                            <Col span={6}>
+                            <Col span={7}>
                               <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
                                 Mã Danh Mục (Item Code)
                               </div>
@@ -1566,7 +1566,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                             </Col>
 
                             {/* Item Name (Free text / Auto filled) */}
-                            <Col span={12}>
+                            <Col span={11}>
                               <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
                                 Tên sản phẩm thực tế nhập *
                               </div>
@@ -1596,10 +1596,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
                           {/* Row 2: Visa, Decision, Validity */}
                           <Row gutter={[10, 6]} style={{ marginTop: 6 }}>
-                            <Col span={6} /> {/* Offset under Mã Danh Mục */}
-                            
                             {/* Số Visa */}
-                            <Col span={6}>
+                            <Col span={7}>
                               <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
                                 Số Visa
                               </div>
@@ -1614,7 +1612,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                             </Col>
 
                             {/* Số quyết định */}
-                            <Col span={6}>
+                            <Col span={11}>
                               <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
                                 Số quyết định
                               </div>
@@ -1637,6 +1635,39 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                 placeholder="VD: 25/12/2028..."
                                 value={item.valid_until || ''}
                                 onChange={(e) => updateItemField(idx, 'valid_until', e.target.value)}
+                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                size="small"
+                                style={{ borderRadius: 6 }}
+                              />
+                            </Col>
+                          </Row>
+
+                          {/* Row 3: QA Issues (Vấn đề & Hướng xử lý) */}
+                          <Row gutter={[10, 6]} style={{ marginTop: 6 }}>
+                            {/* Vấn đề */}
+                            <Col span={12}>
+                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#b91c1c' }}>
+                                Vấn đề (nếu có)
+                              </div>
+                              <Input
+                                placeholder="Nhập chi tiết vấn đề phát sinh..."
+                                value={item.issue_notes || ''}
+                                onChange={(e) => updateItemField(idx, 'issue_notes', e.target.value)}
+                                disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                size="small"
+                                style={{ borderRadius: 6 }}
+                              />
+                            </Col>
+
+                            {/* Hướng xử lý */}
+                            <Col span={12}>
+                              <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#b91c1c' }}>
+                                Hướng xử lý
+                              </div>
+                              <Input
+                                placeholder="Nhập hướng xử lý..."
+                                value={item.resolution_notes || ''}
+                                onChange={(e) => updateItemField(idx, 'resolution_notes', e.target.value)}
                                 disabled={simulatedRole !== 'QA_NHAP_KHAU'}
                                 size="small"
                                 style={{ borderRadius: 6 }}
@@ -1745,76 +1776,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
               )}
             </div>
 
-            {/* PART 5: SHIPMENT ISSUES LIST */}
-            <div style={{ background: 'white', padding: '10px 14px', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#334155', borderLeft: '3px solid #ef4444', paddingLeft: 8 }}>
-                  DANH SÁCH VẤN ĐỀ & HƯỚNG XỬ LÝ (QA)
-                </h3>
-                <Button
-                  type="dashed"
-                  size="small"
-                  icon={<PlusCircle size={14} />}
-                  onClick={handleAddIssue}
-                  style={{ borderRadius: 6, color: '#dc2626', borderColor: '#dc2626' }}
-                >
-                  Thêm vấn đề
-                </Button>
-              </div>
 
-              {(detailRow.issues || []).length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '12px 8px', border: '1px dashed #fca5a5', borderRadius: 8, color: '#94a3b8', fontSize: 11 }}>
-                  Không có vấn đề phát sinh nào được ghi nhận cho hóa đơn này.
-                </div>
-              ) : (
-                <Space direction="vertical" style={{ width: '100%' }} size={6}>
-                  {(detailRow.issues || []).map((issue, idx) => (
-                    <div
-                      key={issue.id || `issue-${idx}`}
-                      style={{
-                        padding: '6px 10px',
-                        border: '1px solid #fee2e2',
-                        borderRadius: 8,
-                        background: '#fff5f5',
-                        position: 'relative'
-                      }}
-                    >
-                      <Button
-                        type="text"
-                        danger
-                        size="small"
-                        icon={<Trash2 size={13} />}
-                        style={{ position: 'absolute', top: 4, right: 4, zIndex: 10 }}
-                        onClick={() => handleRemoveIssue(idx)}
-                      />
-
-                      <Row gutter={[10, 6]}>
-                        <Col span={12}>
-                          <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#991b1b' }}>Vấn đề *</div>
-                          <Input.TextArea
-                            rows={1}
-                            placeholder="Nhập chi tiết vấn đề phát sinh..."
-                            value={issue.issue_text || ''}
-                            onChange={(e) => updateIssueField(idx, 'issue_text', e.target.value)}
-                            style={{ borderRadius: 6 }}
-                          />
-                        </Col>
-                        <Col span={12}>
-                          <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#991b1b' }}>Hướng xử lý</div>
-                          <Input.TextArea
-                            rows={1}
-                            placeholder="Nhập hướng xử lý..."
-                            value={issue.resolution_text || ''}
-                            onChange={(e) => updateIssueField(idx, 'resolution_text', e.target.value)}
-                            style={{ borderRadius: 6 }}
-                          />
-                        </Col>
-                      </Row>
-                    </div>
-                  ))}
-                </Space>
-              )}
-            </div>
 
           </Space>
         )}
