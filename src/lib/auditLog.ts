@@ -5,8 +5,14 @@
 import { supabase } from './supabase';
 
 const SKIP_FIELDS = [
+  // Timestamps
   'updated_at', 'created_at', 'updated_date', 'created_date',
+  // Computed file links (auto-generated from supplier_code)
   'invoice_link', 'supplier_link',
+  // Legacy / computed text fields with no direct user input
+  'import_date_lh_text', 'actual_import_date',
+  // Internal system fields
+  'id', '__v',
 ];
 
 export interface DiffResult {

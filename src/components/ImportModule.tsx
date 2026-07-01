@@ -729,9 +729,12 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       const userRole = simulatedRole === 'QA_NHAP_KHAU' ? 'QA Nhập khẩu' : 'QA Kho';
 
       // 1. Log thay đổi của header shipment
-      //    (loại bỏ imp_shipment_items khỏi snapshot để tránh so sánh nhầm)
-      const originalHeader = { ...(originalRow as any) };
-      delete originalHeader.imp_shipment_items;
+      //    Chỉ so sánh các trường CÓ trong shipmentPayload để tránh log thừa
+      //    (originalRow có thể chứa nhiều trường DB thừa như import_date_lh_text)
+      const originalHeaderSlice: Record<string, unknown> = {};
+      Object.keys(shipmentPayload).forEach(k => {
+        originalHeaderSlice[k] = (originalRow as any)?.[k];
+      });
 
       if (isNew) {
         writeAuditLog({
@@ -742,17 +745,18 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
         });
       } else {
         const { diff, changedFields } = buildDiff(
-          originalHeader as Record<string, unknown>,
+          originalHeaderSlice,
           shipmentPayload as Record<string, unknown>
         );
         if (changedFields.length > 0) {
           writeAuditLog({
             tableName: 'imp_shipments', recordId: invoiceNumber,
             action: 'UPDATE', changedBy, userRole,
-            oldValues: originalHeader as Record<string, unknown>,
+            oldValues: originalHeaderSlice,
             newValues: shipmentPayload as Record<string, unknown>,
             diff, changedFields,
           });
+
         }
       }
 
