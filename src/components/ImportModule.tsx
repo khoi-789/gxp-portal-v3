@@ -1710,96 +1710,83 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           {/* Right Section: Required Stamps/Labels & Toggle (span 8) */}
                           <Col span={8}>
                             <Space direction="vertical" style={{ width: '100%' }} size={6}>
-                              {item.item_code ? (
-                                (() => {
-                                  const isCustomized = !!(item.required_labels && Array.isArray(item.required_labels));
-                                  const reqLabels = isCustomized ? item.required_labels! : getProductLabels(item.item_code);
-                                  const hasLabels = reqLabels && reqLabels.length > 0;
-                                  
-                                  return (
-                                    <div style={{
-                                      background: 'rgba(13,148,136,0.04)',
-                                      border: '1px dashed rgba(13,148,136,0.3)',
-                                      padding: '4px 8px',
-                                      borderRadius: 8,
-                                    }}>
-                                      <div style={{ fontSize: 10, fontWeight: 700, color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                          🏷️ Tem nhãn bắt buộc:
+                              {(() => {
+                                const isCustomized = !!(item.required_labels && Array.isArray(item.required_labels));
+                                const reqLabels = isCustomized 
+                                  ? item.required_labels! 
+                                  : (item.item_code ? getProductLabels(item.item_code) : []);
+                                const hasLabels = reqLabels && reqLabels.length > 0;
+                                
+                                return (
+                                  <div style={{
+                                    background: 'rgba(13,148,136,0.04)',
+                                    border: '1px dashed rgba(13,148,136,0.3)',
+                                    padding: '4px 8px',
+                                    borderRadius: 8,
+                                  }}>
+                                    <div style={{ fontSize: 10, fontWeight: 700, color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        🏷️ Tem nhãn bắt buộc:
+                                      </span>
+                                      
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <span style={{
+                                          fontSize: 8,
+                                          fontWeight: 600,
+                                          color: isCustomized ? '#d97706' : (item.item_code ? '#0d9488' : '#d97706'),
+                                          background: isCustomized ? '#fef3c7' : (item.item_code ? '#ccfbf1' : '#fef3c7'),
+                                          padding: '1px 4px',
+                                          borderRadius: 3
+                                        }}>
+                                          {isCustomized ? 'Manual' : (item.item_code ? 'Realtime' : 'Manual')}
                                         </span>
                                         
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                          <span style={{
-                                            fontSize: 8,
-                                            fontWeight: 600,
-                                            color: isCustomized ? '#d97706' : '#0d9488',
-                                            background: isCustomized ? '#fef3c7' : '#ccfbf1',
-                                            padding: '1px 4px',
-                                            borderRadius: 3
-                                          }}>
-                                            {isCustomized ? 'Manual' : 'Realtime'}
-                                          </span>
-                                          
-                                          {simulatedRole === 'QA_NHAP_KHAU' && (
-                                            <Space size={2}>
+                                        {simulatedRole === 'QA_NHAP_KHAU' && (
+                                          <Space size={2}>
+                                            <Button
+                                              type="link"
+                                              size="small"
+                                              onClick={() => handleOpenCustomLabelModal(idx, reqLabels)}
+                                              style={{ padding: 0, height: 'auto', fontSize: 10, color: '#2563eb' }}
+                                            >
+                                              [Sửa]
+                                            </Button>
+                                            {isCustomized && (
                                               <Button
                                                 type="link"
                                                 size="small"
-                                                onClick={() => handleOpenCustomLabelModal(idx, reqLabels)}
-                                                style={{ padding: 0, height: 'auto', fontSize: 10, color: '#2563eb' }}
+                                                onClick={() => handleResetLabels(idx)}
+                                                style={{ padding: 0, height: 'auto', fontSize: 10, color: '#dc2626' }}
                                               >
-                                                [Sửa]
+                                                [Reset]
                                               </Button>
-                                              {isCustomized && (
-                                                <Button
-                                                  type="link"
-                                                  size="small"
-                                                  onClick={() => handleResetLabels(idx)}
-                                                  style={{ padding: 0, height: 'auto', fontSize: 10, color: '#dc2626' }}
-                                                >
-                                                  [Reset]
-                                                </Button>
-                                              )}
-                                            </Space>
-                                          )}
-                                        </div>
+                                            )}
+                                          </Space>
+                                        )}
                                       </div>
-                                      
-                                      {hasLabels ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                          {reqLabels.map((lbl, lidx) => (
-                                            <div key={lidx} style={{ fontSize: 10, color: '#334155', display: 'flex', justifyContent: 'space-between', gap: 8, lineHeight: 1.2 }}>
-                                              <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                                                • <strong style={{ color: '#0d9488' }}>{lbl.code}</strong> - {lbl.name}
-                                              </span>
-                                              <span style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
-                                                Tỷ lệ: <strong style={{ color: '#0f766e' }}>{lbl.qty}</strong>
-                                              </span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      ) : (
-                                        <div style={{ fontSize: 10, color: '#94a3b8', fontStyle: 'italic', lineHeight: 1.2 }}>
-                                          Chưa có yêu cầu tem nhãn bổ sung
-                                        </div>
-                                      )}
                                     </div>
-                                  );
-                                })()
-                              ) : (
-                                <div style={{
-                                  background: '#f8fafc',
-                                  border: '1px dashed #e2e8f0',
-                                  padding: '8px 10px',
-                                  borderRadius: 8,
-                                  fontSize: 10,
-                                  color: '#94a3b8',
-                                  fontStyle: 'italic',
-                                  textAlign: 'center'
-                                }}>
-                                  Chọn mã SP để xem tem nhãn dán bổ sung
-                                </div>
-                              )}
+                                    
+                                    {hasLabels ? (
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                        {reqLabels.map((lbl, lidx) => (
+                                          <div key={lidx} style={{ fontSize: 10, color: '#334155', display: 'flex', justifyContent: 'space-between', gap: 8, lineHeight: 1.2 }}>
+                                            <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                              • <strong style={{ color: '#0d9488' }}>{lbl.code}</strong> - {lbl.name}
+                                            </span>
+                                            <span style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                              Tỷ lệ: <strong style={{ color: '#0f766e' }}>{lbl.qty}</strong>
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div style={{ fontSize: 10, color: '#94a3b8', fontStyle: 'italic', lineHeight: 1.2 }}>
+                                        Chưa có yêu cầu tem nhãn bổ sung
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
 
                               {/* Toggle switch for QA Issues */}
                               <div style={{
