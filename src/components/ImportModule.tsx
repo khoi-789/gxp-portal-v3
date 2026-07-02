@@ -236,6 +236,21 @@ async function fetchShipments(
     }
   }
 
+  // 2.2 Handle temp_out_of_range_details column search
+  if (filters.temp_out_of_range_details && filters.temp_out_of_range_details.trim()) {
+    const term = filters.temp_out_of_range_details.trim().toLowerCase();
+    if (term === 'lệch' || term === 'lech' || term === 'cảnh báo' || term === 'canh bao') {
+      query = query.eq('temp_out_of_range', true);
+    } else if (term === 'đạt' || term === 'dat' || term === 'bình thường' || term === 'binh thuong') {
+      query = query.eq('temp_out_of_range', false).eq('has_data_logger', true);
+    } else if (term === 'không có' || term === 'khong co' || term === 'không có logger' || term === 'khong co logger') {
+      query = query.eq('has_data_logger', false);
+    } else {
+      const q = `%${filters.temp_out_of_range_details.trim()}%`;
+      query = query.or(`temp_out_of_range_details.ilike.${q},data_logger_type.ilike.${q}`);
+    }
+  }
+
   // 3. Handle global search (including searching through product names & supplier names)
   if (search.trim()) {
     const q = `%${search.trim()}%`;
@@ -283,6 +298,7 @@ async function fetchShipments(
     if (!value || value.trim() === '') return;
     if (key === 'products') return; // Handled separately above
     if (key === 'supplier_code') return; // Handled separately above
+    if (key === 'temp_out_of_range_details') return; // Handled separately above
     const col = colMap[key];
     if (col) query = query.ilike(col, `%${value.trim()}%`);
   });
