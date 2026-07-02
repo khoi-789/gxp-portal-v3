@@ -162,11 +162,26 @@ async function fetchShipments(
   page: number,
   pageSize: number,
   search: string,
-  filters: Record<string, string>
+  filters: Record<string, string>,
+  filterMissingItemCode?: boolean
 ): Promise<{ items: ShipmentRecord[]; count: number }> {
   let query = supabase
     .from('imp_shipments')
     .select('*, imp_shipment_items(*)', { count: 'exact' });
+
+  // 0. Handle filterMissingItemCode
+  if (filterMissingItemCode) {
+    const { data: matchedItems } = await supabase
+      .from('imp_shipment_items')
+      .select('invoice_number')
+      .or('item_code.is.null,item_code.eq.""');
+    const invoiceNums = Array.from(new Set((matchedItems || []).map(x => x.invoice_number).filter(Boolean)));
+    if (invoiceNums.length > 0) {
+      query = query.in('invoice_number', invoiceNums);
+    } else {
+      query = query.eq('invoice_number', '____non_existent_invoice____');
+    }
+  }
 
   // 1. Handle products column search
   if (filters.products && filters.products.trim()) {
@@ -274,6 +289,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [filterMissingItemCode, setFilterMissingItemCode] = useState(false);
 
   // Simulated Persona
   const [simulatedRole, setSimulatedRole] = useState<'QA_NHAP_KHAU' | 'QA_KHO'>('QA_NHAP_KHAU');
@@ -307,10 +323,10 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   });
 
   // Server-side paginated table data
-  const impQueryKey = ['imp_shipments', currentPage, pageSize, globalSearch, columnFilters];
+  const impQueryKey = ['imp_shipments', currentPage, pageSize, globalSearch, columnFilters, filterMissingItemCode];
   const { data: impResult, isLoading: loading, refetch: loadData } = useQuery({
     queryKey: impQueryKey,
-    queryFn: () => fetchShipments(currentPage, pageSize, globalSearch, columnFilters),
+    queryFn: () => fetchShipments(currentPage, pageSize, globalSearch, columnFilters, filterMissingItemCode),
     placeholderData: (prev) => prev,
   });
 
@@ -501,9 +517,13 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       return !allOk;
     }).length;
     const tempWarnings = rawData.filter(r => r.temp_out_of_range).length;
+    const missingItemCode = rawData.filter(r => {
+      const items = r.imp_shipment_items || [];
+      return items.some(item => !item.item_code);
+    }).length;
     const closed = rawData.filter(r => r.progress_status === 'Hoàn tất' || r.progress_status === 'Closed').length;
 
-    return { total, missingCOA, tempWarnings, closed };
+    return { total, missingCOA, tempWarnings, missingItemCode, closed };
   }, [rawData, totalCount]);
 
   // Open Edit / Detail Drawer
@@ -1369,7 +1389,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
          Statistics Cards
          ────────────────────────────────────────────────── */}
       <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
-        <Col xs={12} sm={6} md={6} lg={6}>
+        <Col xs={12} sm={12} md={4} lg={4}>
           <Card className="metric-card-hover" style={{ borderRadius: 12, background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)' }} bodyStyle={{ padding: 12 }}>
             <Statistic
               title={<span style={{ color: '#0f766e', fontWeight: 600, fontSize: 12 }}>Tổng số Invoice</span>}
@@ -1379,7 +1399,46 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             />
           </Card>
         </Col>
-        <Col xs={12} sm={6} md={6} lg={6}>
+        
+        <Col xs={12} sm={12} md={5} lg={5}>
+          <Tooltip title="Click để bật/tắt lọc các Invoice thiếu mã sản phẩm (Item Code)">
+            <Card
+              className="metric-card-hover"
+              onClick={() => setFilterMissingItemCode(prev => !prev)}
+              style={{
+                borderRadius: 12,
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                border: filterMissingItemCode ? '2px solid #8b5cf6' : '1px solid transparent',
+                background: filterMissingItemCode
+                  ? 'linear-gradient(135deg, #ddd6fe 0%, #c084fc 100%)'
+                  : 'linear-gradient(135deg, #f5f3ff 0%, #e9d5ff 100%)',
+                boxShadow: filterMissingItemCode ? '0 4px 12px rgba(139, 92, 246, 0.2)' : 'none',
+              }}
+              bodyStyle={{ padding: 12 }}
+            >
+              <Statistic
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: filterMissingItemCode ? '#581c87' : '#6d28d9', fontWeight: 600, fontSize: 12 }}>
+                      Thiếu mã SP
+                    </span>
+                    {filterMissingItemCode && (
+                      <span style={{ fontSize: 9, background: '#8b5cf6', color: '#fff', padding: '1px 4px', borderRadius: 4, fontWeight: 700 }}>
+                        Đang lọc
+                      </span>
+                    )}
+                  </div>
+                }
+                value={stats.missingItemCode}
+                valueStyle={{ color: filterMissingItemCode ? '#3b0764' : '#5b21b6', fontWeight: 800, fontSize: 20 }}
+                prefix={<AlertCircle size={16} style={{ marginRight: 6 }} color={filterMissingItemCode ? '#581c87' : '#7c3aed'} />}
+              />
+            </Card>
+          </Tooltip>
+        </Col>
+
+        <Col xs={12} sm={12} md={5} lg={5}>
           <Card className="metric-card-hover" style={{ borderRadius: 12, background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)' }} bodyStyle={{ padding: 12 }}>
             <Statistic
               title={<span style={{ color: '#b91c1c', fontWeight: 600, fontSize: 12 }}>Thiếu COA</span>}
@@ -1389,7 +1448,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             />
           </Card>
         </Col>
-        <Col xs={12} sm={6} md={6} lg={6}>
+
+        <Col xs={12} sm={12} md={5} lg={5}>
           <Card className="metric-card-hover" style={{ borderRadius: 12, background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)' }} bodyStyle={{ padding: 12 }}>
             <Statistic
               title={<span style={{ color: '#b45309', fontWeight: 600, fontSize: 12 }}>Cảnh báo nhiệt</span>}
@@ -1399,7 +1459,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             />
           </Card>
         </Col>
-        <Col xs={12} sm={6} md={6} lg={6}>
+
+        <Col xs={12} sm={12} md={5} lg={5}>
           <Card className="metric-card-hover" style={{ borderRadius: 12, background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' }} bodyStyle={{ padding: 12 }}>
             <Statistic
               title={<span style={{ color: '#15803d', fontWeight: 600, fontSize: 12 }}>Hoàn Tất Lưu Trữ</span>}
