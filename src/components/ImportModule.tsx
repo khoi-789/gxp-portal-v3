@@ -299,9 +299,24 @@ async function fetchShipments(
     if (key === 'products') return; // Handled separately above
     if (key === 'supplier_code') return; // Handled separately above
     if (key === 'temp_out_of_range_details') return; // Handled separately above
+    if (key === 'progress_status') return; // Handled separately below
     const col = colMap[key];
     if (col) query = query.ilike(col, `%${value.trim()}%`);
   });
+
+  // Handle progress_status custom filter (supporting legacy values)
+  if (filters.progress_status && filters.progress_status.trim()) {
+    const val = filters.progress_status.trim();
+    if (val === 'Khởi tạo') {
+      query = query.or('progress_status.eq."Khởi tạo",progress_status.eq.Created');
+    } else if (val === 'Đang xử lý') {
+      query = query.or('progress_status.eq."Đang xử lý",progress_status.eq.Checking,progress_status.eq."Pending Inbound",progress_status.eq.Issue');
+    } else if (val === 'Hoàn tất') {
+      query = query.or('progress_status.eq."Hoàn tất",progress_status.eq.Closed');
+    } else {
+      query = query.ilike('progress_status', `%${val}%`);
+    }
+  }
 
   query = query.order('created_date', { ascending: false });
   const from = (page - 1) * pageSize;
@@ -321,6 +336,60 @@ const getSupplierFolderLink = (supplierName: string) => {
   if (!supplierName) return '';
   return `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${supplierName}`;
 };
+
+interface ColumnSelectHeaderProps {
+  title: string;
+  dataKey: string;
+  options: { label: string; value: string }[];
+  filters: Record<string, string>;
+  onFilterChange: (key: string, value: string) => void;
+  align?: 'left' | 'center' | 'right';
+  showFilters?: boolean;
+}
+
+function ColumnSelectHeader({
+  title,
+  dataKey,
+  options,
+  filters,
+  onFilterChange,
+  align = 'left',
+  showFilters = true,
+}: ColumnSelectHeaderProps) {
+  const value = filters[dataKey] ?? undefined;
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 4,
+        alignItems: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
+        width: '100%',
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <span style={{ fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap' }}>{title}</span>
+      {showFilters && (
+        <Select
+          size="small"
+          placeholder="Tất cả"
+          value={value}
+          onChange={(val) => onFilterChange(dataKey, val || '')}
+          allowClear
+          options={options}
+          style={{
+            fontSize: 11,
+            height: 22,
+            width: '100%',
+            minWidth: 90,
+          }}
+          dropdownStyle={{ minWidth: 120 }}
+        />
+      )}
+    </div>
+  );
+}
 
 export default function ImportModule({ userId = 'default' }: { userId?: string }) {
   const [messageApi, contextHolder] = message.useMessage();
@@ -1203,7 +1272,20 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       },
     },
     coa_status: {
-      title: <ColumnSearchHeader title="COA" dataKey="coa_status" filters={columnFilters} onFilterChange={handleColumnFilter} align="center" showFilters={showFilters} />,
+      title: (
+        <ColumnSelectHeader
+          title="COA"
+          dataKey="coa_status"
+          options={[
+            { label: 'Đạt', value: 'Đạt' },
+            { label: 'Chưa đạt', value: 'Chưa đạt' },
+          ]}
+          filters={columnFilters}
+          onFilterChange={handleColumnFilter}
+          align="center"
+          showFilters={showFilters}
+        />
+      ),
       dataIndex: 'coa_status',
       key: 'coa_status',
       align: 'center',
@@ -1216,7 +1298,20 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       },
     },
     label_status: {
-      title: <ColumnSearchHeader title="Nhãn phụ" dataKey="label_status" filters={columnFilters} onFilterChange={handleColumnFilter} align="center" showFilters={showFilters} />,
+      title: (
+        <ColumnSelectHeader
+          title="Nhãn phụ"
+          dataKey="label_status"
+          options={[
+            { label: 'Chờ bổ sung', value: 'Chưa có' },
+            { label: 'Không', value: 'Đã cập nhật' },
+          ]}
+          filters={columnFilters}
+          onFilterChange={handleColumnFilter}
+          align="center"
+          showFilters={showFilters}
+        />
+      ),
       dataIndex: 'label_status',
       key: 'label_status',
       align: 'center',
@@ -1229,7 +1324,21 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       },
     },
     progress_status: {
-      title: <ColumnSearchHeader title="Tiến độ" dataKey="progress_status" filters={columnFilters} onFilterChange={handleColumnFilter} align="center" showFilters={showFilters} />,
+      title: (
+        <ColumnSelectHeader
+          title="Tiến độ"
+          dataKey="progress_status"
+          options={[
+            { label: 'Khởi tạo', value: 'Khởi tạo' },
+            { label: 'Đang xử lý', value: 'Đang xử lý' },
+            { label: 'Hoàn tất', value: 'Hoàn tất' },
+          ]}
+          filters={columnFilters}
+          onFilterChange={handleColumnFilter}
+          align="center"
+          showFilters={showFilters}
+        />
+      ),
       dataIndex: 'progress_status',
       key: 'progress_status',
       align: 'center',
@@ -1261,7 +1370,19 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       },
     },
     target_warehouse: {
-      title: <ColumnSearchHeader title="Kho" dataKey="target_warehouse" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
+      title: (
+        <ColumnSelectHeader
+          title="Kho"
+          dataKey="target_warehouse"
+          options={[
+            { label: 'Kho Long Hậu', value: 'Kho Long Hậu' },
+            { label: 'Kho Hưng Yên', value: 'Kho Hưng Yên' },
+          ]}
+          filters={columnFilters}
+          onFilterChange={handleColumnFilter}
+          showFilters={showFilters}
+        />
+      ),
       dataIndex: 'target_warehouse',
       key: 'target_warehouse',
       ...resizable('target_warehouse'),
