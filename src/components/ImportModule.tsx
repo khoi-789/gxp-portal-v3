@@ -679,8 +679,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
         messageApi.warning('Trạng thái "Hoàn tất" yêu cầu nhập Kho!');
         return;
       }
-      if (!detailRow.actual_import_date_note) {
-        messageApi.warning('Trạng thái "Hoàn tất" yêu cầu nhập Ngày nhập kho (Ghi chú thực tế)!');
+      if (!detailRow.actual_import_date_note || !parseImportDate(detailRow.actual_import_date_note)) {
+        messageApi.warning('Trạng thái "Hoàn tất" yêu cầu nhập Ngày nhập kho (Ghi chú thực tế) hợp lệ!');
         return;
       }
       if (detailRow.has_data_logger) {
@@ -714,14 +714,6 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
         }
         if (!item.coa_status) {
           messageApi.warning(`Trạng thái "Hoàn tất" yêu cầu chọn COA cho ${itemIndexStr}!`);
-          return;
-        }
-        if (!item.visa_no?.trim()) {
-          messageApi.warning(`Trạng thái "Hoàn tất" yêu cầu nhập Số Visa cho ${itemIndexStr}!`);
-          return;
-        }
-        if (!item.decision_no?.trim()) {
-          messageApi.warning(`Trạng thái "Hoàn tất" yêu cầu nhập Số quyết định cho ${itemIndexStr}!`);
           return;
         }
         if (!item.valid_until) {
@@ -1681,8 +1673,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           messageApi.warning('Vui lòng chọn Kho trước khi chuyển sang Hoàn tất!');
                           return;
                         }
-                        if (!detailRow.actual_import_date_note) {
-                          messageApi.warning('Vui lòng nhập Ngày nhập kho (Ghi chú thực tế) trước khi chuyển sang Hoàn tất!');
+                        if (!detailRow.actual_import_date_note || !parseImportDate(detailRow.actual_import_date_note)) {
+                          messageApi.warning('Vui lòng nhập Ngày nhập kho (Ghi chú thực tế) hợp lệ trước khi chuyển sang Hoàn tất!');
                           return;
                         }
                         if (detailRow.has_data_logger) {
@@ -1713,14 +1705,6 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           }
                           if (!item.coa_status) {
                             messageApi.warning(`Vui lòng chọn COA cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
-                            return;
-                          }
-                          if (!item.visa_no?.trim()) {
-                            messageApi.warning(`Vui lòng nhập Số Visa cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
-                            return;
-                          }
-                          if (!item.decision_no?.trim()) {
-                            messageApi.warning(`Vui lòng nhập Số quyết định cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
                             return;
                           }
                           if (!item.valid_until) {
