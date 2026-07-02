@@ -79,22 +79,28 @@ const LABEL_STATUS_OPTIONS = [
 ];
 
 const PROGRESS_STATUS_OPTIONS = [
-  { value: 'Created', label: 'Khởi tạo (Created)' },
-  { value: 'Checking', label: 'Đang kiểm chứng từ (Checking)' },
-  { value: 'Pending Inbound', label: 'Chờ nhập kho (Pending Inbound)' },
-  { value: 'Issue', label: 'Có sự cố (Issue)' },
-  { value: 'Closed', label: 'Hoàn tất (Closed)' },
+  { value: 'Khởi tạo', label: 'Khởi tạo' },
+  { value: 'Đang xử lý', label: 'Đang xử lý' },
+  { value: 'Hoàn tất', label: 'Hoàn tất' },
 ];
 
 const PROGRESS_LABEL: Record<string, string> = {
+  'Khởi tạo': 'Khởi tạo',
+  'Đang xử lý': 'Đang xử lý',
+  'Hoàn tất': 'Hoàn tất',
+  // legacy fallbacks
   Created: 'Khởi tạo',
-  Checking: 'Đang kiểm tra',
-  'Pending Inbound': 'Chờ nhập kho',
-  Issue: 'Có sự cố',
+  Checking: 'Đang xử lý',
+  'Pending Inbound': 'Đang xử lý',
+  Issue: 'Đang xử lý',
   Closed: 'Hoàn tất',
 };
 
 const PROGRESS_COLOR: Record<string, string> = {
+  'Khởi tạo': 'default',
+  'Đang xử lý': 'processing',
+  'Hoàn tất': 'success',
+  // legacy fallbacks
   Created: 'default',
   Checking: 'processing',
   'Pending Inbound': 'warning',
@@ -269,6 +275,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   // Drawer / Form state
   const [detailRow, setDetailRow] = useState<ShipmentRecord | null>(null);
   const [isNew, setIsNew] = useState(false);
+  const isClosed = detailRow ? (detailRow.progress_status === 'Hoàn tất' || detailRow.progress_status === 'Closed') : false;
   
   // Track original detail items for smart DB updates
   const [originalItems, setOriginalItems] = useState<ShipmentItem[]>([]);
@@ -419,9 +426,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   // Statistics calculation
   const stats = useMemo(() => {
     const total = totalCount;
-    const issues = rawData.filter(r => r.progress_status === 'Issue' || r.temp_out_of_range).length;
-    const pendingInbound = rawData.filter(r => r.progress_status === 'Pending Inbound').length;
-    const closed = rawData.filter(r => r.progress_status === 'Closed').length;
+    const issues = rawData.filter(r => r.temp_out_of_range || r.progress_status === 'Issue').length;
+    const pendingInbound = rawData.filter(r => r.progress_status === 'Đang xử lý' || r.progress_status === 'Checking' || r.progress_status === 'Pending Inbound').length;
+    const closed = rawData.filter(r => r.progress_status === 'Hoàn tất' || r.progress_status === 'Closed').length;
     const outOfRange = rawData.filter(r => r.temp_out_of_range).length;
 
     return { total, issues, pendingInbound, closed, outOfRange };
@@ -660,6 +667,81 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     if (!detailRow.supplier_code) {
       messageApi.warning('Vui lòng nhập/chọn Nhà cung cấp!');
       return;
+    }
+
+    if (detailRow.progress_status === 'Hoàn tất' || detailRow.progress_status === 'Closed') {
+      // 1. Validate Master fields
+      if (!detailRow.target_warehouse) {
+        messageApi.warning('Trạng thái "Hoàn tất" yêu cầu nhập Kho!');
+        return;
+      }
+      if (!detailRow.actual_import_date_note) {
+        messageApi.warning('Trạng thái "Hoàn tất" yêu cầu nhập Ngày nhập kho (Ghi chú thực tế)!');
+        return;
+      }
+      if (detailRow.has_data_logger) {
+        if (!detailRow.data_logger_type?.trim()) {
+          messageApi.warning('Trạng thái "Hoàn tất" yêu cầu nhập Loại Data Logger!');
+          return;
+        }
+        if (detailRow.logger_qty <= 0) {
+          messageApi.warning('Trạng thái "Hoàn tất" yêu cầu nhập Số lượng Data Logger > 0!');
+          return;
+        }
+      }
+      if (detailRow.temp_out_of_range && !detailRow.temp_out_of_range_details?.trim()) {
+        messageApi.warning('Trạng thái "Hoàn tất" yêu cầu nhập Chi tiết lệch nhiệt!');
+        return;
+      }
+
+      // 2. Validate Detail items
+      const items = detailRow.imp_shipment_items || [];
+      if (items.length === 0) {
+        messageApi.warning('Trạng thái "Hoàn tất" yêu cầu chuyến hàng phải có ít nhất 1 sản phẩm!');
+        return;
+      }
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const itemIndexStr = `sản phẩm thứ ${i + 1}`;
+        if (!item.item_code) {
+          messageApi.warning(`Trạng thái "Hoàn tất" yêu cầu chọn Mã Danh Mục cho ${itemIndexStr}!`);
+          return;
+        }
+        if (!item.item_name?.trim()) {
+          messageApi.warning(`Trạng thái "Hoàn tất" yêu cầu nhập Tên sản phẩm thực tế cho ${itemIndexStr}!`);
+          return;
+        }
+        if (!item.coa_status) {
+          messageApi.warning(`Trạng thái "Hoàn tất" yêu cầu chọn COA cho ${itemIndexStr}!`);
+          return;
+        }
+        if (!item.visa_no?.trim()) {
+          messageApi.warning(`Trạng thái "Hoàn tất" yêu cầu nhập Số Visa cho ${itemIndexStr}!`);
+          return;
+        }
+        if (!item.decision_no?.trim()) {
+          messageApi.warning(`Trạng thái "Hoàn tất" yêu cầu nhập Số quyết định cho ${itemIndexStr}!`);
+          return;
+        }
+        if (!item.valid_until) {
+          messageApi.warning(`Trạng thái "Hoàn tất" yêu cầu nhập Hiệu lực đến cho ${itemIndexStr}!`);
+          return;
+        }
+
+        // If Phát sinh vấn đề is checked (either in showIssuesMap or by existing notes)
+        const isIssueVisible = showIssuesMap[i] ?? !!(item.issue_notes || item.resolution_notes);
+        if (isIssueVisible) {
+          if (!item.issue_notes?.trim()) {
+            messageApi.warning(`Trạng thái "Hoàn tất" yêu cầu nhập Vấn đề (nếu có) cho ${itemIndexStr}!`);
+            return;
+          }
+          if (!item.resolution_notes?.trim()) {
+            messageApi.warning(`Trạng thái "Hoàn tất" yêu cầu nhập Hướng xử lý cho ${itemIndexStr}!`);
+            return;
+          }
+        }
+      }
     }
 
     setSaving(true);
@@ -1370,6 +1452,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
               type="primary"
               onClick={handleSave}
               loading={saving}
+              disabled={isClosed && simulatedRole !== 'QA_NHAP_KHAU'}
               style={{ background: '#0d9488', borderColor: '#0d9488', borderRadius: 6 }}
             >
               Lưu thay đổi
@@ -1451,7 +1534,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                     placeholder="VD: INUK-240025"
                     value={detailRow.invoice_number}
                     onChange={(e) => updateField('invoice_number', e.target.value)}
-                    disabled={!isNew || simulatedRole !== 'QA_NHAP_KHAU'}
+                    disabled={!isNew || simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
                     style={{ borderRadius: 6 }}
                   />
                 </Col>
@@ -1462,7 +1545,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                   <DatePicker
                     value={detailRow.created_date ? dayjs(detailRow.created_date) : null}
                     onChange={(date) => updateField('created_date', date ? date.format('YYYY-MM-DD') : '')}
-                    disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                    disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
                     style={{ width: '100%', borderRadius: 6 }}
                     format="DD/MM/YYYY"
                     allowClear={false}
@@ -1478,7 +1561,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                     optionFilterProp="label"
                     value={detailRow.supplier_code || undefined}
                     onChange={(val) => updateField('supplier_code', val)}
-                    disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                    disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
                     style={{ width: '100%' }}
                     options={suppliersList.map(s => ({ value: s, label: s }))}
                     dropdownStyle={{ borderRadius: 8 }}
@@ -1559,7 +1642,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                     placeholder="Chọn Kho nhận hàng"
                     value={detailRow.target_warehouse || undefined}
                     onChange={(val) => updateField('target_warehouse', val)}
-                    disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                    disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
                     style={{ width: '100%' }}
                     options={[
                       { value: 'Kho Long Hậu', label: 'Kho Long Hậu' },
@@ -1576,6 +1659,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                     placeholder="Chọn hoặc nhập ngày (DD/MM/YYYY)"
                     value={parseImportDate(detailRow.actual_import_date_note)}
                     onChange={(date) => updateField('actual_import_date_note', date ? date.format('DD/MM/YYYY') : '')}
+                    disabled={isClosed}
                     style={{ width: '100%', borderRadius: 6 }}
                     format="DD/MM/YYYY"
                     allowClear
@@ -1584,10 +1668,11 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
                 {/* Progress Status */}
                 <Col span={6}>
-                  <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Tiến độ tổng</div>
+                  <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Tiến độ</div>
                   <Select
                     value={detailRow.progress_status}
                     onChange={(val) => updateField('progress_status', val)}
+                    disabled={isClosed ? simulatedRole !== 'QA_NHAP_KHAU' : false}
                     style={{ width: '100%' }}
                     options={PROGRESS_STATUS_OPTIONS}
                   />
@@ -1610,6 +1695,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                       <Switch
                         checked={detailRow.has_data_logger}
                         onChange={(val) => updateField('has_data_logger', val)}
+                        disabled={isClosed}
                         size="small"
                       />
                       <span style={{ fontSize: 11, fontWeight: 600, color: '#334155' }}>Data Logger kèm hàng</span>
@@ -1621,6 +1707,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           placeholder="Loại logger"
                           value={detailRow.data_logger_type || ''}
                           onChange={(e) => updateField('data_logger_type', e.target.value)}
+                          disabled={isClosed}
                           size="small"
                           style={{ flex: 1, borderRadius: 4, fontSize: 11 }}
                         />
@@ -1629,6 +1716,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           placeholder="SL"
                           value={detailRow.logger_qty}
                           onChange={(val) => updateField('logger_qty', val || 0)}
+                          disabled={isClosed}
                           size="small"
                           style={{ width: 60, borderRadius: 4, fontSize: 11 }}
                         />
@@ -1655,6 +1743,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                       <Switch
                         checked={detailRow.temp_out_of_range}
                         onChange={(val) => updateField('temp_out_of_range', val)}
+                        disabled={isClosed}
                         size="small"
                       />
                       <span style={{ fontSize: 11, fontWeight: 600, color: detailRow.temp_out_of_range ? '#991b1b' : '#334155' }}>
@@ -1668,6 +1757,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           placeholder="Chi tiết lệch nhiệt (VD: max 30.5°C trong 4h)"
                           value={detailRow.temp_out_of_range_details || ''}
                           onChange={(e) => updateField('temp_out_of_range_details', e.target.value)}
+                          disabled={isClosed}
                           size="small"
                           style={{ borderRadius: 4, fontSize: 11 }}
                         />
@@ -1684,7 +1774,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#334155', borderLeft: '3px solid #14b8a6', paddingLeft: 8 }}>
                   DANH SÁCH CHI TIẾT SẢN PHẨM (DETAIL)
                 </h3>
-                {simulatedRole === 'QA_NHAP_KHAU' && (
+                {simulatedRole === 'QA_NHAP_KHAU' && !isClosed && (
                   <Button
                     type="dashed"
                     size="small"
@@ -1719,7 +1809,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                         }}
                       >
                         {/* Delete button (SCM only) */}
-                        {simulatedRole === 'QA_NHAP_KHAU' && (
+                        {simulatedRole === 'QA_NHAP_KHAU' && !isClosed && (
                           <Button
                             type="text"
                             danger
@@ -1753,7 +1843,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   }}
                                   value={item.item_code || undefined}
                                   onChange={(val) => updateItemField(idx, 'item_code', val)}
-                                  disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                  disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
                                   style={{ width: '100%' }}
                                   options={masterItems.map(m => ({ value: m.item_code, label: `[${m.item_code}] ${m.item_name}` }))}
                                   dropdownStyle={{ borderRadius: 8 }}
@@ -1771,7 +1861,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   placeholder="Nhập tên chi tiết thuốc, hàm lượng..."
                                   value={item.item_name}
                                   onChange={(e) => updateItemField(idx, 'item_name', e.target.value)}
-                                  disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                  disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
                                   style={{ borderRadius: 6, paddingRight: 24 }}
                                 />
                               </Col>
@@ -1784,7 +1874,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                 <Select
                                   value={item.coa_status || 'Chưa có'}
                                   onChange={(val) => updateItemField(idx, 'coa_status', val)}
-                                  disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                  disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
                                   style={{ width: '100%' }}
                                   options={COA_STATUS_OPTIONS}
                                 />
@@ -1802,7 +1892,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   placeholder="Số Visa..."
                                   value={item.visa_no || ''}
                                   onChange={(e) => updateItemField(idx, 'visa_no', e.target.value)}
-                                  disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                  disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
                                   size="small"
                                   style={{ borderRadius: 6 }}
                                 />
@@ -1817,7 +1907,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   placeholder="Số quyết định..."
                                   value={item.decision_no || ''}
                                   onChange={(e) => updateItemField(idx, 'decision_no', e.target.value)}
-                                  disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                  disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
                                   size="small"
                                   style={{ borderRadius: 6 }}
                                 />
@@ -1832,7 +1922,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   placeholder="DD/MM/YYYY"
                                   value={parseImportDate(item.valid_until)}
                                   onChange={(date) => updateItemField(idx, 'valid_until', date ? date.format('DD/MM/YYYY') : null)}
-                                  disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                  disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
                                   size="small"
                                   style={{ width: '100%', borderRadius: 6 }}
                                   format="DD/MM/YYYY"
@@ -1853,7 +1943,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                     placeholder="Nhập chi tiết vấn đề phát sinh..."
                                     value={item.issue_notes || ''}
                                     onChange={(e) => updateItemField(idx, 'issue_notes', e.target.value)}
-                                    disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                    disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
                                     size="small"
                                     style={{ borderRadius: 6 }}
                                   />
@@ -1868,7 +1958,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                     placeholder="Nhập hướng xử lý..."
                                     value={item.resolution_notes || ''}
                                     onChange={(e) => updateItemField(idx, 'resolution_notes', e.target.value)}
-                                    disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                    disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
                                     size="small"
                                     style={{ borderRadius: 6 }}
                                   />
@@ -1911,7 +2001,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                           {isCustomized ? 'Manual' : (item.item_code ? 'Realtime' : 'Manual')}
                                         </span>
                                         
-                                        {simulatedRole === 'QA_NHAP_KHAU' && (
+                                        {simulatedRole === 'QA_NHAP_KHAU' && !isClosed && (
                                           <Space size={2}>
                                             <Button
                                               type="link"
@@ -1977,7 +2067,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   unCheckedChildren="Không"
                                   checked={isIssueVisible}
                                   onChange={(val) => handleToggleIssueVisible(idx, val)}
-                                  disabled={simulatedRole !== 'QA_NHAP_KHAU'}
+                                  disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
                                 />
                               </div>
                             </Space>
