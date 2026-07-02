@@ -163,13 +163,15 @@ async function fetchShipments(
   pageSize: number,
   search: string,
   filters: Record<string, string>,
-  filterMissingItemCode?: boolean
+  filterMissingItemCode?: boolean,
+  filterMissingCOA?: boolean,
+  filterTempWarnings?: boolean
 ): Promise<{ items: ShipmentRecord[]; count: number }> {
   let query = supabase
     .from('imp_shipments')
     .select('*, imp_shipment_items(*)', { count: 'exact' });
 
-  // 0. Handle filterMissingItemCode
+  // 0.1 Handle filterMissingItemCode
   if (filterMissingItemCode) {
     const { data: matchedItems } = await supabase
       .from('imp_shipment_items')
@@ -181,6 +183,25 @@ async function fetchShipments(
     } else {
       query = query.eq('invoice_number', '____non_existent_invoice____');
     }
+  }
+
+  // 0.2 Handle filterMissingCOA
+  if (filterMissingCOA) {
+    const { data: matchedItems } = await supabase
+      .from('imp_shipment_items')
+      .select('invoice_number')
+      .neq('coa_status', 'Đã cập nhật');
+    const invoiceNums = Array.from(new Set((matchedItems || []).map(x => x.invoice_number).filter(Boolean)));
+    if (invoiceNums.length > 0) {
+      query = query.in('invoice_number', invoiceNums);
+    } else {
+      query = query.eq('invoice_number', '____non_existent_invoice____');
+    }
+  }
+
+  // 0.3 Handle filterTempWarnings
+  if (filterTempWarnings) {
+    query = query.eq('temp_out_of_range', true);
   }
 
   // 1. Handle products column search
@@ -290,6 +311,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [filterMissingItemCode, setFilterMissingItemCode] = useState(false);
+  const [filterMissingCOA, setFilterMissingCOA] = useState(false);
+  const [filterTempWarnings, setFilterTempWarnings] = useState(false);
 
   // Simulated Persona
   const [simulatedRole, setSimulatedRole] = useState<'QA_NHAP_KHAU' | 'QA_KHO'>('QA_NHAP_KHAU');
@@ -323,10 +346,27 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   });
 
   // Server-side paginated table data
-  const impQueryKey = ['imp_shipments', currentPage, pageSize, globalSearch, columnFilters, filterMissingItemCode];
+  const impQueryKey = [
+    'imp_shipments',
+    currentPage,
+    pageSize,
+    globalSearch,
+    columnFilters,
+    filterMissingItemCode,
+    filterMissingCOA,
+    filterTempWarnings
+  ];
   const { data: impResult, isLoading: loading, refetch: loadData } = useQuery({
     queryKey: impQueryKey,
-    queryFn: () => fetchShipments(currentPage, pageSize, globalSearch, columnFilters, filterMissingItemCode),
+    queryFn: () => fetchShipments(
+      currentPage,
+      pageSize,
+      globalSearch,
+      columnFilters,
+      filterMissingItemCode,
+      filterMissingCOA,
+      filterTempWarnings
+    ),
     placeholderData: (prev) => prev,
   });
 
@@ -1439,25 +1479,79 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
         </Col>
 
         <Col xs={12} sm={12} md={5} lg={5}>
-          <Card className="metric-card-hover" style={{ borderRadius: 12, background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)' }} bodyStyle={{ padding: 12 }}>
-            <Statistic
-              title={<span style={{ color: '#b91c1c', fontWeight: 600, fontSize: 12 }}>Thiếu COA</span>}
-              value={stats.missingCOA}
-              valueStyle={{ color: '#7f1d1d', fontWeight: 800, fontSize: 20 }}
-              prefix={<AlertTriangle size={16} style={{ marginRight: 6 }} color="#dc2626" />}
-            />
-          </Card>
+          <Tooltip title="Click để bật/tắt lọc các Invoice thiếu chứng nhận COA">
+            <Card
+              className="metric-card-hover"
+              onClick={() => setFilterMissingCOA(prev => !prev)}
+              style={{
+                borderRadius: 12,
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                border: filterMissingCOA ? '2px solid #ef4444' : '1px solid transparent',
+                background: filterMissingCOA
+                  ? 'linear-gradient(135deg, #fecaca 0%, #fca5a5 100%)'
+                  : 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+                boxShadow: filterMissingCOA ? '0 4px 12px rgba(239, 68, 68, 0.2)' : 'none',
+              }}
+              bodyStyle={{ padding: 12 }}
+            >
+              <Statistic
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: filterMissingCOA ? '#7f1d1d' : '#b91c1c', fontWeight: 600, fontSize: 12 }}>
+                      Thiếu COA
+                    </span>
+                    {filterMissingCOA && (
+                      <span style={{ fontSize: 9, background: '#ef4444', color: '#fff', padding: '1px 4px', borderRadius: 4, fontWeight: 700 }}>
+                        Đang lọc
+                      </span>
+                    )}
+                  </div>
+                }
+                value={stats.missingCOA}
+                valueStyle={{ color: filterMissingCOA ? '#450a0a' : '#7f1d1d', fontWeight: 800, fontSize: 20 }}
+                prefix={<AlertTriangle size={16} style={{ marginRight: 6 }} color={filterMissingCOA ? '#7f1d1d' : '#dc2626'} />}
+              />
+            </Card>
+          </Tooltip>
         </Col>
 
         <Col xs={12} sm={12} md={5} lg={5}>
-          <Card className="metric-card-hover" style={{ borderRadius: 12, background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)' }} bodyStyle={{ padding: 12 }}>
-            <Statistic
-              title={<span style={{ color: '#b45309', fontWeight: 600, fontSize: 12 }}>Cảnh báo nhiệt</span>}
-              value={stats.tempWarnings}
-              valueStyle={{ color: '#78350f', fontWeight: 800, fontSize: 20 }}
-              prefix={<Thermometer size={16} style={{ marginRight: 6 }} color="#d97706" />}
-            />
-          </Card>
+          <Tooltip title="Click để bật/tắt lọc các Invoice có cảnh báo lệch nhiệt độ">
+            <Card
+              className="metric-card-hover"
+              onClick={() => setFilterTempWarnings(prev => !prev)}
+              style={{
+                borderRadius: 12,
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                border: filterTempWarnings ? '2px solid #f97316' : '1px solid transparent',
+                background: filterTempWarnings
+                  ? 'linear-gradient(135deg, #fed7aa 0%, #ffb703 100%)'
+                  : 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                boxShadow: filterTempWarnings ? '0 4px 12px rgba(249, 115, 22, 0.2)' : 'none',
+              }}
+              bodyStyle={{ padding: 12 }}
+            >
+              <Statistic
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: filterTempWarnings ? '#7c2d12' : '#b45309', fontWeight: 600, fontSize: 12 }}>
+                      Cảnh báo nhiệt
+                    </span>
+                    {filterTempWarnings && (
+                      <span style={{ fontSize: 9, background: '#f97316', color: '#fff', padding: '1px 4px', borderRadius: 4, fontWeight: 700 }}>
+                        Đang lọc
+                      </span>
+                    )}
+                  </div>
+                }
+                value={stats.tempWarnings}
+                valueStyle={{ color: filterTempWarnings ? '#431407' : '#78350f', fontWeight: 800, fontSize: 20 }}
+                prefix={<Thermometer size={16} style={{ marginRight: 6 }} color={filterTempWarnings ? '#7c2d12' : '#d97706'} />}
+              />
+            </Card>
+          </Tooltip>
         </Col>
 
         <Col xs={12} sm={12} md={5} lg={5}>
