@@ -189,14 +189,14 @@ async function fetchShipments(
   return { items: (data || []) as ShipmentRecord[], count: count || 0 };
 }
 
-const getInvoiceFolderLink = (supplierCode: string, invoiceNumber: string) => {
-  if (!supplierCode || !invoiceNumber) return '';
-  return `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${supplierCode}\\5. THONG TIN NHAP - PHAN PHOI\\1. KIEM NHAP\\${invoiceNumber}`;
+const getInvoiceFolderLink = (supplierName: string, invoiceNumber: string) => {
+  if (!supplierName || !invoiceNumber) return '';
+  return `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${supplierName}\\5. THONG TIN NHAP - PHAN PHOI\\1. KIEM NHAP\\${invoiceNumber}`;
 };
 
-const getSupplierFolderLink = (supplierCode: string) => {
-  if (!supplierCode) return '';
-  return `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${supplierCode}`;
+const getSupplierFolderLink = (supplierName: string) => {
+  if (!supplierName) return '';
+  return `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${supplierName}`;
 };
 
 export default function ImportModule({ userId = 'default' }: { userId?: string }) {
@@ -665,11 +665,14 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     setSaving(true);
     try {
       // 1. Prepare shipment payload (Master)
+      const match = masterSuppliers.find((s: any) => s.supplier_code === detailRow.supplier_code);
+      const supplierName = match ? match.supplier_name : detailRow.supplier_code;
+
       const computedInvoiceLink = (detailRow.supplier_code && invoiceNumber)
-        ? `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${detailRow.supplier_code}\\5. THONG TIN NHAP - PHAN PHOI\\1. KIEM NHAP\\${invoiceNumber}`
+        ? `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${supplierName}\\5. THONG TIN NHAP - PHAN PHOI\\1. KIEM NHAP\\${invoiceNumber}`
         : null;
       const computedSupplierLink = detailRow.supplier_code 
-        ? `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${detailRow.supplier_code}`
+        ? `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${supplierName}`
         : null;
 
       const shipmentPayload: any = {
@@ -890,7 +893,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       key: 'invoice_number',
       ...resizable('invoice_number'),
       render: (v: string, r: ShipmentRecord) => {
-        const link = getInvoiceFolderLink(r.supplier_code, v);
+        const match = masterSuppliers.find((s: any) => s.supplier_code === r.supplier_code);
+        const supplierName = match ? match.supplier_name : r.supplier_code;
+        const link = getInvoiceFolderLink(supplierName, v);
         return (
           <span 
             style={{ fontWeight: 700, color: '#0d9488', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
@@ -925,7 +930,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       key: 'supplier_code',
       ...resizable('supplier_code'),
       render: (v: string, r: ShipmentRecord) => {
-        const link = getSupplierFolderLink(v);
+        const match = masterSuppliers.find((s: any) => s.supplier_code === v);
+        const supplierName = match ? match.supplier_name : v;
+        const link = getSupplierFolderLink(supplierName);
         return (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <Tag color="cyan" style={{ fontWeight: 600, margin: 0 }}>{v}</Tag>
@@ -1482,9 +1489,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 <Col span={6}>
                   <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Link INV</div>
                   {(() => {
-                    const link = detailRow.supplier_code 
-                      ? `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${detailRow.supplier_code}`
-                      : '';
+                    const match = masterSuppliers.find((s: any) => s.supplier_code === detailRow.supplier_code);
+                    const supplierName = match ? match.supplier_name : detailRow.supplier_code;
+                    const link = getSupplierFolderLink(supplierName);
                     return (
                       <Input
                         value={link}
@@ -1515,9 +1522,9 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 <Col span={6}>
                   <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Link hãng</div>
                   {(() => {
-                    const link = (detailRow.supplier_code && detailRow.invoice_number)
-                      ? `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${detailRow.supplier_code}\\5. THONG TIN NHAP - PHAN PHOI\\1. KIEM NHAP\\${detailRow.invoice_number}`
-                      : '';
+                    const match = masterSuppliers.find((s: any) => s.supplier_code === detailRow.supplier_code);
+                    const supplierName = match ? match.supplier_name : detailRow.supplier_code;
+                    const link = getInvoiceFolderLink(supplierName, detailRow.invoice_number);
                     return (
                       <Input
                         value={link}
