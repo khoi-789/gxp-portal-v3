@@ -11,7 +11,8 @@ import type { ColumnsType } from 'antd/es/table';
 import {
   Search, RefreshCw, Trash2, FileDown, Eye, CheckCircle2,
   AlertTriangle, Clock, Filter, Plus, FileText, ExternalLink,
-  Calendar, PlusCircle, AlertCircle, Edit, Info, Copy, Folder
+  Calendar, PlusCircle, AlertCircle, Edit, Info, Copy, Folder,
+  Thermometer
 } from 'lucide-react';
 import { ColumnSearchHeader, applyColumnFilters } from '@/lib/columnSearch';
 import TableControls, { ColumnConfig } from '@/components/TableControls';
@@ -459,9 +460,10 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       const allOk = items.length > 0 && items.every(item => item.coa_status === 'Đã cập nhật');
       return !allOk;
     }).length;
+    const tempWarnings = rawData.filter(r => r.temp_out_of_range).length;
     const closed = rawData.filter(r => r.progress_status === 'Hoàn tất' || r.progress_status === 'Closed').length;
 
-    return { total, missingCOA, closed };
+    return { total, missingCOA, tempWarnings, closed };
   }, [rawData, totalCount]);
 
   // Open Edit / Detail Drawer
@@ -1327,7 +1329,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
          Statistics Cards
          ────────────────────────────────────────────────── */}
       <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
-        <Col xs={24} sm={8} md={8} lg={8}>
+        <Col xs={12} sm={6} md={6} lg={6}>
           <Card className="metric-card-hover" style={{ borderRadius: 12, background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)' }} bodyStyle={{ padding: 12 }}>
             <Statistic
               title={<span style={{ color: '#0f766e', fontWeight: 600, fontSize: 12 }}>Tổng số Invoice</span>}
@@ -1337,7 +1339,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             />
           </Card>
         </Col>
-        <Col xs={24} sm={8} md={8} lg={8}>
+        <Col xs={12} sm={6} md={6} lg={6}>
           <Card className="metric-card-hover" style={{ borderRadius: 12, background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)' }} bodyStyle={{ padding: 12 }}>
             <Statistic
               title={<span style={{ color: '#b91c1c', fontWeight: 600, fontSize: 12 }}>Thiếu COA</span>}
@@ -1347,7 +1349,17 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             />
           </Card>
         </Col>
-        <Col xs={24} sm={8} md={8} lg={8}>
+        <Col xs={12} sm={6} md={6} lg={6}>
+          <Card className="metric-card-hover" style={{ borderRadius: 12, background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)' }} bodyStyle={{ padding: 12 }}>
+            <Statistic
+              title={<span style={{ color: '#b45309', fontWeight: 600, fontSize: 12 }}>Cảnh báo nhiệt</span>}
+              value={stats.tempWarnings}
+              valueStyle={{ color: '#78350f', fontWeight: 800, fontSize: 20 }}
+              prefix={<Thermometer size={16} style={{ marginRight: 6 }} color="#d97706" />}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6} md={6} lg={6}>
           <Card className="metric-card-hover" style={{ borderRadius: 12, background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' }} bodyStyle={{ padding: 12 }}>
             <Statistic
               title={<span style={{ color: '#15803d', fontWeight: 600, fontSize: 12 }}>Hoàn Tất Lưu Trữ</span>}
