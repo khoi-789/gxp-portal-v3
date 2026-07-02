@@ -671,6 +671,10 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
     if (detailRow.progress_status === 'Hoàn tất' || detailRow.progress_status === 'Closed') {
       // 1. Validate Master fields
+      if (!detailRow.created_date) {
+        messageApi.warning('Trạng thái "Hoàn tất" yêu cầu nhập Ngày nhận mail!');
+        return;
+      }
       if (!detailRow.target_warehouse) {
         messageApi.warning('Trạng thái "Hoàn tất" yêu cầu nhập Kho!');
         return;
@@ -704,10 +708,6 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
         const itemIndexStr = `sản phẩm thứ ${i + 1}`;
-        if (!item.item_code) {
-          messageApi.warning(`Trạng thái "Hoàn tất" yêu cầu chọn Mã Danh Mục cho ${itemIndexStr}!`);
-          return;
-        }
         if (!item.item_name?.trim()) {
           messageApi.warning(`Trạng thái "Hoàn tất" yêu cầu nhập Tên sản phẩm thực tế cho ${itemIndexStr}!`);
           return;
