@@ -426,12 +426,14 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   // Statistics calculation
   const stats = useMemo(() => {
     const total = totalCount;
-    const issues = rawData.filter(r => r.temp_out_of_range || r.progress_status === 'Issue').length;
-    const pendingInbound = rawData.filter(r => r.progress_status === 'Đang xử lý' || r.progress_status === 'Checking' || r.progress_status === 'Pending Inbound').length;
+    const missingCOA = rawData.filter(r => {
+      const items = r.imp_shipment_items || [];
+      const allOk = items.length > 0 && items.every(item => item.coa_status === 'Đã cập nhật');
+      return !allOk;
+    }).length;
     const closed = rawData.filter(r => r.progress_status === 'Hoàn tất' || r.progress_status === 'Closed').length;
-    const outOfRange = rawData.filter(r => r.temp_out_of_range).length;
 
-    return { total, issues, pendingInbound, closed, outOfRange };
+    return { total, missingCOA, closed };
   }, [rawData, totalCount]);
 
   // Open Edit / Detail Drawer
@@ -1294,7 +1296,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
          Statistics Cards
          ────────────────────────────────────────────────── */}
       <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
-        <Col xs={12} sm={12} md={4} lg={4}>
+        <Col xs={24} sm={8} md={8} lg={8}>
           <Card className="metric-card-hover" style={{ borderRadius: 12, background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)' }} bodyStyle={{ padding: 12 }}>
             <Statistic
               title={<span style={{ color: '#0f766e', fontWeight: 600, fontSize: 12 }}>Tổng số Invoice</span>}
@@ -1304,37 +1306,17 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             />
           </Card>
         </Col>
-        <Col xs={12} sm={12} md={5} lg={5}>
-          <Card className="metric-card-hover" style={{ borderRadius: 12, background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' }} bodyStyle={{ padding: 12 }}>
-            <Statistic
-              title={<span style={{ color: '#1d4ed8', fontWeight: 600, fontSize: 12 }}>Chờ Duyệt Chứng Từ</span>}
-              value={stats.pendingInbound} // In this context checking + inbound is represented
-              valueStyle={{ color: '#1e3a8a', fontWeight: 800, fontSize: 20 }}
-              prefix={<Clock size={16} style={{ marginRight: 6 }} color="#2563eb" />}
-            />
-          </Card>
-        </Col>
-        <Col xs={12} sm={12} md={5} lg={5}>
-          <Card className="metric-card-hover" style={{ borderRadius: 12, background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)' }} bodyStyle={{ padding: 12 }}>
-            <Statistic
-              title={<span style={{ color: '#b45309', fontWeight: 600, fontSize: 12 }}>Chờ Nhập Kho Vật Lý</span>}
-              value={stats.pendingInbound}
-              valueStyle={{ color: '#78350f', fontWeight: 800, fontSize: 20 }}
-              prefix={<Filter size={16} style={{ marginRight: 6 }} color="#d97706" />}
-            />
-          </Card>
-        </Col>
-        <Col xs={12} sm={12} md={5} lg={5}>
+        <Col xs={24} sm={8} md={8} lg={8}>
           <Card className="metric-card-hover" style={{ borderRadius: 12, background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)' }} bodyStyle={{ padding: 12 }}>
             <Statistic
-              title={<span style={{ color: '#b91c1c', fontWeight: 600, fontSize: 12 }}>Vấn Đề / Lệch Nhiệt</span>}
-              value={stats.issues}
+              title={<span style={{ color: '#b91c1c', fontWeight: 600, fontSize: 12 }}>Thiếu COA</span>}
+              value={stats.missingCOA}
               valueStyle={{ color: '#7f1d1d', fontWeight: 800, fontSize: 20 }}
               prefix={<AlertTriangle size={16} style={{ marginRight: 6 }} color="#dc2626" />}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={24} md={5} lg={5}>
+        <Col xs={24} sm={8} md={8} lg={8}>
           <Card className="metric-card-hover" style={{ borderRadius: 12, background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' }} bodyStyle={{ padding: 12 }}>
             <Statistic
               title={<span style={{ color: '#15803d', fontWeight: 600, fontSize: 12 }}>Hoàn Tất Lưu Trữ</span>}
