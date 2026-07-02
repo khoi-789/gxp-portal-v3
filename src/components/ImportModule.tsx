@@ -275,12 +275,12 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   // Drawer / Form state
   const [detailRow, setDetailRow] = useState<ShipmentRecord | null>(null);
   const [isNew, setIsNew] = useState(false);
-  const isClosed = detailRow ? (detailRow.progress_status === 'Hoàn tất' || detailRow.progress_status === 'Closed') : false;
   
   // Track original detail items for smart DB updates
   const [originalItems, setOriginalItems] = useState<ShipmentItem[]>([]);
   // Snapshot of original master row for Audit Log diff
   const [originalRow, setOriginalRow] = useState<ShipmentRecord | null>(null);
+  const isClosed = originalRow ? (originalRow.progress_status === 'Hoàn tất' || originalRow.progress_status === 'Closed') : false;
   // Active drawer tab
   const [drawerTab, setDrawerTab] = useState<'info' | 'history'>('info');
 
