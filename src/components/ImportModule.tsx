@@ -183,26 +183,57 @@ async function fetchShipments(
     }
   }
 
-  // 2. Handle global search (including searching through product names)
+  // 2. Handle supplier_code column search (by supplier name)
+  if (filters.supplier_code && filters.supplier_code.trim()) {
+    const { data: matchedSuppliers } = await supabase
+      .from('master_suppliers')
+      .select('supplier_code')
+      .or(`supplier_name.ilike.%${filters.supplier_code.trim()}%,supplier_code.ilike.%${filters.supplier_code.trim()}%`);
+    
+    const supplierCodes = Array.from(new Set((matchedSuppliers || []).map(x => x.supplier_code).filter(Boolean)));
+    if (supplierCodes.length > 0) {
+      query = query.in('supplier_code', supplierCodes);
+    } else {
+      query = query.eq('supplier_code', '____non_existent_supplier____');
+    }
+  }
+
+  // 3. Handle global search (including searching through product names & supplier names)
   if (search.trim()) {
     const q = `%${search.trim()}%`;
+    
+    // Fetch matching suppliers
+    const { data: matchedSuppliers } = await supabase
+      .from('master_suppliers')
+      .select('supplier_code')
+      .or(`supplier_name.ilike.${q},supplier_code.ilike.${q}`);
+    const supplierCodes = Array.from(new Set((matchedSuppliers || []).map(x => x.supplier_code).filter(Boolean)));
+
+    // Fetch matching items
     const { data: matchedItems } = await supabase
       .from('imp_shipment_items')
       .select('invoice_number')
       .ilike('item_name', q);
     const invoiceNums = Array.from(new Set((matchedItems || []).map(x => x.invoice_number).filter(Boolean)));
     
+    let orConditions = `invoice_number.ilike.${q}`;
+    if (supplierCodes.length > 0) {
+      const supplierInSql = `(${supplierCodes.map(c => `"${c}"`).join(',')})`;
+      orConditions += `,supplier_code.in.${supplierInSql}`;
+    } else {
+      orConditions += `,supplier_code.ilike.${q}`;
+    }
+    
     if (invoiceNums.length > 0) {
       const arrayInSql = `(${invoiceNums.map(n => `"${n}"`).join(',')})`;
-      query = query.or(`invoice_number.ilike.${q},supplier_code.ilike.${q},invoice_number.in.${arrayInSql}`);
-    } else {
-      query = query.or(`invoice_number.ilike.${q},supplier_code.ilike.${q}`);
+      orConditions += `,invoice_number.in.${arrayInSql}`;
     }
+    
+    query = query.or(orConditions);
   }
 
   const colMap: Record<string, string> = {
     invoice_number: 'invoice_number',
-    supplier_code: 'supplier_code',
     coa_status: 'coa_status',
     label_status: 'label_status',
     progress_status: 'progress_status',
@@ -211,6 +242,7 @@ async function fetchShipments(
   Object.entries(filters).forEach(([key, value]) => {
     if (!value || value.trim() === '') return;
     if (key === 'products') return; // Handled separately above
+    if (key === 'supplier_code') return; // Handled separately above
     const col = colMap[key];
     if (col) query = query.ilike(col, `%${value.trim()}%`);
   });
@@ -358,7 +390,15 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
   // Unique suppliers from master data
   const suppliersList = useMemo(() => {
-    return masterSuppliers.map((s: any) => s.supplier_code).filter(Boolean).sort();
+    const sorted = [...masterSuppliers].sort((a: any, b: any) => {
+      const nameA = (a.supplier_name || '').toLowerCase();
+      const nameB = (b.supplier_name || '').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+    return sorted.map((s: any) => ({
+      value: s.supplier_code,
+      label: s.supplier_name || s.supplier_code
+    }));
   }, [masterSuppliers]);
 
   // Handle column filter change - reset page
@@ -1049,7 +1089,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
         const link = getSupplierFolderLink(supplierName);
         return (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            <Tag color="cyan" style={{ fontWeight: 600, margin: 0 }}>{v}</Tag>
+            <Tag color="cyan" style={{ fontWeight: 600, margin: 0 }}>{supplierName}</Tag>
             {link && (
               <Tooltip title="Click để copy đường dẫn thư mục gốc NCC">
                 <a 
@@ -1588,7 +1628,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                     onChange={(val) => updateField('supplier_code', val)}
                     disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
                     style={{ width: '100%' }}
-                    options={suppliersList.map(s => ({ value: s, label: s }))}
+                    options={suppliersList}
                     dropdownStyle={{ borderRadius: 8 }}
                   />
                 </Col>
