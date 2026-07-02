@@ -1671,7 +1671,77 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                   <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#475569' }}>Tiến độ</div>
                   <Select
                     value={detailRow.progress_status}
-                    onChange={(val) => updateField('progress_status', val)}
+                    onChange={(val) => {
+                      if (val === 'Hoàn tất' || val === 'Closed') {
+                        if (!detailRow.created_date) {
+                          messageApi.warning('Vui lòng nhập Ngày nhận mail trước khi chuyển sang Hoàn tất!');
+                          return;
+                        }
+                        if (!detailRow.target_warehouse) {
+                          messageApi.warning('Vui lòng chọn Kho trước khi chuyển sang Hoàn tất!');
+                          return;
+                        }
+                        if (!detailRow.actual_import_date_note) {
+                          messageApi.warning('Vui lòng nhập Ngày nhập kho (Ghi chú thực tế) trước khi chuyển sang Hoàn tất!');
+                          return;
+                        }
+                        if (detailRow.has_data_logger) {
+                          if (!detailRow.data_logger_type?.trim()) {
+                            messageApi.warning('Vui lòng nhập Loại Data Logger trước khi chuyển sang Hoàn tất!');
+                            return;
+                          }
+                          if (detailRow.logger_qty <= 0) {
+                            messageApi.warning('Vui lòng nhập Số lượng Data Logger trước khi chuyển sang Hoàn tất!');
+                            return;
+                          }
+                        }
+                        if (detailRow.temp_out_of_range && !detailRow.temp_out_of_range_details?.trim()) {
+                          messageApi.warning('Vui lòng nhập Chi tiết lệch nhiệt trước khi chuyển sang Hoàn tất!');
+                          return;
+                        }
+                        const items = detailRow.imp_shipment_items || [];
+                        if (items.length === 0) {
+                          messageApi.warning('Chuyến hàng phải có ít nhất 1 sản phẩm trước khi chuyển sang Hoàn tất!');
+                          return;
+                        }
+                        for (let i = 0; i < items.length; i++) {
+                          const item = items[i];
+                          const itemIndexStr = `sản phẩm thứ ${i + 1}`;
+                          if (!item.item_name?.trim()) {
+                            messageApi.warning(`Vui lòng nhập Tên sản phẩm thực tế cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
+                            return;
+                          }
+                          if (!item.coa_status) {
+                            messageApi.warning(`Vui lòng chọn COA cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
+                            return;
+                          }
+                          if (!item.visa_no?.trim()) {
+                            messageApi.warning(`Vui lòng nhập Số Visa cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
+                            return;
+                          }
+                          if (!item.decision_no?.trim()) {
+                            messageApi.warning(`Vui lòng nhập Số quyết định cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
+                            return;
+                          }
+                          if (!item.valid_until) {
+                            messageApi.warning(`Vui lòng nhập Hiệu lực đến cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
+                            return;
+                          }
+                          const isIssueVisible = showIssuesMap[i] ?? !!(item.issue_notes || item.resolution_notes);
+                          if (isIssueVisible) {
+                            if (!item.issue_notes?.trim()) {
+                              messageApi.warning(`Vui lòng nhập Vấn đề cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
+                              return;
+                            }
+                            if (!item.resolution_notes?.trim()) {
+                              messageApi.warning(`Vui lòng nhập Hướng xử lý cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
+                              return;
+                            }
+                          }
+                        }
+                      }
+                      updateField('progress_status', val);
+                    }}
                     disabled={isClosed ? simulatedRole !== 'QA_NHAP_KHAU' : false}
                     style={{ width: '100%' }}
                     options={PROGRESS_STATUS_OPTIONS}
