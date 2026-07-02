@@ -167,9 +167,36 @@ async function fetchShipments(
     .from('imp_shipments')
     .select('*, imp_shipment_items(*)', { count: 'exact' });
 
+  // 1. Handle products column search
+  if (filters.products && filters.products.trim()) {
+    const { data: matchedItems } = await supabase
+      .from('imp_shipment_items')
+      .select('invoice_number')
+      .ilike('item_name', `%${filters.products.trim()}%`);
+    const invoiceNums = Array.from(new Set((matchedItems || []).map(x => x.invoice_number).filter(Boolean)));
+    if (invoiceNums.length > 0) {
+      query = query.in('invoice_number', invoiceNums);
+    } else {
+      // Force empty results if no items match
+      query = query.eq('invoice_number', '____non_existent_invoice____');
+    }
+  }
+
+  // 2. Handle global search (including searching through product names)
   if (search.trim()) {
     const q = `%${search.trim()}%`;
-    query = query.or(`invoice_number.ilike.${q},supplier_code.ilike.${q}`);
+    const { data: matchedItems } = await supabase
+      .from('imp_shipment_items')
+      .select('invoice_number')
+      .ilike('item_name', q);
+    const invoiceNums = Array.from(new Set((matchedItems || []).map(x => x.invoice_number).filter(Boolean)));
+    
+    if (invoiceNums.length > 0) {
+      const arrayInSql = `(${invoiceNums.map(n => `"${n}"`).join(',')})`;
+      query = query.or(`invoice_number.ilike.${q},supplier_code.ilike.${q},invoice_number.in.${arrayInSql}`);
+    } else {
+      query = query.or(`invoice_number.ilike.${q},supplier_code.ilike.${q}`);
+    }
   }
 
   const colMap: Record<string, string> = {
@@ -182,6 +209,7 @@ async function fetchShipments(
 
   Object.entries(filters).forEach(([key, value]) => {
     if (!value || value.trim() === '') return;
+    if (key === 'products') return; // Handled separately above
     const col = colMap[key];
     if (col) query = query.ilike(col, `%${value.trim()}%`);
   });
@@ -1040,10 +1068,13 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       dataIndex: 'products',
       key: 'products',
       ...resizable('products'),
-      render: (v: string) => {
-        const displayValue = v && v.length > 50 ? `${v.substring(0, 50)}...` : v;
+      render: (_: string, r: ShipmentRecord) => {
+        const items = r.imp_shipment_items || [];
+        const names = items.map(item => item.item_name).filter(Boolean);
+        const fullText = names.join(', ');
+        const displayValue = fullText.length > 50 ? `${fullText.substring(0, 50)}...` : fullText;
         return (
-          <Tooltip title={v} placement="topLeft">
+          <Tooltip title={fullText} placement="topLeft">
             <span style={{ color: '#334155', fontWeight: 500, fontSize: 13 }}>{displayValue || '—'}</span>
           </Tooltip>
         );
