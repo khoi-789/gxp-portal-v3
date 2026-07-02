@@ -69,8 +69,8 @@ export interface ShipmentRecord {
 
 const COA_STATUS_OPTIONS = [
   { value: 'Chưa có', label: 'Chưa có' },
-  { value: 'Đã cập nhật', label: 'Đã cập nhật' },
-  { value: 'Đang sai sót', label: 'Đang sai sót' },
+  { value: 'Đang sai sót', label: 'Chờ cập nhật' },
+  { value: 'Đã cập nhật', label: 'Đạt' },
 ];
 
 const LABEL_STATUS_OPTIONS = [
