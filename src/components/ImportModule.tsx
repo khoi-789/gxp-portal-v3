@@ -139,7 +139,8 @@ const DEFAULT_IMPORT_COLS: ColumnConfig[] = [
   { key: 'label_status', label: 'Nhãn phụ', visible: true },
   { key: 'progress_status', label: 'Tiến độ', visible: true },
   { key: 'temp_out_of_range', label: 'Cảnh báo nhiệt', visible: true },
-  { key: 'import_dates', label: 'Ngày nhập kho', visible: true },
+  { key: 'target_warehouse', label: 'Kho', visible: true },
+  { key: 'actual_import_date_note', label: 'Ngày nhập', visible: true },
   { key: 'actions', label: 'Thao tác', visible: true, fixed: true },
 ];
 
@@ -153,7 +154,8 @@ const DEFAULT_IMPORT_WIDTHS: Record<string, number> = {
   label_status: 110,
   progress_status: 140,
   temp_out_of_range: 160,
-  import_dates: 180,
+  target_warehouse: 130,
+  actual_import_date_note: 120,
   actions: 80,
 };
 
@@ -273,6 +275,8 @@ async function fetchShipments(
     coa_status: 'coa_status',
     label_status: 'label_status',
     progress_status: 'progress_status',
+    target_warehouse: 'target_warehouse',
+    actual_import_date_note: 'actual_import_date_note',
   };
 
   Object.entries(filters).forEach(([key, value]) => {
@@ -1240,23 +1244,27 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
         return <span style={{ color: '#94a3b8', fontSize: 12 }}>Không có logger</span>;
       },
     },
-    import_dates: {
-      title: <ColumnSearchHeader title="Ngày nhập kho" dataKey="actual_import_date_note" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
-      key: 'import_dates',
-      ...resizable('import_dates'),
-      render: (_: any, r: ShipmentRecord) => {
+    target_warehouse: {
+      title: <ColumnSearchHeader title="Kho" dataKey="target_warehouse" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
+      dataIndex: 'target_warehouse',
+      key: 'target_warehouse',
+      ...resizable('target_warehouse'),
+      render: (v: string) => {
+        if (!v) return '—';
         return (
-          <div style={{ fontSize: 11, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {r.target_warehouse && (
-              <div>
-                <Tag color={r.target_warehouse === 'Kho Long Hậu' ? 'blue' : 'purple'} style={{ fontSize: 10, margin: 0, padding: '0 4px' }}>
-                  {r.target_warehouse}
-                </Tag>
-              </div>
-            )}
-            <div><strong>{r.actual_import_date_note || '—'}</strong></div>
-          </div>
+          <Tag color={v === 'Kho Long Hậu' ? 'blue' : 'purple'} style={{ fontSize: 11, fontWeight: 600, margin: 0, padding: '0 6px' }}>
+            {v}
+          </Tag>
         );
+      },
+    },
+    actual_import_date_note: {
+      title: <ColumnSearchHeader title="Ngày nhập" dataKey="actual_import_date_note" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
+      dataIndex: 'actual_import_date_note',
+      key: 'actual_import_date_note',
+      ...resizable('actual_import_date_note'),
+      render: (v: string) => {
+        return <strong style={{ color: '#334155', fontSize: 13 }}>{v || 'Chưa'}</strong>;
       },
     },
     actions: {
