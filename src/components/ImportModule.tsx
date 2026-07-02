@@ -1310,12 +1310,35 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   // Build columns based on visibility preferences
   const tableColumns = useMemo(() => {
     const visibleConfigs = prefs.columnConfigs.filter(c => c.visible);
-    return visibleConfigs
+    
+    // Enforce correct order: STT first, Số Invoice second, actions last, others in middle
+    const sttConfig = visibleConfigs.find(c => c.key === 'stt');
+    const invConfig = visibleConfigs.find(c => c.key === 'invoice_number');
+    const actionsConfig = visibleConfigs.find(c => c.key === 'actions');
+    const others = visibleConfigs.filter(c => c.key !== 'stt' && c.key !== 'invoice_number' && c.key !== 'actions');
+    
+    const sortedConfigs = [
+      sttConfig,
+      invConfig,
+      ...others,
+      actionsConfig
+    ].filter(Boolean) as ColumnConfig[];
+
+    return sortedConfigs
       .map(c => {
         const def = allColumnDefs[c.key];
         if (!def) return null;
+        
+        let fixed: 'left' | 'right' | undefined = undefined;
+        if (c.key === 'stt' || c.key === 'invoice_number') {
+          fixed = 'left';
+        } else if (c.key === 'actions') {
+          fixed = 'right';
+        }
+
         return {
           ...def,
+          fixed,
           width: prefs.columnWidths[c.key] ?? DEFAULT_IMPORT_WIDTHS[c.key] ?? 100,
         };
       })
