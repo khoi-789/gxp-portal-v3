@@ -103,6 +103,9 @@ const PROGRESS_COLOR: Record<string, string> = {
 };
 
 const COA_COLOR: Record<string, string> = {
+  'Đạt': 'success',
+  'Chưa đạt': 'error',
+  // legacy fallback
   'Chưa có': 'default',
   'Đã cập nhật': 'success',
   'Đang sai sót': 'error',
@@ -356,6 +359,15 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     return hasReqLabels ? 'Chờ bổ sung' : 'Không';
   }, [detailRow, getProductLabels]);
 
+  // Auto-calculated COA status
+  const computedCOAStatus = useMemo(() => {
+    if (!detailRow) return 'Chưa đạt';
+    const currentItems = detailRow.imp_shipment_items || [];
+    if (currentItems.length === 0) return 'Chưa đạt';
+    const allOk = currentItems.every(item => item.coa_status === 'Đã cập nhật');
+    return allOk ? 'Đạt' : 'Chưa đạt';
+  }, [detailRow]);
+
   // Open required label customizer modal
   const handleOpenCustomLabelModal = (idx: number, currentLabels: any[]) => {
     setEditingItemIdx(idx);
@@ -431,7 +443,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       invoice_number: '',
       created_date: dayjs().format('YYYY-MM-DD'),
       supplier_code: '',
-      coa_status: 'Chưa có',
+      coa_status: 'Chưa đạt',
       label_status: 'Không',
       progress_status: 'Created',
       has_data_logger: false,
@@ -664,7 +676,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
         invoice_number: invoiceNumber,
         created_date: detailRow.created_date,
         supplier_code: detailRow.supplier_code,
-        coa_status: detailRow.coa_status,
+        coa_status: computedCOAStatus,
         label_status: computedLabelStatus,
         progress_status: detailRow.progress_status,
         has_data_logger: detailRow.has_data_logger,
@@ -952,7 +964,12 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       key: 'coa_status',
       align: 'center',
       ...resizable('coa_status'),
-      render: (v: string) => <Tag color={COA_COLOR[v] || 'default'} style={{ margin: 0, fontWeight: 500 }}>{v}</Tag>,
+      render: (_: string, r: ShipmentRecord) => {
+        const items = r.imp_shipment_items || [];
+        const allOk = items.length > 0 && items.every(item => item.coa_status === 'Đã cập nhật');
+        const displayVal = allOk ? 'Đạt' : 'Chưa đạt';
+        return <Tag color={COA_COLOR[displayVal] || 'default'} style={{ margin: 0, fontWeight: 500 }}>{displayVal}</Tag>;
+      },
     },
     label_status: {
       title: <ColumnSearchHeader title="Nhãn phụ" dataKey="label_status" filters={columnFilters} onFilterChange={handleColumnFilter} align="center" showFilters={showFilters} />,
