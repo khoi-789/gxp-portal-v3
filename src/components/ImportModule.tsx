@@ -109,6 +109,9 @@ const COA_COLOR: Record<string, string> = {
 };
 
 const LABEL_COLOR: Record<string, string> = {
+  'Chờ bổ sung': 'warning',
+  'Không': 'default',
+  // legacy fallback
   'Chưa có': 'default',
   'Đã cập nhật': 'success',
 };
@@ -183,6 +186,16 @@ async function fetchShipments(
   return { items: (data || []) as ShipmentRecord[], count: count || 0 };
 }
 
+const getInvoiceFolderLink = (supplierCode: string, invoiceNumber: string) => {
+  if (!supplierCode || !invoiceNumber) return '';
+  return `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${supplierCode}\\5. THONG TIN NHAP - PHAN PHOI\\1. KIEM NHAP\\${invoiceNumber}`;
+};
+
+const getSupplierFolderLink = (supplierCode: string) => {
+  if (!supplierCode) return '';
+  return `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${supplierCode}`;
+};
+
 export default function ImportModule({ userId = 'default' }: { userId?: string }) {
   const [messageApi, contextHolder] = message.useMessage();
   const queryClient = useQueryClient();
@@ -233,6 +246,22 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
   const rawData = impResult?.items || [];
   const totalCount = impResult?.count || 0;
+
+  // Helper to copy network folder path to clipboard
+  const handleCopyLink = (e: React.MouseEvent, path: string, type: 'invoice' | 'supplier') => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!path) return;
+    navigator.clipboard.writeText(path).then(() => {
+      messageApi.success(
+        type === 'invoice'
+          ? `Đã copy đường dẫn thư mục kiểm nhập Invoice! Bạn có thể dán vào File Explorer để mở.`
+          : `Đã copy đường dẫn thư mục gốc Nhà cung cấp! Bạn có thể dán vào File Explorer để mở.`
+      );
+    }).catch(err => {
+      messageApi.error('Không thể copy đường dẫn: ' + err);
+    });
+  };
 
   // Drawer / Form state
   const [detailRow, setDetailRow] = useState<ShipmentRecord | null>(null);
@@ -316,7 +345,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
   // Auto-calculated label status
   const computedLabelStatus = useMemo(() => {
-    if (!detailRow) return 'Chưa có';
+    if (!detailRow) return 'Không';
     const currentItems = detailRow.imp_shipment_items || [];
     const hasReqLabels = currentItems.some(item => {
       const labels = (item.required_labels !== undefined && item.required_labels !== null)
@@ -324,7 +353,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
         : getProductLabels(item.item_code);
       return labels && labels.length > 0;
     });
-    return (!hasReqLabels || detailRow.progress_status === 'Closed') ? 'Đã cập nhật' : 'Chưa có';
+    return hasReqLabels ? 'Chờ bổ sung' : 'Không';
   }, [detailRow, getProductLabels]);
 
   // Open required label customizer modal
@@ -403,7 +432,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       created_date: dayjs().format('YYYY-MM-DD'),
       supplier_code: '',
       coa_status: 'Chưa có',
-      label_status: 'Chưa có',
+      label_status: 'Không',
       progress_status: 'Created',
       has_data_logger: false,
       data_logger_type: null,
@@ -624,11 +653,11 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
     setSaving(true);
     try {
       // 1. Prepare shipment payload (Master)
-      const computedInvoiceLink = detailRow.supplier_code 
-        ? `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${detailRow.supplier_code}`
-        : null;
-      const computedSupplierLink = (detailRow.supplier_code && invoiceNumber)
+      const computedInvoiceLink = (detailRow.supplier_code && invoiceNumber)
         ? `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${detailRow.supplier_code}\\5. THONG TIN NHAP - PHAN PHOI\\1. KIEM NHAP\\${invoiceNumber}`
+        : null;
+      const computedSupplierLink = detailRow.supplier_code 
+        ? `\\\\hd.domain\\hoangducdfs\\TAILIEUPHONG-HD\\P.QA\\7. LONG HAU\\7. CAC THEO DOI TRONG QUA TRINH\\18. FORM MAU CHO FOLDER NHA SAN XUAT\\${detailRow.supplier_code}`
         : null;
 
       const shipmentPayload: any = {
@@ -848,21 +877,28 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       dataIndex: 'invoice_number',
       key: 'invoice_number',
       ...resizable('invoice_number'),
-      render: (v: string, r: ShipmentRecord) => (
-        <span 
-          style={{ fontWeight: 700, color: '#0d9488', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-          onClick={() => handleOpenDetail(r)}
-        >
-          {v}
-          {r.invoice_link && (
-            <Tooltip title="Xem file gốc">
-              <a href={r.invoice_link} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
-                <ExternalLink size={12} color="#94a3b8" />
-              </a>
-            </Tooltip>
-          )}
-        </span>
-      ),
+      render: (v: string, r: ShipmentRecord) => {
+        const link = getInvoiceFolderLink(r.supplier_code, v);
+        return (
+          <span 
+            style={{ fontWeight: 700, color: '#0d9488', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+            onClick={() => handleOpenDetail(r)}
+          >
+            {v}
+            {link && (
+              <Tooltip title="Click để copy đường dẫn thư mục kiểm nhập">
+                <a 
+                  href={link} 
+                  onClick={(e) => handleCopyLink(e, link, 'invoice')}
+                  style={{ display: 'inline-flex', alignItems: 'center' }}
+                >
+                  <ExternalLink size={12} color="#0d9488" />
+                </a>
+              </Tooltip>
+            )}
+          </span>
+        );
+      },
     },
     created_date: {
       title: <ColumnSearchHeader title="Ngày lập" dataKey="created_date" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
@@ -876,16 +912,25 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       dataIndex: 'supplier_code',
       key: 'supplier_code',
       ...resizable('supplier_code'),
-      render: (v: string, r: ShipmentRecord) => (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <Tag color="cyan" style={{ fontWeight: 600, margin: 0 }}>{v}</Tag>
-          {r.supplier_link && (
-            <a href={r.supplier_link} target="_blank" rel="noreferrer" title="Website NCC">
-              <ExternalLink size={11} color="#64748b" />
-            </a>
-          )}
-        </span>
-      ),
+      render: (v: string, r: ShipmentRecord) => {
+        const link = getSupplierFolderLink(v);
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <Tag color="cyan" style={{ fontWeight: 600, margin: 0 }}>{v}</Tag>
+            {link && (
+              <Tooltip title="Click để copy đường dẫn thư mục gốc NCC">
+                <a 
+                  href={link} 
+                  onClick={(e) => handleCopyLink(e, link, 'supplier')}
+                  style={{ display: 'inline-flex', alignItems: 'center' }}
+                >
+                  <ExternalLink size={11} color="#64748b" />
+                </a>
+              </Tooltip>
+            )}
+          </span>
+        );
+      },
     },
     products: {
       title: <ColumnSearchHeader title="Sản phẩm" dataKey="products" filters={columnFilters} onFilterChange={handleColumnFilter} showFilters={showFilters} />,
@@ -915,7 +960,12 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       key: 'label_status',
       align: 'center',
       ...resizable('label_status'),
-      render: (v: string) => <Tag color={LABEL_COLOR[v] || 'default'} style={{ margin: 0, fontWeight: 500 }}>{v}</Tag>,
+      render: (v: string) => {
+        let displayVal = v;
+        if (v === 'Chưa có') displayVal = 'Chờ bổ sung';
+        else if (v === 'Đã cập nhật') displayVal = 'Không';
+        return <Tag color={LABEL_COLOR[displayVal] || 'default'} style={{ margin: 0, fontWeight: 500 }}>{displayVal}</Tag>;
+      },
     },
     progress_status: {
       title: <ColumnSearchHeader title="Tiến độ" dataKey="progress_status" filters={columnFilters} onFilterChange={handleColumnFilter} align="center" showFilters={showFilters} />,
