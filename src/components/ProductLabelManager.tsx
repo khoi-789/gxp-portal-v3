@@ -109,7 +109,7 @@ const DEFAULT_MAPPING_WIDTHS: Record<string, number> = {
   actions: 80,
 };
 
-export default function ProductLabelManager({ userId = 'default' }: { userId?: string }) {
+export default function ProductLabelManager({ userId = 'default', userRole = 'admin' }: { userId?: string; userRole?: 'admin' | 'staff' | 'viewer' }) {
   const [messageApi, contextHolder] = message.useMessage();
   const queryClient = useQueryClient();
   const [globalSearch, setGlobalSearch] = useState('');
@@ -690,31 +690,43 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
       ...resizable('actions'),
       render: (_: any, r: any) => (
         <Space size="middle">
-          <Tooltip title="Sửa số lượng">
+          <Tooltip title={userRole === 'viewer' ? "Viewer không thể sửa" : "Sửa số lượng"}>
             <Button
               type="text"
               size="small"
-              icon={<Edit3 size={14} color="#0d9488" />}
+              disabled={userRole === 'viewer'}
+              icon={<Edit3 size={14} color={userRole === 'viewer' ? "#cbd5e1" : "#0d9488"} />}
               onClick={() => handleEdit(r)}
             />
           </Tooltip>
-          <Tooltip title="Xóa liên kết">
-            <Popconfirm
-              title="Xóa liên kết SP - Tem"
-              description="Bạn có chắc chắn muốn xóa liên kết này?"
-              onConfirm={() => handleDelete(r)}
-              okText="Xóa"
-              cancelText="Hủy"
-              okButtonProps={{ danger: true }}
-            >
+          {userRole === 'viewer' ? (
+            <Tooltip title="Viewer không thể xóa">
               <Button
                 type="text"
                 size="small"
-                danger
-                icon={<Trash2 size={14} />}
+                disabled
+                icon={<Trash2 size={14} color="#cbd5e1" />}
               />
-            </Popconfirm>
-          </Tooltip>
+            </Tooltip>
+          ) : (
+            <Tooltip title="Xóa liên kết">
+              <Popconfirm
+                title="Xóa liên kết SP - Tem"
+                description="Bạn có chắc chắn muốn xóa liên kết này?"
+                onConfirm={() => handleDelete(r)}
+                okText="Xóa"
+                cancelText="Hủy"
+                okButtonProps={{ danger: true }}
+              >
+                <Button
+                  type="text"
+                  size="small"
+                  danger
+                  icon={<Trash2 size={14} />}
+                />
+              </Popconfirm>
+            </Tooltip>
+          )}
         </Space>
       ),
     },
@@ -788,6 +800,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
           <Button
             icon={<Download size={14} />}
             onClick={handleDownloadTemplate}
+            disabled={userRole === 'viewer'}
             style={{ borderRadius: 6 }}
           >
             Tải Template
@@ -796,6 +809,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
           <Button
             icon={<Upload size={14} />}
             onClick={() => fileInputRef.current?.click()}
+            disabled={userRole === 'viewer'}
             style={{ borderRadius: 6 }}
           >
             Nhập từ Excel
@@ -804,6 +818,7 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
           <Button
             icon={<Download size={14} />}
             onClick={handleExportExcel}
+            disabled={userRole === 'viewer'}
             style={{ borderRadius: 6 }}
           >
             Xuất Excel
@@ -821,7 +836,8 @@ export default function ProductLabelManager({ userId = 'default' }: { userId?: s
             type="primary"
             icon={<Plus size={14} />}
             onClick={handleCreateNew}
-            style={{ background: '#0d9488', borderColor: '#0d9488', borderRadius: 6 }}
+            disabled={userRole === 'viewer'}
+            style={{ background: userRole === 'viewer' ? '#f5f5f5' : '#0d9488', borderColor: userRole === 'viewer' ? '#d9d9d9' : '#0d9488', borderRadius: 6 }}
           >
             Thêm liên kết
           </Button>

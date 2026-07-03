@@ -218,7 +218,7 @@ const DEFAULT_WIDTHS: Record<string, number> = {
 // ──────────────────────────────────────────────────────────
 // Main Component
 // ──────────────────────────────────────────────────────────
-export default function MasterItemManager({ userId = 'default' }: { userId?: string }) {
+export default function MasterItemManager({ userId = 'default', userRole = 'admin' }: { userId?: string; userRole?: 'admin' | 'staff' | 'viewer' }) {
   const queryClient = useQueryClient();
   const [messageApi, contextHolder] = message.useMessage();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -749,17 +749,23 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
     ...resizable('actions'),
     render: (_: unknown, record: MasterItem) => (
       <Space size={6}>
-        <Tooltip title="Sửa">
-          <Button type="text" size="small" id={`btn-edit-${record.item_code}`} icon={<Edit3 size={15} color="#0d9488" />} onClick={() => openDrawerForEdit(record)} style={{ borderRadius: 8 }} />
+        <Tooltip title={userRole === 'viewer' ? "Viewer không thể sửa" : "Sửa"}>
+          <Button disabled={userRole === 'viewer'} type="text" size="small" id={`btn-edit-${record.item_code}`} icon={<Edit3 size={15} color={userRole === 'viewer' ? "#cbd5e1" : "#0d9488"} />} onClick={() => openDrawerForEdit(record)} style={{ borderRadius: 8 }} />
         </Tooltip>
-        <Popconfirm
-          title="Xóa sản phẩm"
-          description={`Xác nhận xóa "${record.item_name}"?`}
-          onConfirm={() => deleteMutation.mutate(record)}
-          okText="Xóa" cancelText="Huỷ" okButtonProps={{ danger: true }}
-        >
-          <Button type="text" size="small" id={`btn-delete-${record.item_code}`} icon={<Trash2 size={15} color="#ef4444" />} style={{ borderRadius: 8 }} />
-        </Popconfirm>
+        {userRole === 'viewer' ? (
+          <Tooltip title="Viewer không thể xóa">
+            <Button disabled type="text" size="small" id={`btn-delete-${record.item_code}`} icon={<Trash2 size={15} color="#cbd5e1" />} style={{ borderRadius: 8 }} />
+          </Tooltip>
+        ) : (
+          <Popconfirm
+            title="Xóa sản phẩm"
+            description={`Xác nhận xóa "${record.item_name}"?`}
+            onConfirm={() => deleteMutation.mutate(record)}
+            okText="Xóa" cancelText="Huỷ" okButtonProps={{ danger: true }}
+          >
+            <Button type="text" size="small" id={`btn-delete-${record.item_code}`} icon={<Trash2 size={15} color="#ef4444" />} style={{ borderRadius: 8 }} />
+          </Popconfirm>
+        )}
       </Space>
     ),
   };
@@ -853,6 +859,7 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
           <Button
             icon={<Download size={14} />}
             onClick={handleDownloadTemplate}
+            disabled={userRole === 'viewer'}
             style={{ borderRadius: 10, height: 38 }}
           >
             Tải Template
@@ -861,6 +868,7 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
           <Button
             icon={<Upload size={14} />}
             onClick={() => fileInputRef.current?.click()}
+            disabled={userRole === 'viewer'}
             style={{ borderRadius: 10, height: 38 }}
           >
             Nhập từ Excel
@@ -869,6 +877,7 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
           <Button
             icon={<Download size={14} />}
             onClick={handleExportExcel}
+            disabled={userRole === 'viewer'}
             style={{ borderRadius: 10, height: 38 }}
           >
             Xuất Excel
@@ -891,7 +900,8 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
             type="primary"
             icon={<Plus size={15} />}
             onClick={openDrawerForCreate}
-            style={{ borderRadius: 10, background: '#0d9488', borderColor: '#0d9488', fontWeight: 600, height: 38 }}
+            disabled={userRole === 'viewer'}
+            style={{ borderRadius: 10, background: userRole === 'viewer' ? '#f5f5f5' : '#0d9488', borderColor: userRole === 'viewer' ? '#d9d9d9' : '#0d9488', fontWeight: 600, height: 38 }}
           >
             Thêm sản phẩm
           </Button>

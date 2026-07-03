@@ -405,7 +405,7 @@ function ColumnSelectHeader({
   );
 }
 
-export default function ImportModule({ userId = 'default' }: { userId?: string }) {
+export default function ImportModule({ userId = 'default', userRole = 'admin' }: { userId?: string; userRole?: 'admin' | 'staff' | 'viewer' }) {
   const [messageApi, contextHolder] = message.useMessage();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
@@ -419,6 +419,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
 
   // Simulated Persona
   const [simulatedRole, setSimulatedRole] = useState<'QA_NHAP_KHAU' | 'QA_KHO'>('QA_NHAP_KHAU');
+  const isViewer = userRole === 'viewer';
+  const effectiveRole = isViewer ? 'NONE' : simulatedRole;
 
   // Master product data for select list (load all for dropdowns)
   const { data: masterItemsRaw = [] } = useMasterItems();
@@ -501,6 +503,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
   // Snapshot of original master row for Audit Log diff
   const [originalRow, setOriginalRow] = useState<ShipmentRecord | null>(null);
   const isClosed = originalRow ? (originalRow.progress_status === 'Hoàn tất' || originalRow.progress_status === 'Closed') : false;
+  const effectiveClosed = isViewer ? true : isClosed;
   // Active drawer tab
   const [drawerTab, setDrawerTab] = useState<'info' | 'history'>('info');
 
@@ -1426,7 +1429,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       ...resizable('actions'),
       render: (_: any, r: ShipmentRecord) => (
         <Space size={2}>
-          <Tooltip title="Xem & Sửa">
+          <Tooltip title={isViewer ? "Xem chi tiết" : "Xem & Sửa"}>
             <Button
               type="text"
               size="small"
@@ -1434,7 +1437,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
               onClick={() => handleOpenDetail(r)}
             />
           </Tooltip>
-          {simulatedRole === 'QA_NHAP_KHAU' && (
+          {effectiveRole === 'QA_NHAP_KHAU' && (
             <Tooltip title="Xóa">
               <Popconfirm
                 title="Xóa Invoice"
@@ -1570,17 +1573,23 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             border: '1px solid #e2e8f0'
           }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Info size={13} color="#0d9488" /> Vai trò giả lập:
+              <Info size={13} color="#0d9488" /> {isViewer ? "Vai trò hiện tại:" : "Vai trò giả lập:"}
             </span>
-            <Segmented
-              options={[
-                { label: 'QA Nhập khẩu', value: 'QA_NHAP_KHAU' },
-                { label: 'QA Kho', value: 'QA_KHO' }
-              ]}
-              value={simulatedRole}
-              onChange={(val) => setSimulatedRole(val as any)}
-              style={{ background: '#e2e8f0', borderRadius: 8 }}
-            />
+            {isViewer ? (
+              <Tag color="purple" style={{ margin: 0, fontWeight: 600, padding: '2px 8px', borderRadius: 6 }}>
+                Viewer (Chỉ xem)
+              </Tag>
+            ) : (
+              <Segmented
+                options={[
+                  { label: 'QA Nhập khẩu', value: 'QA_NHAP_KHAU' },
+                  { label: 'QA Kho', value: 'QA_KHO' }
+                ]}
+                value={simulatedRole}
+                onChange={(val) => setSimulatedRole(val as any)}
+                style={{ background: '#e2e8f0', borderRadius: 8 }}
+              />
+            )}
           </div>
 
           {/* Actions */}
@@ -1593,7 +1602,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
             >
               Làm mới
             </Button>
-            {simulatedRole === 'QA_NHAP_KHAU' && (
+            {effectiveRole === 'QA_NHAP_KHAU' && (
               <Button
                 type="primary"
                 icon={<Plus size={14} />}
@@ -1854,7 +1863,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
               type="primary"
               onClick={handleSave}
               loading={saving}
-              disabled={isClosed && simulatedRole !== 'QA_NHAP_KHAU'}
+              disabled={isViewer || (effectiveClosed && effectiveRole !== 'QA_NHAP_KHAU')}
               style={{ background: '#0d9488', borderColor: '#0d9488', borderRadius: 6 }}
             >
               Lưu thay đổi
@@ -1936,7 +1945,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                     placeholder="VD: INUK-240025"
                     value={detailRow.invoice_number}
                     onChange={(e) => updateField('invoice_number', e.target.value)}
-                    disabled={!isNew || simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
+                    disabled={!isNew || effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
                     style={{ borderRadius: 6 }}
                   />
                 </Col>
@@ -1947,7 +1956,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                   <DatePicker
                     value={detailRow.created_date ? dayjs(detailRow.created_date) : null}
                     onChange={(date) => updateField('created_date', date ? date.format('YYYY-MM-DD') : '')}
-                    disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
+                    disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
                     style={{ width: '100%', borderRadius: 6 }}
                     format="DD/MM/YYYY"
                     allowClear={false}
@@ -1963,7 +1972,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                     optionFilterProp="label"
                     value={detailRow.supplier_code || undefined}
                     onChange={(val) => updateField('supplier_code', val)}
-                    disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
+                    disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
                     style={{ width: '100%' }}
                     options={suppliersList}
                     dropdownStyle={{ borderRadius: 8 }}
@@ -2044,7 +2053,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                     placeholder="Chọn Kho nhận hàng"
                     value={detailRow.target_warehouse || undefined}
                     onChange={(val) => updateField('target_warehouse', val)}
-                    disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
+                    disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
                     style={{ width: '100%' }}
                     options={[
                       { value: 'Kho Long Hậu', label: 'Kho Long Hậu' },
@@ -2061,7 +2070,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                     placeholder="Chọn hoặc nhập ngày (DD/MM/YYYY)"
                     value={parseImportDate(detailRow.actual_import_date_note)}
                     onChange={(date) => updateField('actual_import_date_note', date ? date.format('DD/MM/YYYY') : '')}
-                    disabled={isClosed}
+                    disabled={effectiveClosed}
                     style={{ width: '100%', borderRadius: 6 }}
                     format="DD/MM/YYYY"
                     allowClear
@@ -2144,7 +2153,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                       }
                       updateField('progress_status', val);
                     }}
-                    disabled={isClosed ? simulatedRole !== 'QA_NHAP_KHAU' : false}
+                    disabled={effectiveClosed ? effectiveRole !== 'QA_NHAP_KHAU' : false}
                     style={{ width: '100%' }}
                     options={PROGRESS_STATUS_OPTIONS}
                   />
@@ -2167,7 +2176,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                       <Switch
                         checked={detailRow.has_data_logger}
                         onChange={(val) => updateField('has_data_logger', val)}
-                        disabled={isClosed}
+                        disabled={effectiveClosed}
                         size="small"
                       />
                       <span style={{ fontSize: 11, fontWeight: 600, color: '#334155' }}>Data Logger kèm hàng</span>
@@ -2179,7 +2188,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           placeholder="Loại logger"
                           value={detailRow.data_logger_type || ''}
                           onChange={(e) => updateField('data_logger_type', e.target.value)}
-                          disabled={isClosed}
+                          disabled={effectiveClosed}
                           size="small"
                           style={{ flex: 1, borderRadius: 4, fontSize: 11 }}
                         />
@@ -2188,7 +2197,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           placeholder="SL"
                           value={detailRow.logger_qty}
                           onChange={(val) => updateField('logger_qty', val || 0)}
-                          disabled={isClosed}
+                          disabled={effectiveClosed}
                           size="small"
                           style={{ width: 60, borderRadius: 4, fontSize: 11 }}
                         />
@@ -2215,7 +2224,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                       <Switch
                         checked={detailRow.temp_out_of_range}
                         onChange={(val) => updateField('temp_out_of_range', val)}
-                        disabled={isClosed}
+                        disabled={effectiveClosed}
                         size="small"
                       />
                       <span style={{ fontSize: 11, fontWeight: 600, color: detailRow.temp_out_of_range ? '#991b1b' : '#334155' }}>
@@ -2229,7 +2238,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                           placeholder="Chi tiết lệch nhiệt (VD: max 30.5°C trong 4h)"
                           value={detailRow.temp_out_of_range_details || ''}
                           onChange={(e) => updateField('temp_out_of_range_details', e.target.value)}
-                          disabled={isClosed}
+                          disabled={effectiveClosed}
                           size="small"
                           style={{ borderRadius: 4, fontSize: 11 }}
                         />
@@ -2246,7 +2255,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                 <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#334155', borderLeft: '3px solid #14b8a6', paddingLeft: 8 }}>
                   DANH SÁCH CHI TIẾT SẢN PHẨM (DETAIL)
                 </h3>
-                {simulatedRole === 'QA_NHAP_KHAU' && !isClosed && (
+                {effectiveRole === 'QA_NHAP_KHAU' && !effectiveClosed && (
                   <Button
                     type="dashed"
                     size="small"
@@ -2262,7 +2271,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
               {detailRow.imp_shipment_items.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '16px 8px', border: '1px dashed #cbd5e1', borderRadius: 8, color: '#94a3b8', fontSize: 11 }}>
                   Không có sản phẩm nào trong chuyến hàng này.
-                  {simulatedRole === 'QA_NHAP_KHAU' && ' Bấm "Thêm sản phẩm" ở trên để tạo mới.'}
+                  {effectiveRole === 'QA_NHAP_KHAU' && ' Bấm "Thêm sản phẩm" ở trên để tạo mới.'}
                 </div>
               ) : (
                 <Space direction="vertical" style={{ width: '100%' }} size={6}>
@@ -2281,7 +2290,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                         }}
                       >
                         {/* Delete button (SCM only) */}
-                        {simulatedRole === 'QA_NHAP_KHAU' && !isClosed && (
+                        {effectiveRole === 'QA_NHAP_KHAU' && !effectiveClosed && (
                           <Button
                             type="text"
                             danger
@@ -2315,7 +2324,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   }}
                                   value={item.item_code || undefined}
                                   onChange={(val) => updateItemField(idx, 'item_code', val)}
-                                  disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
+                                  disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
                                   style={{ width: '100%' }}
                                   options={masterItems.map(m => ({ value: m.item_code, label: `[${m.item_code}] ${m.item_name}` }))}
                                   dropdownStyle={{ borderRadius: 8 }}
@@ -2333,7 +2342,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   placeholder="Nhập tên chi tiết thuốc, hàm lượng..."
                                   value={item.item_name}
                                   onChange={(e) => updateItemField(idx, 'item_name', e.target.value)}
-                                  disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
+                                  disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
                                   style={{ borderRadius: 6, paddingRight: 24 }}
                                 />
                               </Col>
@@ -2346,7 +2355,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                 <Select
                                   value={item.coa_status || 'Chưa có'}
                                   onChange={(val) => updateItemField(idx, 'coa_status', val)}
-                                  disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
+                                  disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
                                   style={{ width: '100%' }}
                                   options={COA_STATUS_OPTIONS}
                                 />
@@ -2364,7 +2373,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   placeholder="Số Visa..."
                                   value={item.visa_no || ''}
                                   onChange={(e) => updateItemField(idx, 'visa_no', e.target.value)}
-                                  disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
+                                  disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
                                   size="small"
                                   style={{ borderRadius: 6 }}
                                 />
@@ -2379,7 +2388,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   placeholder="Số quyết định..."
                                   value={item.decision_no || ''}
                                   onChange={(e) => updateItemField(idx, 'decision_no', e.target.value)}
-                                  disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
+                                  disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
                                   size="small"
                                   style={{ borderRadius: 6 }}
                                 />
@@ -2394,7 +2403,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   placeholder="DD/MM/YYYY"
                                   value={parseImportDate(item.valid_until)}
                                   onChange={(date) => updateItemField(idx, 'valid_until', date ? date.format('DD/MM/YYYY') : null)}
-                                  disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
+                                  disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
                                   size="small"
                                   style={{ width: '100%', borderRadius: 6 }}
                                   format="DD/MM/YYYY"
@@ -2415,7 +2424,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                     placeholder="Nhập chi tiết vấn đề phát sinh..."
                                     value={item.issue_notes || ''}
                                     onChange={(e) => updateItemField(idx, 'issue_notes', e.target.value)}
-                                    disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
+                                    disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
                                     size="small"
                                     style={{ borderRadius: 6 }}
                                   />
@@ -2430,7 +2439,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                     placeholder="Nhập hướng xử lý..."
                                     value={item.resolution_notes || ''}
                                     onChange={(e) => updateItemField(idx, 'resolution_notes', e.target.value)}
-                                    disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
+                                    disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
                                     size="small"
                                     style={{ borderRadius: 6 }}
                                   />
@@ -2539,7 +2548,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
                                   unCheckedChildren="Không"
                                   checked={isIssueVisible}
                                   onChange={(val) => handleToggleIssueVisible(idx, val)}
-                                  disabled={simulatedRole !== 'QA_NHAP_KHAU' || isClosed}
+                                  disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
                                 />
                               </div>
                             </Space>

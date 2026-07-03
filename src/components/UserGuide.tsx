@@ -52,7 +52,7 @@ export default function UserGuide() {
             <Users size={16} style={{ marginRight: 6, verticalAlign: 'text-bottom' }} /> Các vai trò trong hệ thống
           </Title>
           <Row gutter={[16, 16]}>
-            <Col xs={24} md={8}>
+            <Col xs={24} sm={12} md={6}>
               <Card
                 title={<Tag color="gold">ADMIN</Tag>}
                 bordered={false}
@@ -72,7 +72,7 @@ export default function UserGuide() {
                 </ul>
               </Card>
             </Col>
-            <Col xs={24} md={8}>
+            <Col xs={24} sm={12} md={6}>
               <Card
                 title={<Tag color="blue">QA Nhập khẩu (QA_NHAP_KHAU)</Tag>}
                 bordered={false}
@@ -93,7 +93,7 @@ export default function UserGuide() {
                 </ul>
               </Card>
             </Col>
-            <Col xs={24} md={8}>
+            <Col xs={24} sm={12} md={6}>
               <Card
                 title={<Tag color="purple">QA Kho (QA_KHO)</Tag>}
                 bordered={false}
@@ -111,6 +111,27 @@ export default function UserGuide() {
                   <li>Theo dõi nhiệt độ trong suốt hành trình (Data Logger).</li>
                   <li>Cập nhật thông tin thực tế nhập kho (kho đích, ngày nhập kho).</li>
                   <li>Không có quyền tự ý mở khóa hồ sơ "Hoàn tất".</li>
+                </ul>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card
+                title={<Tag color="magenta">VIEWER</Tag>}
+                bordered={false}
+                style={{
+                  background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)',
+                  borderRadius: 12,
+                  height: '100%',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                }}
+              >
+                <Text style={{ display: 'block', fontWeight: 600, marginBottom: 8, color: '#9d174d' }}>
+                  Người xem thông tin
+                </Text>
+                <ul style={{ paddingLeft: 18, color: '#9d174d', fontSize: 13, lineHeight: '1.6' }}>
+                  <li>Xem và lọc danh sách dữ liệu trên tất cả các phân hệ và Master Data.</li>
+                  <li><strong>Không</strong> được phép thêm mới, chỉnh sửa hoặc xóa bất kỳ thông tin nào.</li>
+                  <li><strong>Không</strong> được phép thao tác nhập/xuất file (Import/Export).</li>
                 </ul>
               </Card>
             </Col>

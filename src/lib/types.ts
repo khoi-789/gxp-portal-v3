@@ -8,7 +8,7 @@ export interface User {
   email: string;         // text - Not Null, Unique
   full_name: string;     // text - Not Null
   department_code: string; // text - Not Null (VD: QA, KHO, SCM, DEV)
-  system_role: 'admin' | 'staff'; // text - Not Null
+  system_role: 'admin' | 'staff' | 'viewer'; // text - Not Null
 }
 
 // §3.2 Bảng portal_apps

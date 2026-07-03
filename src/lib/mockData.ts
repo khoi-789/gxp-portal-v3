@@ -23,6 +23,15 @@ export const MOCK_STAFF_USER: User = {
   system_role: 'staff',
 };
 
+// §5: User Viewer chỉ đọc
+export const MOCK_VIEWER_USER: User = {
+  id: 'usr-00003-viewer',
+  email: 'viewer.doc@company.com',
+  full_name: 'Phạm Người Xem',
+  department_code: 'DEV',
+  system_role: 'viewer',
+};
+
 // §5: 4 Portal Apps
 // 1 Folder "App Công Ty" + 2 App Link (QA/KHO) + 1 App Testing
 export const MOCK_PORTAL_APPS: PortalApp[] = [

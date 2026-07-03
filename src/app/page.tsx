@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Tabs, Switch, Tag } from 'antd';
+import { Tabs, Switch, Tag, Segmented } from 'antd';
 import PortalLayout from '@/components/PortalLayout';
 import AppDashboard from '@/components/AppDashboard';
 import MasterItemManager from '@/components/MasterItemManager';
 import ProductLabelManager from '@/components/ProductLabelManager';
 import MasterSupplierManager from '@/components/MasterSupplierManager';
 import UserGuide from '@/components/UserGuide';
-import { MOCK_CURRENT_USER, MOCK_STAFF_USER } from '@/lib/mockData';
+import { MOCK_CURRENT_USER, MOCK_STAFF_USER, MOCK_VIEWER_USER } from '@/lib/mockData';
 import { User } from '@/lib/types';
 import { LayoutGrid, Package, Link2, Truck, Database, HelpCircle } from 'lucide-react';
 
@@ -18,9 +18,31 @@ import { LayoutGrid, Package, Link2, Truck, Database, HelpCircle } from 'lucide-
  * - PILOT: user switcher để demo RBAC
  */
 export default function HomePage() {
-  const [useAdmin, setUseAdmin] = useState(true);
-  const currentUser: User = useAdmin ? MOCK_CURRENT_USER : MOCK_STAFF_USER;
-  const isAdmin = currentUser.system_role === 'admin';
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'viewer'>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('pilot_selected_role');
+      if (stored === 'staff' || stored === 'viewer' || stored === 'admin') {
+        return stored;
+      }
+    }
+    return 'admin';
+  });
+
+  const handleRoleChange = (role: 'admin' | 'staff' | 'viewer') => {
+    setSelectedRole(role);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pilot_selected_role', role);
+    }
+  };
+
+  const currentUser: User =
+    selectedRole === 'admin'
+      ? MOCK_CURRENT_USER
+      : selectedRole === 'staff'
+      ? MOCK_STAFF_USER
+      : MOCK_VIEWER_USER;
+
+  const isAllowedMasterData = currentUser.system_role === 'admin' || currentUser.system_role === 'viewer';
 
   const masterDataSubItems = [
     {
@@ -31,7 +53,7 @@ export default function HomePage() {
           Danh mục SP
         </span>
       ),
-      children: <MasterItemManager userId={currentUser.id} />,
+      children: <MasterItemManager userId={currentUser.id} userRole={currentUser.system_role} />,
     },
     {
       key: 'master-suppliers',
@@ -41,7 +63,7 @@ export default function HomePage() {
           Danh mục NCC
         </span>
       ),
-      children: <MasterSupplierManager userId={currentUser.id} />,
+      children: <MasterSupplierManager userId={currentUser.id} userRole={currentUser.system_role} />,
     },
     {
       key: 'label-mappings',
@@ -51,7 +73,7 @@ export default function HomePage() {
           Liên kết SP - Tem
         </span>
       ),
-      children: <ProductLabelManager userId={currentUser.id} />,
+      children: <ProductLabelManager userId={currentUser.id} userRole={currentUser.system_role} />,
     },
   ];
 
@@ -66,8 +88,8 @@ export default function HomePage() {
       ),
       children: <AppDashboard currentUser={currentUser} />,
     },
-    // Master Data chỉ hiện với Admin (§4.3)
-    ...(isAdmin
+    // Master Data hiện với Admin & Viewer
+    ...(isAllowedMasterData
       ? [
           {
             key: 'master-data',
@@ -127,18 +149,21 @@ export default function HomePage() {
             <strong style={{ color: '#92400e' }}>PILOT MODE</strong>
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Tag color="blue" style={{ fontSize: 10, margin: 0, padding: '0 4px' }}>Staff</Tag>
-            <Switch
+            <Segmented
               size="small"
-              checked={useAdmin}
-              onChange={setUseAdmin}
-              style={{ background: useAdmin ? '#0d9488' : '#94a3b8' }}
+              options={[
+                { label: <span style={{ fontSize: 11, fontWeight: 500, color: '#1e3a8a' }}>Staff</span>, value: 'staff' },
+                { label: <span style={{ fontSize: 11, fontWeight: 500, color: '#581c87' }}>Viewer</span>, value: 'viewer' },
+                { label: <span style={{ fontSize: 11, fontWeight: 500, color: '#78350f' }}>Admin</span>, value: 'admin' },
+              ]}
+              value={selectedRole}
+              onChange={(val) => handleRoleChange(val as any)}
+              style={{ background: '#f1f5f9', borderRadius: 6, padding: 2 }}
             />
-            <Tag color="gold" style={{ fontSize: 10, margin: 0, padding: '0 4px' }}>Admin</Tag>
           </div>
           <div style={{ borderLeft: '1px solid #e2e8f0', height: 16, margin: '0 4px' }} />
           <span style={{ fontSize: 11, color: '#64748b' }}>
-            User: <strong style={{ color: '#1e293b' }}>{currentUser.full_name.split(' ').pop()}</strong>
+            User: <strong style={{ color: '#1e293b' }}>{currentUser.full_name}</strong>
           </span>
         </div>
       }
