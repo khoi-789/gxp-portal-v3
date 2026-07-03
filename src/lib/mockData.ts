@@ -7,7 +7,7 @@ import { User, PortalApp, MasterItem } from './types';
 
 // §5: 1 User (Admin - QA)
 export const MOCK_CURRENT_USER: User = {
-  id: 'usr-00001-admin-qa',
+  id: 'usr-x3n8m2k5d',
   email: 'admin@gxpportal.com',
   full_name: 'Nguyễn Quản Trị',
   department_code: 'QA',
@@ -16,7 +16,7 @@ export const MOCK_CURRENT_USER: User = {
 
 // §5: User thường để test RBAC
 export const MOCK_STAFF_USER: User = {
-  id: 'usr-00002-staff-kho',
+  id: 'usr-w9b4v7z2p',
   email: 'kho.nhanvien@company.com',
   full_name: 'Trần Kho Hàng',
   department_code: 'KHO',
@@ -25,7 +25,7 @@ export const MOCK_STAFF_USER: User = {
 
 // §5: User Viewer chỉ đọc
 export const MOCK_VIEWER_USER: User = {
-  id: 'usr-00003-viewer',
+  id: 'usr-q7r3s8t5u',
   email: 'viewer.doc@company.com',
   full_name: 'Phạm Người Xem',
   department_code: 'DEV',

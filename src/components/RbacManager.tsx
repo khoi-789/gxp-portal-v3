@@ -31,7 +31,7 @@ interface MockUser {
 
 const INITIAL_USERS: MockUser[] = [
   {
-    id: 'usr-00001-admin-qa',
+    id: 'usr-x3n8m2k5d',
     full_name: 'Nguyễn Quản Trị',
     email: 'admin@gxpportal.com',
     department_code: 'QA',
@@ -42,7 +42,7 @@ const INITIAL_USERS: MockUser[] = [
     password: 'Password123!'
   },
   {
-    id: 'usr-00002-staff-kho',
+    id: 'usr-w9b4v7z2p',
     full_name: 'Trần Kho Hàng',
     email: 'kho.nhanvien@company.com',
     department_code: 'KHO',
@@ -53,7 +53,7 @@ const INITIAL_USERS: MockUser[] = [
     password: 'Password123!'
   },
   {
-    id: 'usr-00003-viewer',
+    id: 'usr-q7r3s8t5u',
     full_name: 'Phạm Người Xem',
     email: 'viewer.doc@company.com',
     department_code: 'DEV',
@@ -64,7 +64,7 @@ const INITIAL_USERS: MockUser[] = [
     password: 'Password123!'
   },
   {
-    id: 'usr-00004-import-scm',
+    id: 'usr-c2d9f4g6h',
     full_name: 'Lê Nhập Khẩu',
     email: 'import.nhanvien@company.com',
     department_code: 'SCM',
@@ -75,7 +75,7 @@ const INITIAL_USERS: MockUser[] = [
     password: 'Password123!'
   },
   {
-    id: 'usr-00005-audit-sup',
+    id: 'usr-j8k3m9p4q',
     full_name: 'Vũ Giám Sát',
     email: 'audit.supervisor@company.com',
     department_code: 'QA',
@@ -86,7 +86,7 @@ const INITIAL_USERS: MockUser[] = [
     password: 'Password123!'
   },
   {
-    id: 'usr-00006-staff-test',
+    id: 'usr-v6w2x7y5z',
     full_name: 'Đỗ Nhân Viên',
     email: 'staff.test@company.com',
     department_code: 'KHO',
@@ -111,61 +111,61 @@ const MODULE_LIST = [
 
 const INITIAL_PERMISSIONS: UserPerm[] = [
   // Nguyễn Quản Trị (Admin)
-  { userId: 'usr-00001-admin-qa', moduleKey: 'imp', role: 'admin' },
-  { userId: 'usr-00001-admin-qa', moduleKey: 'bbsc', role: 'admin' },
-  { userId: 'usr-00001-admin-qa', moduleKey: 'cc', role: 'admin' },
-  { userId: 'usr-00001-admin-qa', moduleKey: 'lbl', role: 'admin' },
-  { userId: 'usr-00001-admin-qa', moduleKey: 'ldg', role: 'admin' },
-  { userId: 'usr-00001-admin-qa', moduleKey: 'master-items', role: 'admin' },
-  { userId: 'usr-00001-admin-qa', moduleKey: 'master-suppliers', role: 'admin' },
-  { userId: 'usr-00001-admin-qa', moduleKey: 'master-label-mappings', role: 'admin' },
+  { userId: 'usr-x3n8m2k5d', moduleKey: 'imp', role: 'admin' },
+  { userId: 'usr-x3n8m2k5d', moduleKey: 'bbsc', role: 'admin' },
+  { userId: 'usr-x3n8m2k5d', moduleKey: 'cc', role: 'admin' },
+  { userId: 'usr-x3n8m2k5d', moduleKey: 'lbl', role: 'admin' },
+  { userId: 'usr-x3n8m2k5d', moduleKey: 'ldg', role: 'admin' },
+  { userId: 'usr-x3n8m2k5d', moduleKey: 'master-items', role: 'admin' },
+  { userId: 'usr-x3n8m2k5d', moduleKey: 'master-suppliers', role: 'admin' },
+  { userId: 'usr-x3n8m2k5d', moduleKey: 'master-label-mappings', role: 'admin' },
 
   // Trần Kho Hàng (QA Kho)
-  { userId: 'usr-00002-staff-kho', moduleKey: 'imp', role: 'qa_kho' },
-  { userId: 'usr-00002-staff-kho', moduleKey: 'bbsc', role: 'qa_kho' },
-  { userId: 'usr-00002-staff-kho', moduleKey: 'cc', role: 'viewer' },
-  { userId: 'usr-00002-staff-kho', moduleKey: 'lbl', role: 'qa_kho' },
-  { userId: 'usr-00002-staff-kho', moduleKey: 'ldg', role: 'qa_kho' },
-  { userId: 'usr-00002-staff-kho', moduleKey: 'master-items', role: 'viewer' },
-  { userId: 'usr-00002-staff-kho', moduleKey: 'master-suppliers', role: 'viewer' },
-  { userId: 'usr-00002-staff-kho', moduleKey: 'master-label-mappings', role: 'viewer' },
+  { userId: 'usr-w9b4v7z2p', moduleKey: 'imp', role: 'qa_kho' },
+  { userId: 'usr-w9b4v7z2p', moduleKey: 'bbsc', role: 'qa_kho' },
+  { userId: 'usr-w9b4v7z2p', moduleKey: 'cc', role: 'viewer' },
+  { userId: 'usr-w9b4v7z2p', moduleKey: 'lbl', role: 'qa_kho' },
+  { userId: 'usr-w9b4v7z2p', moduleKey: 'ldg', role: 'qa_kho' },
+  { userId: 'usr-w9b4v7z2p', moduleKey: 'master-items', role: 'viewer' },
+  { userId: 'usr-w9b4v7z2p', moduleKey: 'master-suppliers', role: 'viewer' },
+  { userId: 'usr-w9b4v7z2p', moduleKey: 'master-label-mappings', role: 'viewer' },
 
   // Phạm Người Xem (Viewer)
-  { userId: 'usr-00003-viewer', moduleKey: 'imp', role: 'viewer' },
-  { userId: 'usr-00003-viewer', moduleKey: 'bbsc', role: 'viewer' },
-  { userId: 'usr-00003-viewer', moduleKey: 'cc', role: 'viewer' },
-  { userId: 'usr-00003-viewer', moduleKey: 'lbl', role: 'viewer' },
-  { userId: 'usr-00003-viewer', moduleKey: 'ldg', role: 'viewer' },
-  { userId: 'usr-00003-viewer', moduleKey: 'master-items', role: 'viewer' },
-  { userId: 'usr-00003-viewer', moduleKey: 'master-suppliers', role: 'viewer' },
-  { userId: 'usr-00003-viewer', moduleKey: 'master-label-mappings', role: 'viewer' },
+  { userId: 'usr-q7r3s8t5u', moduleKey: 'imp', role: 'viewer' },
+  { userId: 'usr-q7r3s8t5u', moduleKey: 'bbsc', role: 'viewer' },
+  { userId: 'usr-q7r3s8t5u', moduleKey: 'cc', role: 'viewer' },
+  { userId: 'usr-q7r3s8t5u', moduleKey: 'lbl', role: 'viewer' },
+  { userId: 'usr-q7r3s8t5u', moduleKey: 'ldg', role: 'viewer' },
+  { userId: 'usr-q7r3s8t5u', moduleKey: 'master-items', role: 'viewer' },
+  { userId: 'usr-q7r3s8t5u', moduleKey: 'master-suppliers', role: 'viewer' },
+  { userId: 'usr-q7r3s8t5u', moduleKey: 'master-label-mappings', role: 'viewer' },
 
   // Lê Nhập Khẩu (SCM QA NK)
-  { userId: 'usr-00004-import-scm', moduleKey: 'imp', role: 'qa_nk' },
-  { userId: 'usr-00004-import-scm', moduleKey: 'bbsc', role: 'viewer' },
-  { userId: 'usr-00004-import-scm', moduleKey: 'cc', role: 'qa_nk' },
-  { userId: 'usr-00004-import-scm', moduleKey: 'lbl', role: 'qa_nk' },
-  { userId: 'usr-00004-import-scm', moduleKey: 'ldg', role: 'viewer' },
-  { userId: 'usr-00004-import-scm', moduleKey: 'master-items', role: 'viewer' },
-  { userId: 'usr-00004-import-scm', moduleKey: 'master-suppliers', role: 'viewer' },
-  { userId: 'usr-00004-import-scm', moduleKey: 'master-label-mappings', role: 'viewer' },
+  { userId: 'usr-c2d9f4g6h', moduleKey: 'imp', role: 'qa_nk' },
+  { userId: 'usr-c2d9f4g6h', moduleKey: 'bbsc', role: 'viewer' },
+  { userId: 'usr-c2d9f4g6h', moduleKey: 'cc', role: 'qa_nk' },
+  { userId: 'usr-c2d9f4g6h', moduleKey: 'lbl', role: 'qa_nk' },
+  { userId: 'usr-c2d9f4g6h', moduleKey: 'ldg', role: 'viewer' },
+  { userId: 'usr-c2d9f4g6h', moduleKey: 'master-items', role: 'viewer' },
+  { userId: 'usr-c2d9f4g6h', moduleKey: 'master-suppliers', role: 'viewer' },
+  { userId: 'usr-c2d9f4g6h', moduleKey: 'master-label-mappings', role: 'viewer' },
 
   // Vũ Giám Sát (Admin)
-  { userId: 'usr-00005-audit-sup', moduleKey: 'imp', role: 'admin' },
-  { userId: 'usr-00005-audit-sup', moduleKey: 'bbsc', role: 'admin' },
-  { userId: 'usr-00005-audit-sup', moduleKey: 'cc', role: 'admin' },
-  { userId: 'usr-00005-audit-sup', moduleKey: 'lbl', role: 'admin' },
-  { userId: 'usr-00005-audit-sup', moduleKey: 'ldg', role: 'admin' },
-  { userId: 'usr-00005-audit-sup', moduleKey: 'master-items', role: 'admin' },
-  { userId: 'usr-00005-audit-sup', moduleKey: 'master-suppliers', role: 'admin' },
-  { userId: 'usr-00005-audit-sup', moduleKey: 'master-label-mappings', role: 'admin' }
+  { userId: 'usr-j8k3m9p4q', moduleKey: 'imp', role: 'admin' },
+  { userId: 'usr-j8k3m9p4q', moduleKey: 'bbsc', role: 'admin' },
+  { userId: 'usr-j8k3m9p4q', moduleKey: 'cc', role: 'admin' },
+  { userId: 'usr-j8k3m9p4q', moduleKey: 'lbl', role: 'admin' },
+  { userId: 'usr-j8k3m9p4q', moduleKey: 'ldg', role: 'admin' },
+  { userId: 'usr-j8k3m9p4q', moduleKey: 'master-items', role: 'admin' },
+  { userId: 'usr-j8k3m9p4q', moduleKey: 'master-suppliers', role: 'admin' },
+  { userId: 'usr-j8k3m9p4q', moduleKey: 'master-label-mappings', role: 'admin' }
 ];
 
 export default function RbacManager({ onDirtyChange }: { onDirtyChange?: (isDirty: boolean) => void }) {
   const [activeSubTab, setActiveSubTab] = useState<string>('matrix');
   const [users, setUsers] = useState<MockUser[]>(INITIAL_USERS);
   const [permissions, setPermissions] = useState<UserPerm[]>(INITIAL_PERMISSIONS);
-  const [selectedUserId, setSelectedUserId] = useState<string>('usr-00001-admin-qa');
+  const [selectedUserId, setSelectedUserId] = useState<string>('usr-x3n8m2k5d');
   const [userSearchText, setUserSearchText] = useState<string>('');
   const [matrixSearchText, setMatrixSearchText] = useState<string>('');
 
@@ -230,8 +230,15 @@ export default function RbacManager({ onDirtyChange }: { onDirtyChange?: (isDirt
 
       // Fallback: load from LocalStorage
       if (typeof window !== 'undefined') {
-        const localUsers = localStorage.getItem('rbac_users');
-        const localPerms = localStorage.getItem('rbac_permissions');
+        let localUsers = localStorage.getItem('rbac_users');
+        let localPerms = localStorage.getItem('rbac_permissions');
+
+        if (localUsers && (localUsers.includes('usr-00001') || localUsers.includes('usr-00002'))) {
+          localStorage.removeItem('rbac_users');
+          localStorage.removeItem('rbac_permissions');
+          localUsers = null;
+          localPerms = null;
+        }
 
         if (localUsers) {
           try {
