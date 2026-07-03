@@ -9,6 +9,7 @@ import {
   Users, ShieldAlert, Search, CheckCircle, XCircle, ArrowRight, UserPlus, 
   Settings, Key, Layers, Database, Lock, Unlock, Mail, ShieldCheck, RefreshCw, Save, Trash2
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface UserPerm {
   userId: string;
@@ -187,6 +188,67 @@ export default function RbacManager({ onDirtyChange }: { onDirtyChange?: (isDirt
   const [addFormRole, setAddFormRole] = useState<'admin' | 'staff' | 'viewer'>('staff');
   const [addFormPassword, setAddFormPassword] = useState('');
 
+  // Load initial data from DB or LocalStorage
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const { data: dbUsers, error: usersErr } = await supabase
+          .from('rbac_users')
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        const { data: dbPerms, error: permsErr } = await supabase
+          .from('rbac_permissions')
+          .select('*');
+
+        if (!usersErr && dbUsers && dbUsers.length > 0) {
+          setUsers(dbUsers.map(u => ({
+            id: u.id,
+            full_name: u.full_name,
+            email: u.email,
+            department_code: u.department_code,
+            system_role: u.system_role as any,
+            avatar_color: u.avatar_color,
+            status: u.status as any,
+            username: u.username,
+            password: u.password
+          })));
+
+          if (!permsErr && dbPerms) {
+            setPermissions(dbPerms.map(p => ({
+              userId: p.user_id,
+              moduleKey: p.module_key,
+              role: p.role as any
+            })));
+          }
+          console.log('Loaded RBAC data from Supabase successfully.');
+          return;
+        }
+      } catch (err) {
+        console.warn('Supabase not fully configured or tables missing. Falling back to LocalStorage.', err);
+      }
+
+      // Fallback: load from LocalStorage
+      if (typeof window !== 'undefined') {
+        const localUsers = localStorage.getItem('rbac_users');
+        const localPerms = localStorage.getItem('rbac_permissions');
+
+        if (localUsers) {
+          try {
+            setUsers(JSON.parse(localUsers));
+          } catch (e) {}
+        }
+        if (localPerms) {
+          try {
+            setPermissions(JSON.parse(localPerms));
+          } catch (e) {}
+        }
+      }
+    }
+
+    loadData();
+  }, []);
+
   // Hydrate edit states when selected user changes
   useEffect(() => {
     if (selectedUser) {
@@ -292,7 +354,7 @@ export default function RbacManager({ onDirtyChange }: { onDirtyChange?: (isDirt
   };
 
   // Save changes
-  const handleSaveAll = () => {
+  const handleSaveAll = async () => {
     if (!editUserForm) return;
 
     if (!editUserForm.full_name.trim()) {
@@ -308,28 +370,66 @@ export default function RbacManager({ onDirtyChange }: { onDirtyChange?: (isDirt
       return;
     }
 
-    // Update users array
-    setUsers(prev => prev.map(u => {
-      if (u.id === selectedUserId) {
-        return {
-          ...u,
-          full_name: editUserForm.full_name,
-          email: editUserForm.email,
-          department_code: editUserForm.department_code,
-          system_role: editUserForm.system_role,
-          status: editUserForm.status,
-          username: editUserForm.username,
-          password: passwordInput ? passwordInput : u.password,
-        };
-      }
-      return u;
-    }));
+    const updatedUser = {
+      ...editUserForm,
+      password: passwordInput ? passwordInput : editUserForm.password,
+    };
 
-    // Update permissions array
-    setPermissions(prev => {
-      const filtered = prev.filter(p => p.userId !== selectedUserId);
-      return [...filtered, ...editPermissions];
-    });
+    // 1. Update React State
+    const nextUsers = users.map(u => (u.id === selectedUserId ? updatedUser : u));
+    setUsers(nextUsers);
+
+    const nextPermissions = [
+      ...permissions.filter(p => p.userId !== selectedUserId),
+      ...editPermissions
+    ];
+    setPermissions(nextPermissions);
+
+    // 2. Persist to LocalStorage (Always acts as cache/fallback)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('rbac_users', JSON.stringify(nextUsers));
+      localStorage.setItem('rbac_permissions', JSON.stringify(nextPermissions));
+    }
+
+    // 3. Persist to Supabase
+    try {
+      const { error: userErr } = await supabase
+        .from('rbac_users')
+        .upsert({
+          id: updatedUser.id,
+          full_name: updatedUser.full_name,
+          email: updatedUser.email,
+          department_code: updatedUser.department_code,
+          system_role: updatedUser.system_role,
+          avatar_color: updatedUser.avatar_color,
+          status: updatedUser.status,
+          username: updatedUser.username,
+          password: updatedUser.password
+        });
+
+      if (!userErr) {
+        // Delete current permission rows for this user
+        await supabase
+          .from('rbac_permissions')
+          .delete()
+          .eq('user_id', selectedUserId);
+
+        // Insert new permission rows
+        const dbPermsPayload = editPermissions.map(p => ({
+          user_id: p.userId,
+          module_key: p.moduleKey,
+          role: p.role
+        }));
+
+        if (dbPermsPayload.length > 0) {
+          await supabase
+            .from('rbac_permissions')
+            .insert(dbPermsPayload);
+        }
+      }
+    } catch (dbErr) {
+      console.error('Failed to sync changes to Supabase:', dbErr);
+    }
 
     setPasswordInput('');
     message.success(`Đã lưu toàn bộ thay đổi cho người dùng ${editUserForm.full_name} thành công!`);
@@ -408,19 +508,40 @@ export default function RbacManager({ onDirtyChange }: { onDirtyChange?: (isDirt
   };
 
   // Table list lock/unlock status toggler
-  const handleToggleListStatus = (userId: string) => {
+  const handleToggleListStatus = async (userId: string) => {
     if (isDirty && userId === selectedUserId) {
       message.warning('Vui lòng lưu hoặc hủy thay đổi hiện tại trước khi đổi trạng thái!');
       return;
     }
-    setUsers(prev => prev.map(u => {
+    
+    let targetUser: MockUser | undefined;
+    const nextUsers = users.map(u => {
       if (u.id === userId) {
         const nextStatus = u.status === 'active' ? 'inactive' : 'active';
-        message.success(`Đã chuyển trạng thái người dùng sang ${nextStatus === 'active' ? 'Hoạt động' : 'Tạm khóa'}`);
-        return { ...u, status: nextStatus };
+        targetUser = { ...u, status: nextStatus };
+        return targetUser;
       }
       return u;
-    }));
+    });
+
+    if (!targetUser) return;
+
+    setUsers(nextUsers);
+    
+    // Save to LocalStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('rbac_users', JSON.stringify(nextUsers));
+    }
+
+    // Save to Supabase
+    try {
+      await supabase
+        .from('rbac_users')
+        .update({ status: targetUser.status })
+        .eq('id', userId);
+    } catch (err) {}
+
+    message.success(`Đã chuyển trạng thái người dùng sang ${targetUser.status === 'active' ? 'Hoạt động' : 'Tạm khóa'}`);
   };
 
   // Open Add User Modal with dirty check
@@ -476,7 +597,7 @@ export default function RbacManager({ onDirtyChange }: { onDirtyChange?: (isDirt
   };
 
   // Submit new user
-  const handleAddUserSubmit = () => {
+  const handleAddUserSubmit = async () => {
     if (!addFormName.trim()) {
       message.error('Họ tên không được để trống!');
       return;
@@ -517,7 +638,8 @@ export default function RbacManager({ onDirtyChange }: { onDirtyChange?: (isDirt
     };
 
     // Add user to state
-    setUsers(prev => [...prev, newUser]);
+    const nextUsers = [...users, newUser];
+    setUsers(nextUsers);
 
     // Initialize default permissions (none/viewer/admin based on role)
     const newPerms: UserPerm[] = MODULE_LIST.map(m => ({
@@ -525,7 +647,44 @@ export default function RbacManager({ onDirtyChange }: { onDirtyChange?: (isDirt
       moduleKey: m.key,
       role: addFormRole === 'admin' ? 'admin' : addFormRole === 'viewer' ? 'viewer' : 'none'
     }));
-    setPermissions(prev => [...prev, ...newPerms]);
+    const nextPermissions = [...permissions, ...newPerms];
+    setPermissions(nextPermissions);
+
+    // 1. Save to LocalStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('rbac_users', JSON.stringify(nextUsers));
+      localStorage.setItem('rbac_permissions', JSON.stringify(nextPermissions));
+    }
+
+    // 2. Save to Supabase
+    try {
+      const { error: userErr } = await supabase
+        .from('rbac_users')
+        .insert({
+          id: newUser.id,
+          full_name: newUser.full_name,
+          email: newUser.email,
+          department_code: newUser.department_code,
+          system_role: newUser.system_role,
+          avatar_color: newUser.avatar_color,
+          status: newUser.status,
+          username: newUser.username,
+          password: newUser.password
+        });
+
+      if (!userErr) {
+        const dbPermsPayload = newPerms.map(p => ({
+          user_id: p.userId,
+          module_key: p.moduleKey,
+          role: p.role
+        }));
+        await supabase
+          .from('rbac_permissions')
+          .insert(dbPermsPayload);
+      }
+    } catch (err) {
+      console.error('Failed to sync new user to Supabase:', err);
+    }
 
     // Navigate to new user
     setSelectedUserId(newId);
