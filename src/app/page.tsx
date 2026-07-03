@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Tabs, Switch, Tag, Segmented } from 'antd';
+import { Tabs, Switch, Tag, Segmented, Modal } from 'antd';
 import PortalLayout from '@/components/PortalLayout';
 import AppDashboard from '@/components/AppDashboard';
 import MasterItemManager from '@/components/MasterItemManager';
@@ -21,6 +21,8 @@ import { LayoutGrid, Package, Link2, Truck, Database, HelpCircle, Key } from 'lu
 export default function HomePage() {
   const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'viewer'>('admin');
   const [isMounted, setIsMounted] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [isRbacDirty, setIsRbacDirty] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -136,11 +138,29 @@ export default function HomePage() {
                 Phân quyền
               </span>
             ),
-            children: <RbacManager />,
+            children: <RbacManager onDirtyChange={setIsRbacDirty} />,
           },
         ]
       : []),
   ];
+
+  const handleTabChange = (key: string) => {
+    if (isRbacDirty && activeTab === 'rbac') {
+      Modal.confirm({
+        title: 'Xác nhận rời khỏi',
+        content: 'Bạn đang có thay đổi chưa lưu trong cấu hình Phân quyền. Bạn có chắc chắn muốn rời đi và hủy toàn bộ thay đổi này?',
+        okText: 'Đồng ý',
+        cancelText: 'Hủy',
+        okButtonProps: { danger: true },
+        onOk: () => {
+          setIsRbacDirty(false);
+          setActiveTab(key);
+        }
+      });
+    } else {
+      setActiveTab(key);
+    }
+  };
 
   if (!isMounted) {
     return null;
@@ -170,7 +190,8 @@ export default function HomePage() {
         }}
       >
         <Tabs
-          defaultActiveKey="dashboard"
+          activeKey={activeTab}
+          onChange={handleTabChange}
           items={tabItems}
           size="large"
           className="portal-tabs-full-height"
