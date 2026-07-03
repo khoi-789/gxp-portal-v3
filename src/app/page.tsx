@@ -7,9 +7,10 @@ import AppDashboard from '@/components/AppDashboard';
 import MasterItemManager from '@/components/MasterItemManager';
 import ProductLabelManager from '@/components/ProductLabelManager';
 import MasterSupplierManager from '@/components/MasterSupplierManager';
+import UserGuide from '@/components/UserGuide';
 import { MOCK_CURRENT_USER, MOCK_STAFF_USER } from '@/lib/mockData';
 import { User } from '@/lib/types';
-import { LayoutGrid, Package, Link2, Truck, Database } from 'lucide-react';
+import { LayoutGrid, Package, Link2, Truck, Database, HelpCircle } from 'lucide-react';
 
 /**
  * Trang chủ GxP Portal
@@ -89,6 +90,16 @@ export default function HomePage() {
           },
         ]
       : []),
+    {
+      key: 'user-guide',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+          <HelpCircle size={15} />
+          Hướng dẫn
+        </span>
+      ),
+      children: <UserGuide />,
+    },
   ];
 
   return (
