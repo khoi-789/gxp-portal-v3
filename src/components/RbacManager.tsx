@@ -178,6 +178,15 @@ export default function RbacManager({ onDirtyChange }: { onDirtyChange?: (isDirt
   const [editPermissions, setEditPermissions] = useState<UserPerm[]>([]);
   const [passwordInput, setPasswordInput] = useState<string>('');
 
+  // Add User Modal State
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [addFormName, setAddFormName] = useState('');
+  const [addFormUsername, setAddFormUsername] = useState('');
+  const [addFormEmail, setAddFormEmail] = useState('');
+  const [addFormDept, setAddFormDept] = useState('QA');
+  const [addFormRole, setAddFormRole] = useState<'admin' | 'staff' | 'viewer'>('staff');
+  const [addFormPassword, setAddFormPassword] = useState('');
+
   // Hydrate edit states when selected user changes
   useEffect(() => {
     if (selectedUser) {
@@ -414,6 +423,116 @@ export default function RbacManager({ onDirtyChange }: { onDirtyChange?: (isDirt
     }));
   };
 
+  // Open Add User Modal with dirty check
+  const handleOpenAddUser = () => {
+    if (isDirty) {
+      Modal.confirm({
+        title: 'Cấu hình chưa lưu',
+        content: `Bạn đang có thay đổi chưa lưu cho người dùng [${selectedUser?.full_name}]. Vui lòng lưu hoặc hủy bỏ thay đổi trước khi thêm người dùng mới.`,
+        okText: 'Hiểu rồi',
+        cancelButtonProps: { style: { display: 'none' } }
+      });
+      return;
+    }
+    
+    // Reset form states
+    setAddFormName('');
+    setAddFormUsername('');
+    setAddFormEmail('');
+    setAddFormDept('QA');
+    setAddFormRole('staff');
+    setAddFormPassword('');
+    setIsAddUserModalOpen(true);
+  };
+
+  // Convert name to initials/abbreviation for username and email suggestions
+  const handleAddNameChange = (val: string) => {
+    setAddFormName(val);
+    const clean = val
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // remove accents
+      .replace(/đ/g, 'd')
+      .replace(/[^a-z0-9 ]/g, '');
+    const parts = clean.split(' ').filter(Boolean);
+    if (parts.length > 0) {
+      const firstName = parts[parts.length - 1];
+      const initials = parts.slice(0, parts.length - 1).map(p => p.charAt(0)).join('');
+      const suggestedUsername = firstName + initials;
+      
+      setAddFormUsername(suggestedUsername);
+      setAddFormEmail(`${suggestedUsername}@gxpportal.com`);
+    }
+  };
+
+  // Generate random password for the Modal
+  const handleGenerateAddPassword = () => {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#';
+    let newPass = 'GxP-';
+    for (let i = 0; i < 8; i++) {
+      newPass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setAddFormPassword(newPass);
+  };
+
+  // Submit new user
+  const handleAddUserSubmit = () => {
+    if (!addFormName.trim()) {
+      message.error('Họ tên không được để trống!');
+      return;
+    }
+    if (!addFormUsername.trim()) {
+      message.error('Tên đăng nhập không được để trống!');
+      return;
+    }
+    if (!addFormEmail.trim()) {
+      message.error('Email không được để trống!');
+      return;
+    }
+    
+    // Check duplication
+    if (users.some(u => u.username?.toLowerCase() === addFormUsername.trim().toLowerCase())) {
+      message.error('Tên đăng nhập đã tồn tại!');
+      return;
+    }
+    if (users.some(u => u.email.toLowerCase() === addFormEmail.trim().toLowerCase())) {
+      message.error('Email đã tồn tại!');
+      return;
+    }
+
+    const newId = `usr-${Math.random().toString(36).substr(2, 9)}`;
+    const colors = ['#0d9488', '#581c87', '#9d174d', '#1e3a8a', '#78350f', '#0284c7', '#b91c1c', '#15803d'];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+    const newUser: MockUser = {
+      id: newId,
+      full_name: addFormName.trim(),
+      email: addFormEmail.trim(),
+      department_code: addFormDept,
+      system_role: addFormRole,
+      avatar_color: randomColor,
+      status: 'active',
+      username: addFormUsername.trim(),
+      password: addFormPassword.trim() || 'Password123!',
+    };
+
+    // Add user to state
+    setUsers(prev => [...prev, newUser]);
+
+    // Initialize default permissions (none/viewer/admin based on role)
+    const newPerms: UserPerm[] = MODULE_LIST.map(m => ({
+      userId: newId,
+      moduleKey: m.key,
+      role: addFormRole === 'admin' ? 'admin' : addFormRole === 'viewer' ? 'viewer' : 'none'
+    }));
+    setPermissions(prev => [...prev, ...newPerms]);
+
+    // Navigate to new user
+    setSelectedUserId(newId);
+    setIsAddUserModalOpen(false);
+    message.success(`Đã thêm người dùng ${newUser.full_name} thành công!`);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '4px 0' }}>
       {/* Page Header */}
@@ -430,7 +549,7 @@ export default function RbacManager({ onDirtyChange }: { onDirtyChange?: (isDirt
           type="primary" 
           icon={<UserPlus size={14} />} 
           style={{ background: '#0d9488', borderColor: '#0d9488', borderRadius: 8, height: 32, fontSize: 12 }}
-          onClick={() => message.info('Tính năng Thêm tài khoản mới (coming soon)')}
+          onClick={handleOpenAddUser}
         >
           Thêm người dùng
         </Button>
@@ -950,6 +1069,113 @@ export default function RbacManager({ onDirtyChange }: { onDirtyChange?: (isDirt
           }
         ]}
       />
+
+      {/* Modal Thêm người dùng mới */}
+      <Modal
+        title={
+          <span style={{ fontSize: 15, fontWeight: 750, color: '#0f766e', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <UserPlus size={18} /> Thêm người dùng mới
+          </span>
+        }
+        open={isAddUserModalOpen}
+        onCancel={() => setIsAddUserModalOpen(false)}
+        onOk={handleAddUserSubmit}
+        okText="Thêm mới"
+        cancelText="Hủy bỏ"
+        okButtonProps={{ style: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 6 } }}
+        cancelButtonProps={{ style: { borderRadius: 6 } }}
+        width={500}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
+          {/* Họ tên */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Họ và tên *</div>
+            <Input
+              placeholder="Nhập họ và tên..."
+              value={addFormName}
+              onChange={(e) => handleAddNameChange(e.target.value)}
+              style={{ borderRadius: 6 }}
+            />
+          </div>
+
+          <Row gutter={12}>
+            {/* Tên đăng nhập */}
+            <Col span={12}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Tên đăng nhập *</div>
+              <Input
+                placeholder="Ví dụ: anhnt..."
+                value={addFormUsername}
+                onChange={(e) => setAddFormUsername(e.target.value)}
+                style={{ borderRadius: 6 }}
+              />
+            </Col>
+            {/* Phòng ban */}
+            <Col span={12}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Phòng ban</div>
+              <Select
+                value={addFormDept}
+                onChange={setAddFormDept}
+                style={{ width: '100%' }}
+                options={[
+                  { value: 'QA', label: 'QA (Đảm bảo CL)' },
+                  { value: 'KHO', label: 'KHO (Kho vận)' },
+                  { value: 'SCM', label: 'SCM (Chuỗi cung ứng)' },
+                  { value: 'DEV', label: 'DEV (Kỹ thuật/IT)' }
+                ]}
+              />
+            </Col>
+          </Row>
+
+          {/* Email */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Email (Mail) *</div>
+            <Input
+              placeholder="Ví dụ: anhnt@company.com..."
+              value={addFormEmail}
+              onChange={(e) => setAddFormEmail(e.target.value)}
+              style={{ borderRadius: 6 }}
+            />
+          </div>
+
+          <Row gutter={12}>
+            {/* Vai trò hệ thống */}
+            <Col span={12}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Vai trò hệ thống</div>
+              <Select
+                value={addFormRole}
+                onChange={setAddFormRole}
+                style={{ width: '100%' }}
+                options={[
+                  { value: 'admin', label: 'ADMIN (Quản trị)' },
+                  { value: 'staff', label: 'STAFF (Nhân viên)' },
+                  { value: 'viewer', label: 'VIEWER (Người xem)' }
+                ]}
+              />
+            </Col>
+            {/* Mật khẩu khởi tạo */}
+            <Col span={12}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu khởi tạo</div>
+              <Space.Compact style={{ width: '100%' }}>
+                <Input.Password
+                  placeholder="Nhập mật khẩu..."
+                  value={addFormPassword}
+                  onChange={(e) => setAddFormPassword(e.target.value)}
+                  style={{ borderRadius: '6px 0 0 6px' }}
+                />
+                <Button
+                  icon={<RefreshCw size={12} />}
+                  onClick={handleGenerateAddPassword}
+                  style={{ borderRadius: '0 6px 6px 0', borderLeft: 0 }}
+                />
+              </Space.Compact>
+            </Col>
+          </Row>
+          
+          <div style={{ fontSize: 10, color: '#64748b', fontStyle: 'italic', marginTop: 4 }}>
+            * Sau khi tạo, người dùng mới sẽ được mặc định khởi tạo quyền hạn tùy theo Vai trò hệ thống. Bạn có thể thay đổi cụ thể tại bảng Matrix.
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
