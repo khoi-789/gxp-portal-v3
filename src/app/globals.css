@@ -497,3 +497,14 @@ body {
 .ant-table-pagination.ant-pagination {
   z-index: 100 !important;
 }
+
+/* ============================================================
+   RBAC Management Panel Styles
+   ============================================================ */
+.user-sidebar-item:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.rbac-row-hover:hover td {
+  background-color: #f0fdfa !important;
+}

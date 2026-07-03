@@ -8,9 +8,10 @@ import MasterItemManager from '@/components/MasterItemManager';
 import ProductLabelManager from '@/components/ProductLabelManager';
 import MasterSupplierManager from '@/components/MasterSupplierManager';
 import UserGuide from '@/components/UserGuide';
+import RbacManager from '@/components/RbacManager';
 import { MOCK_CURRENT_USER, MOCK_STAFF_USER, MOCK_VIEWER_USER } from '@/lib/mockData';
 import { User } from '@/lib/types';
-import { LayoutGrid, Package, Link2, Truck, Database, HelpCircle } from 'lucide-react';
+import { LayoutGrid, Package, Link2, Truck, Database, HelpCircle, Key } from 'lucide-react';
 
 /**
  * Trang chủ GxP Portal
@@ -122,6 +123,20 @@ export default function HomePage() {
       ),
       children: <UserGuide />,
     },
+    ...(currentUser.system_role === 'admin'
+      ? [
+          {
+            key: 'rbac',
+            label: (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+                <Key size={15} />
+                Phân quyền
+              </span>
+            ),
+            children: <RbacManager />,
+          },
+        ]
+      : []),
   ];
 
   return (
