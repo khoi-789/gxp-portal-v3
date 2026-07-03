@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { User } from '@/lib/types';
 import {
   Settings,
@@ -13,7 +13,7 @@ import {
   LogOut,
   User as UserIcon,
 } from 'lucide-react';
-import { Tooltip } from 'antd';
+import { Tooltip, Segmented } from 'antd';
 
 /**
  * URS §4.1: <PortalLayout> - Component bọc ngoài cùng (Wrapper)
@@ -53,6 +53,24 @@ export default function PortalLayout({
 }: PortalLayoutProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'viewer'>('admin');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('pilot_selected_role');
+      if (stored === 'staff' || stored === 'viewer' || stored === 'admin') {
+        setSelectedRole(stored);
+      }
+    }
+  }, []);
+
+  const handleRoleChange = (role: 'admin' | 'staff' | 'viewer') => {
+    setSelectedRole(role);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pilot_selected_role', role);
+      window.location.reload();
+    }
+  };
 
   const deptColor = DEPT_COLORS[currentUser.department_code] ?? '#0d9488';
   const isAdmin = currentUser.system_role === 'admin';
@@ -176,13 +194,43 @@ export default function PortalLayout({
           {/* ---- Right: User Info + Settings ---- */}
           <div
             style={{
-              flex: 1,
+              flex: 2,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'flex-end',
-              gap: 10,
+              gap: 12,
             }}
           >
+            {/* Native Pilot Mode switcher in Header */}
+            <div
+              id="pilot-user-switcher-header"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '2px 8px',
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 8,
+                height: 32,
+              }}
+            >
+              <span style={{ fontSize: 9, color: '#fef08a', fontWeight: 800, letterSpacing: '0.05em' }}>
+                PILOT MODE
+              </span>
+              <Segmented
+                size="small"
+                options={[
+                  { label: <span style={{ fontSize: 10, fontWeight: 600, color: selectedRole === 'staff' ? '#0f766e' : 'rgba(255,255,255,0.85)' }}>Staff</span>, value: 'staff' },
+                  { label: <span style={{ fontSize: 10, fontWeight: 600, color: selectedRole === 'viewer' ? '#0f766e' : 'rgba(255,255,255,0.85)' }}>Viewer</span>, value: 'viewer' },
+                  { label: <span style={{ fontSize: 10, fontWeight: 600, color: selectedRole === 'admin' ? '#0f766e' : 'rgba(255,255,255,0.85)' }}>Admin</span>, value: 'admin' },
+                ]}
+                value={selectedRole}
+                onChange={(val) => handleRoleChange(val as any)}
+                style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 6, padding: 1 }}
+              />
+            </div>
+
             {/* User Chip */}
             <button
               id="btn-user-menu"
@@ -451,13 +499,6 @@ export default function PortalLayout({
               <PlusSquare size={14} />
               Thêm công cụ mới
             </button>
-
-            {/* Slot for Pilot Mode Switcher (URS extension) */}
-            {pilotSwitcher && (
-              <div style={{ marginLeft: 'auto', flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
-                {pilotSwitcher}
-              </div>
-            )}
           </div>
         </div>
       )}

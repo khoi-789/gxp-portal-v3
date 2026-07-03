@@ -146,42 +146,6 @@ export default function HomePage() {
       onOpenAppManager={() => alert('Mở thêm công cụ mới (coming soon)')}
       fullWidth={true}
       noScroll={false}
-      pilotSwitcher={
-        <div
-          id="pilot-user-switcher"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            padding: '4px 12px',
-            background: 'rgba(255,255,255,0.5)',
-            border: '1px dashed #cbd5e1',
-            borderRadius: 10,
-            backdropFilter: 'blur(4px)',
-          }}
-        >
-          <span style={{ fontSize: 11, color: '#64748b', fontWeight: 500 }}>
-            <strong style={{ color: '#92400e' }}>PILOT MODE</strong>
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Segmented
-              size="small"
-              options={[
-                { label: <span style={{ fontSize: 11, fontWeight: 500, color: '#1e3a8a' }}>Staff</span>, value: 'staff' },
-                { label: <span style={{ fontSize: 11, fontWeight: 500, color: '#581c87' }}>Viewer</span>, value: 'viewer' },
-                { label: <span style={{ fontSize: 11, fontWeight: 500, color: '#78350f' }}>Admin</span>, value: 'admin' },
-              ]}
-              value={selectedRole}
-              onChange={(val) => handleRoleChange(val as any)}
-              style={{ background: '#f1f5f9', borderRadius: 6, padding: 2 }}
-            />
-          </div>
-          <div style={{ borderLeft: '1px solid #e2e8f0', height: 16, margin: '0 4px' }} />
-          <span style={{ fontSize: 11, color: '#64748b' }}>
-            User: <strong style={{ color: '#1e293b' }}>{currentUser.full_name}</strong>
-          </span>
-        </div>
-      }
     >
       {/* ========= Tabs Navigation ========= */}
       <div
