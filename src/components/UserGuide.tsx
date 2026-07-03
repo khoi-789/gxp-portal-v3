@@ -359,6 +359,25 @@ export default function UserGuide() {
           <Paragraph style={{ fontSize: 13, color: '#475569', fontStyle: 'italic', marginTop: 8 }}>
             * Click lần 1 vào thẻ để kích hoạt lọc (thẻ sẽ chuyển sang màu đậm hơn kèm tag "Đang lọc"), click lần 2 để tắt lọc và hiển thị đầy đủ danh sách. Bạn có thể bật đồng thời nhiều thẻ để lọc kết hợp.
           </Paragraph>
+
+          <Divider style={{ margin: '24px 0 16px' }} />
+
+          <Title level={5} style={{ color: '#0f766e' }}>
+            <Settings size={16} style={{ marginRight: 6, verticalAlign: 'text-bottom' }} /> 5. Các tính năng tự động hóa thông minh (Smart Automation)
+          </Title>
+          <Paragraph style={{ fontSize: 13, color: '#475569' }}>
+            IMP tích hợp các tiện ích tự động hóa để tăng tốc độ nhập liệu và giảm thiểu sai sót thủ công:
+          </Paragraph>
+          <ul style={{ paddingLeft: 18, color: '#475569', fontSize: 13, lineHeight: '1.8' }}>
+            <li>
+              <strong>Tự động gợi ý Tem nhãn phụ</strong>: 
+              Khi người dùng chọn hoặc thêm sản phẩm vào danh mục của Invoice, hệ thống sẽ tự động đối chiếu với danh sách cấu hình trong Master Data (Liên kết SP - Tem) và **tự động gợi ý danh sách các loại tem cần bổ sung** tương ứng cho sản phẩm đó. Người dùng vẫn hoàn toàn có thể tùy chỉnh, thêm hoặc xóa tem trực tiếp trên giao diện Drawer sản phẩm.
+            </li>
+            <li>
+              <strong>Tự động điền (Autofill) thông tin Visa/Quyết định từ lịch sử gần nhất</strong>: 
+              Khi thêm sản phẩm vào Invoice, hệ thống sẽ tự động tìm kiếm trong cơ sở dữ liệu các lô hàng đã nhập trước đó của sản phẩm này để lấy ra 3 trường thông tin: <strong>Số Visa</strong>, <strong>Số quyết định</strong>, và <strong>Hiệu lực đến</strong> của lô hàng gần nhất rồi **tự động điền** vào form. Người dùng vẫn có thể chỉnh sửa lại các thông tin này nếu lô hàng mới có sự thay đổi.
+            </li>
+          </ul>
         </div>
       ),
     },
