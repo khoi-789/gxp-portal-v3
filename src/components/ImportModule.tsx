@@ -119,6 +119,7 @@ const COA_COLOR: Record<string, string> = {
 };
 
 const LABEL_COLOR: Record<string, string> = {
+  'Bổ sung': 'warning',
   'Chờ bổ sung': 'warning',
   'Không': 'default',
   // legacy fallback
@@ -300,9 +301,22 @@ async function fetchShipments(
     if (key === 'supplier_code') return; // Handled separately above
     if (key === 'temp_out_of_range_details') return; // Handled separately above
     if (key === 'progress_status') return; // Handled separately below
+    if (key === 'label_status') return; // Handled separately below
     const col = colMap[key];
     if (col) query = query.ilike(col, `%${value.trim()}%`);
   });
+
+  // Handle label_status custom filter (supporting legacy, semi-legacy, and new values)
+  if (filters.label_status && filters.label_status.trim()) {
+    const val = filters.label_status.trim();
+    if (val === 'Bổ sung' || val === 'Chờ bổ sung' || val === 'Chưa có') {
+      query = query.or('label_status.eq."Bổ sung",label_status.eq."Chờ bổ sung",label_status.eq."Chưa có"');
+    } else if (val === 'Không' || val === 'Đã cập nhật') {
+      query = query.or('label_status.eq."Không",label_status.eq."Đã cập nhật"');
+    } else {
+      query = query.ilike('label_status', `%${val}%`);
+    }
+  }
 
   // Handle progress_status custom filter (supporting legacy values)
   if (filters.progress_status && filters.progress_status.trim()) {
@@ -577,7 +591,7 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
         : getProductLabels(item.item_code);
       return labels && labels.length > 0;
     });
-    return hasReqLabels ? 'Chờ bổ sung' : 'Không';
+    return hasReqLabels ? 'Bổ sung' : 'Không';
   }, [detailRow, getProductLabels]);
 
   // Auto-calculated COA status
@@ -1303,8 +1317,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
           title="Nhãn phụ"
           dataKey="label_status"
           options={[
-            { label: 'Chờ bổ sung', value: 'Chưa có' },
-            { label: 'Không', value: 'Đã cập nhật' },
+            { label: 'Bổ sung', value: 'Bổ sung' },
+            { label: 'Không', value: 'Không' },
           ]}
           filters={columnFilters}
           onFilterChange={handleColumnFilter}
@@ -1318,8 +1332,8 @@ export default function ImportModule({ userId = 'default' }: { userId?: string }
       ...resizable('label_status'),
       render: (v: string) => {
         let displayVal = v;
-        if (v === 'Chưa có') displayVal = 'Chờ bổ sung';
-        else if (v === 'Đã cập nhật') displayVal = 'Không';
+        if (v === 'Chưa có' || v === 'Chờ bổ sung' || v === 'Bổ sung') displayVal = 'Bổ sung';
+        else if (v === 'Đã cập nhật' || v === 'Không') displayVal = 'Không';
         return <Tag color={LABEL_COLOR[displayVal] || 'default'} style={{ margin: 0, fontWeight: 500 }}>{displayVal}</Tag>;
       },
     },
