@@ -508,3 +508,13 @@ body {
 .rbac-row-hover:hover td {
   background-color: #f0fdfa !important;
 }
+
+/* Force hide hidden Segmented inputs (hydration safety) */
+.ant-segmented-item-input {
+  display: none !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  pointer-events: none !important;
+}

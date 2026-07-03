@@ -54,8 +54,10 @@ export default function PortalLayout({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'viewer'>('admin');
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('pilot_selected_role');
       if (stored === 'staff' || stored === 'viewer' || stored === 'admin') {
@@ -202,34 +204,36 @@ export default function PortalLayout({
             }}
           >
             {/* Native Pilot Mode switcher in Header */}
-            <div
-              id="pilot-user-switcher-header"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '2px 8px',
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.15)',
-                borderRadius: 8,
-                height: 32,
-              }}
-            >
-              <span style={{ fontSize: 9, color: '#fef08a', fontWeight: 800, letterSpacing: '0.05em' }}>
-                PILOT MODE
-              </span>
-              <Segmented
-                size="small"
-                options={[
-                  { label: <span style={{ fontSize: 10, fontWeight: 600, color: selectedRole === 'staff' ? '#0f766e' : 'rgba(255,255,255,0.85)' }}>Staff</span>, value: 'staff' },
-                  { label: <span style={{ fontSize: 10, fontWeight: 600, color: selectedRole === 'viewer' ? '#0f766e' : 'rgba(255,255,255,0.85)' }}>Viewer</span>, value: 'viewer' },
-                  { label: <span style={{ fontSize: 10, fontWeight: 600, color: selectedRole === 'admin' ? '#0f766e' : 'rgba(255,255,255,0.85)' }}>Admin</span>, value: 'admin' },
-                ]}
-                value={selectedRole}
-                onChange={(val) => handleRoleChange(val as any)}
-                style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 6, padding: 1 }}
-              />
-            </div>
+            {isMounted && (
+              <div
+                id="pilot-user-switcher-header"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '2px 8px',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 8,
+                  height: 32,
+                }}
+              >
+                <span style={{ fontSize: 9, color: '#fef08a', fontWeight: 800, letterSpacing: '0.05em' }}>
+                  PILOT MODE
+                </span>
+                <Segmented
+                  size="small"
+                  options={[
+                    { label: <span style={{ fontSize: 10, fontWeight: 600, color: selectedRole === 'staff' ? '#0f766e' : 'rgba(255,255,255,0.85)' }}>Staff</span>, value: 'staff' },
+                    { label: <span style={{ fontSize: 10, fontWeight: 600, color: selectedRole === 'viewer' ? '#0f766e' : 'rgba(255,255,255,0.85)' }}>Viewer</span>, value: 'viewer' },
+                    { label: <span style={{ fontSize: 10, fontWeight: 600, color: selectedRole === 'admin' ? '#0f766e' : 'rgba(255,255,255,0.85)' }}>Admin</span>, value: 'admin' },
+                  ]}
+                  value={selectedRole}
+                  onChange={(val) => handleRoleChange(val as any)}
+                  style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 6, padding: 1 }}
+                />
+              </div>
+            )}
 
             {/* User Chip */}
             <button

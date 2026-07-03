@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, Switch, Tag, Segmented } from 'antd';
 import PortalLayout from '@/components/PortalLayout';
 import AppDashboard from '@/components/AppDashboard';
@@ -19,15 +19,18 @@ import { LayoutGrid, Package, Link2, Truck, Database, HelpCircle, Key } from 'lu
  * - PILOT: user switcher để demo RBAC
  */
 export default function HomePage() {
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'viewer'>(() => {
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'viewer'>('admin');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('pilot_selected_role');
       if (stored === 'staff' || stored === 'viewer' || stored === 'admin') {
-        return stored;
+        setSelectedRole(stored);
       }
     }
-    return 'admin';
-  });
+  }, []);
 
   const handleRoleChange = (role: 'admin' | 'staff' | 'viewer') => {
     setSelectedRole(role);
@@ -138,6 +141,10 @@ export default function HomePage() {
         ]
       : []),
   ];
+
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <PortalLayout
