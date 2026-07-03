@@ -194,6 +194,43 @@ export default function UserGuide() {
 
           <Divider style={{ margin: '24px 0 16px' }} />
 
+          <Row gutter={[16, 16]}>
+            <Col xs={24} md={12}>
+              <Card
+                title={<span style={{ color: '#0d9488', fontWeight: 600 }}>Tải Template & Nhập dữ liệu lớn (Import)</span>}
+                bordered
+                bodyStyle={{ padding: 16 }}
+                style={{ height: '100%', borderColor: '#ccfbf1' }}
+              >
+                <ul style={{ paddingLeft: 18, color: '#475569', fontSize: 13, lineHeight: '1.8' }}>
+                  <li><strong>Tải Template chuẩn</strong>: Admin sử dụng nút <strong>"Tải template"</strong> để nhận file Excel mẫu chuẩn được định dạng sẵn cấu trúc cột.</li>
+                  <li><strong>Nhập Excel hàng loạt</strong>: Admin chọn file Excel đã điền dữ liệu và nhấn nút <strong>"Nhập Excel"</strong> để hệ thống tự động xử lý, kiểm tra dữ liệu và thêm/cập nhật hàng loạt vào database.</li>
+                </ul>
+              </Card>
+            </Col>
+            <Col xs={24} md={12}>
+              <Card
+                title={<span style={{ color: '#0891b2', fontWeight: 600 }}>Xuất dữ liệu & Quy tắc xuất theo bộ lọc (Export)</span>}
+                bordered
+                bodyStyle={{ padding: 16 }}
+                style={{ height: '100%', borderColor: '#c5f2f7' }}
+              >
+                <ul style={{ paddingLeft: 18, color: '#475569', fontSize: 13, lineHeight: '1.8' }}>
+                  <li><strong>Xuất dữ liệu ra Excel</strong>: Xuất thông tin danh mục nhanh chóng ra định dạng file `.xlsx` thông qua nút <strong>"Xuất Excel"</strong>.</li>
+                  <li><strong>Tự động xuất theo bộ lọc</strong>: Khi bấm xuất Excel, hệ thống sẽ tự động quét bộ lọc hiện hành (Tìm kiếm tổng và lọc đầu cột):
+                    <ul style={{ paddingLeft: 12, marginTop: 4, listStyleType: 'circle' }}>
+                      <li>Nếu <i>đang có bộ lọc hoạt động</i>: Chỉ xuất những dữ liệu khớp với bộ lọc trên màn hình.</li>
+                      <li>Nếu <i>không dùng bộ lọc</i>: Tự động xuất toàn bộ danh sách.</li>
+                    </ul>
+                  </li>
+                  <li><i>* Quy tắc xuất theo bộ lọc này được áp dụng thống nhất trên tất cả các bảng dữ liệu Master Data và các Module nghiệp vụ hiện tại lẫn sau này.</i></li>
+                </ul>
+              </Card>
+            </Col>
+          </Row>
+
+          <Divider style={{ margin: '24px 0 16px' }} />
+
           <Title level={5} style={{ color: '#1e293b' }}>
             <Shield size={16} style={{ marginRight: 6, verticalAlign: 'text-bottom' }} /> Đồng bộ hóa dữ liệu thời gian thực
           </Title>

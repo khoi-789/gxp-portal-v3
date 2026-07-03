@@ -383,14 +383,25 @@ export default function MasterItemManager({ userId = 'default' }: { userId?: str
         .from('master_items')
         .select('*');
 
+      // 1. Apply global search
       if (debouncedSearch && debouncedSearch.trim()) {
-        query = query.ilike('item_code', `%${debouncedSearch.trim()}%`);
+        const q = `%${debouncedSearch.trim().toLowerCase()}%`;
+        query = query.or(`item_code.ilike.${q},item_name.ilike.${q}`);
       }
 
+      // 2. Apply column-specific filters
       Object.entries(debouncedFilters).forEach(([key, value]) => {
         if (!value || value.trim() === '') return;
         const val = value.trim();
-        if (key === 'item_code' || key === 'item_name' || key === 'supplier_code') {
+
+        if (key === 'is_active') {
+          const valLower = val.toLowerCase();
+          if (valLower.includes('ngưng') || valLower.includes('stop') || valLower.includes('false') || valLower === '0' || valLower.includes('ngung')) {
+            query = query.eq('is_active', false);
+          } else if (valLower.includes('đang') || valLower.includes('active') || valLower.includes('true') || valLower === '1' || valLower.includes('dang') || valLower.includes('kd')) {
+            query = query.eq('is_active', true);
+          }
+        } else {
           query = query.ilike(key, `%${val}%`);
         }
       });

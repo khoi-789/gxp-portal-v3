@@ -340,13 +340,15 @@ export default function MasterSupplierManager({ userId = 'default' }: { userId?:
 
       if (searchText && searchText.trim()) {
         const q = `%${searchText.trim().toLowerCase()}%`;
-        query = query.or(`supplier_code.ilike.${q},supplier_name.ilike.${q}`);
+        query = query.or(`supplier_code.ilike.${q},supplier_name.ilike.${q},notes.ilike.${q}`);
       }
 
       Object.entries(columnFilters).forEach(([key, value]) => {
         if (!value || value.trim() === '') return;
         const val = value.trim();
-        if (key === 'supplier_code' || key === 'supplier_name' || key === 'notes') {
+        if (key === 'business_type') {
+          query = query.contains('business_type', [val]);
+        } else {
           query = query.ilike(key, `%${val}%`);
         }
       });
