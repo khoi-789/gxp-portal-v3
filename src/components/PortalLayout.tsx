@@ -396,113 +396,6 @@ export default function PortalLayout({
         </div>
       </header>
 
-      {/* =====================================================
-          URS §4.1: Admin Toolbar
-          CHỈ HIỂN THỊ nếu user.system_role === 'admin'
-         ===================================================== */}
-      {isAdmin && (
-        <div className="admin-toolbar" id="admin-toolbar">
-          <div
-            style={{
-              maxWidth: 1400,
-              margin: '0 auto',
-              padding: '0 24px',
-              height: 44,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-            }}
-          >
-            {/* Admin Badge */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '3px 10px',
-                background: '#fef08a',
-                borderRadius: 20,
-                border: '1px solid #fde047',
-                marginRight: 4,
-              }}
-            >
-              <ShieldCheck size={13} color="#92400e" strokeWidth={2} />
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#92400e',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                }}
-              >
-                Chế độ Admin
-              </span>
-            </div>
-
-            {/* §4.1 Nút "QL Nhóm" */}
-            <button
-              id="btn-manage-groups"
-              onClick={onOpenGroupManager}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 14px',
-                background: 'white',
-                border: '1px solid #d1d5db',
-                borderRadius: 8,
-                cursor: 'pointer',
-                fontSize: 13,
-                fontWeight: 500,
-                color: '#374151',
-                transition: 'all 150ms ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#0d9488';
-                e.currentTarget.style.color = '#0d9488';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#d1d5db';
-                e.currentTarget.style.color = '#374151';
-              }}
-            >
-              <Users size={14} />
-              QL Nhóm
-            </button>
-
-            {/* §4.1 Nút "Thêm công cụ mới" */}
-            <button
-              id="btn-add-new-tool"
-              onClick={onOpenAppManager}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 14px',
-                background: '#0d9488',
-                border: '1px solid #0d9488',
-                borderRadius: 8,
-                cursor: 'pointer',
-                fontSize: 13,
-                fontWeight: 500,
-                color: 'white',
-                transition: 'all 150ms ease',
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.background = '#0f766e')
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = '#0d9488')
-              }
-            >
-              <PlusSquare size={14} />
-              Thêm công cụ mới
-            </button>
-          </div>
-        </div>
-      )}
-
       <main 
         style={{ 
           flex: 1, 
@@ -512,7 +405,7 @@ export default function PortalLayout({
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
-          height: noScroll ? 'calc(100vh - 153px)' : 'auto',
+          height: noScroll ? 'calc(100vh - 109px)' : 'auto',
           overflow: noScroll ? 'hidden' : 'visible'
         }}
       >
