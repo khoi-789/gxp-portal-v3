@@ -1,0 +1,380 @@
+[
+  {
+    "supplier_code": "MEGA_MAXXCARE",
+    "supplier_name": "MEGA",
+    "created_at": "2026-06-26T07:36:30.529111+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "J_J",
+    "supplier_name": "JNJ",
+    "created_at": "2026-06-26T07:36:30.529111+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "ASPIRO",
+    "supplier_name": "ASPIRO",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "Hàng nhập khẩu bởi HETERO",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "DR_REDDY_S",
+    "supplier_name": "DR REDDYS",
+    "created_at": "2026-06-26T07:36:30.529111+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "ABBOTT",
+    "supplier_name": "ABBOTT",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "ALLEVIARE",
+    "supplier_name": "ALLEVIARE",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "ASCENSIA",
+    "supplier_name": "ASCENSIA",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": null,
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "ASTRAZENECA",
+    "supplier_name": "ASTRAZENECA",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "BESIN",
+    "supplier_name": "BESIN",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "BIOTRONIK",
+    "supplier_name": "BIOTRONIK",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "CPC1",
+    "supplier_name": "CPC1",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "DANONE",
+    "supplier_name": "DANONE",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "DAVIPHARM",
+    "supplier_name": "DAVIPHARM",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "DKSH",
+    "supplier_name": "DKSH",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "ELOVI",
+    "supplier_name": "ELOVI",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "GETZ",
+    "supplier_name": "GETZ",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "HAPHARCO",
+    "supplier_name": "HAPHARCO",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "HETERO",
+    "supplier_name": "HETERO",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "HOE",
+    "supplier_name": "HOE",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "HYPHENS",
+    "supplier_name": "HYPHENS",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "IMEXPHARM",
+    "supplier_name": "IMEXPHARM",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "LUYE",
+    "supplier_name": "LUYE",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "MAYOLY",
+    "supplier_name": "MAYOLY",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "NOVARTIS",
+    "supplier_name": "NOVARTIS",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "NUMED",
+    "supplier_name": "NUMED",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "ORIENT",
+    "supplier_name": "ORIENT",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "OTSUKA",
+    "supplier_name": "OTSUKA",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "PARADIGM",
+    "supplier_name": "PARADIGM",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "ROHTO",
+    "supplier_name": "ROHTO",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "RXILIENT",
+    "supplier_name": "RXILIENT",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "SANDOZ",
+    "supplier_name": "SANDOZ",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "SANG",
+    "supplier_name": "SANG",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "SANOFI",
+    "supplier_name": "SANOFI",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "SIV",
+    "supplier_name": "SIV",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "TORRENT",
+    "supplier_name": "TORRENT",
+    "created_at": "2026-06-24T01:10:42.241819+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "UNITED",
+    "supplier_name": "UNITED",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "UPJOHN",
+    "supplier_name": "UPJOHN",
+    "created_at": "2026-06-25T10:08:49.418779+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "VIATRIS",
+    "supplier_name": "VIATRIS",
+    "created_at": "2026-06-25T10:08:49.418779+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "TRUONG_SON",
+    "supplier_name": "TRUONGSON",
+    "created_at": "2026-06-26T07:36:30.529111+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  },
+  {
+    "supplier_code": "VE_PHARMA",
+    "supplier_name": "VEPHARMA",
+    "created_at": "2026-06-26T07:36:30.529111+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "WW",
+    "supplier_name": "WOERWAG",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Nhập Khẩu"
+    ]
+  },
+  {
+    "supplier_code": "YHV",
+    "supplier_name": "YES HEALTH",
+    "created_at": "2026-06-24T01:49:12.93233+00:00",
+    "notes": "",
+    "business_type": [
+      "Trong nước"
+    ]
+  }
+]

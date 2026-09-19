@@ -35,12 +35,12 @@ export default function ImportPage() {
       <div style={{ padding: '0 4px', height: '100%', display: 'flex', flexDirection: 'column' }}>
         {/* Navigation / Header */}
         <div style={{ marginBottom: 8 }}>
-          <Button 
-            type="text" 
-            icon={<ArrowLeft size={14} />} 
+          <Button
+            type="text"
+            icon={<ArrowLeft size={14} />}
             onClick={() => router.push('/')}
-            style={{ 
-              color: '#64748b', 
+            style={{
+              color: '#64748b',
               fontWeight: 600,
               padding: '0 4px',
               height: 28,

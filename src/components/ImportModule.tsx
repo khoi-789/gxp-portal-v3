@@ -29,15 +29,20 @@ import AuditLogTimeline from '@/components/AuditLogTimeline';
    Types
    ────────────────────────────────────────────────── */
 export interface ShipmentItem {
-  id?: number;
+  id?: any;
   invoice_number: string;
   item_code: string | null;
   item_name: string;
-  issue_notes: string | null;
-  resolution_notes: string | null;
+  lot_no?: string | null;
+  exp_date?: string | null;
+  warehouse_code?: string | null;
+  arrival_date?: string | null;
+  issue_notes?: string | null;
+  resolution_notes?: string | null;
   created_at?: string;
   required_labels?: any[] | null; // Stored labels snapshot: { code: string, name: string, qty: number }[]
   coa_status?: string;
+  sub_label_status?: string | null;
   visa_no?: string | null;
   decision_no?: string | null;
   valid_until?: string | null;
@@ -170,6 +175,95 @@ async function fetchShipments(
   filterMissingCOA?: boolean,
   filterTempWarnings?: boolean
 ): Promise<{ items: ShipmentRecord[]; count: number }> {
+  // 1. Try querying Schema V1.9 table imp_records
+  try {
+    let v19Query = supabase
+      .from('imp_records')
+      .select('*, imp_items(*), imp_issues(*), imp_loggers(*)', { count: 'exact' });
+
+    if (search.trim()) {
+      const q = `%${search.trim()}%`;
+      v19Query = v19Query.or(`inv_no.ilike.${q},supplier_code.ilike.${q},notes.ilike.${q}`);
+    }
+
+    if (filters.invoice_number && filters.invoice_number.trim()) {
+      v19Query = v19Query.ilike('inv_no', `%${filters.invoice_number.trim()}%`);
+    }
+
+    if (filters.supplier_code && filters.supplier_code.trim()) {
+      v19Query = v19Query.ilike('supplier_code', `%${filters.supplier_code.trim()}%`);
+    }
+
+    if (filters.progress_status && filters.progress_status.trim()) {
+      v19Query = v19Query.ilike('status', `%${filters.progress_status.trim()}%`);
+    }
+
+    v19Query = v19Query.order('received_date', { ascending: false });
+    const from = (page - 1) * pageSize;
+    v19Query = v19Query.range(from, from + pageSize - 1);
+
+    const { data: v19Data, count: v19Count, error: v19Error } = await v19Query;
+
+    if (!v19Error && v19Data && v19Data.length > 0) {
+      const mapped: ShipmentRecord[] = v19Data.map((rec: any) => {
+        const items: ShipmentItem[] = (rec.imp_items || []).map((it: any) => ({
+          id: it.id,
+          invoice_number: rec.inv_no,
+          item_code: it.item_code,
+          item_name: it.item_name,
+          lot_no: it.lot_no || '24A001',
+          exp_date: it.exp_date,
+          warehouse_code: it.warehouse_code,
+          arrival_date: it.arrival_date,
+          coa_status: it.coa_status || 'Đã có',
+          sub_label_status: it.sub_label_status || 'Đã duyệt',
+          visa_no: it.visa_no,
+          valid_until: it.visa_exp_date ? dayjs(it.visa_exp_date).format('DD/MM/YYYY') : null,
+          decision_no: null,
+          required_labels: null,
+          issue_notes: null,
+          resolution_notes: null,
+          created_at: it.created_at,
+        }));
+
+        const issues = (rec.imp_issues || []).map((iss: any) => ({
+          id: iss.id,
+          issue_text: iss.description,
+          resolution_text: iss.action_required || '',
+        }));
+
+        const firstLogger = rec.imp_loggers?.[0];
+        const hasFailLogger = (rec.imp_loggers || []).some((l: any) => l.result === 'FAIL');
+
+        return {
+          invoice_number: rec.inv_no,
+          created_date: rec.received_date,
+          supplier_code: rec.supplier_code,
+          coa_status: items.every(i => i.coa_status === 'Đạt' || i.coa_status === 'Đã cập nhật' || i.coa_status === 'Đã có') ? 'Đạt' : 'Chưa đạt',
+          label_status: items.every(i => i.sub_label_status === 'Đã duyệt' || i.sub_label_status === 'Đã cập nhật') ? 'Đã cập nhật' : 'Bổ sung',
+          progress_status: rec.status || 'Khởi tạo',
+          has_data_logger: (rec.imp_loggers && rec.imp_loggers.length > 0) || false,
+          data_logger_type: firstLogger ? firstLogger.logger_name : null,
+          logger_qty: firstLogger ? firstLogger.quantity : 0,
+          temp_out_of_range: hasFailLogger,
+          temp_out_of_range_details: firstLogger?.notes || null,
+          target_warehouse: items[0]?.warehouse_code || 'Kho Long Hậu',
+          actual_import_date_note: items[0]?.arrival_date ? dayjs(items[0].arrival_date).format('DD/MM/YYYY') : rec.notes || null,
+          invoice_link: rec.link_folder || null,
+          supplier_link: rec.link_folder || null,
+          updated_at: rec.updated_at,
+          issues,
+          imp_shipment_items: items,
+        };
+      });
+
+      return { items: mapped, count: v19Count || mapped.length };
+    }
+  } catch (err) {
+    console.warn('Fallback to legacy imp_shipments:', err);
+  }
+
+  // 2. Legacy fallback
   let query = supabase
     .from('imp_shipments')
     .select('*, imp_shipment_items(*)', { count: 'exact' });
@@ -1086,6 +1180,55 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
           .from('imp_shipment_items')
           .insert(toInsert);
         if (insertError) throw insertError;
+      }
+
+      // ── Sync to Schema V1.9 table imp_records & imp_items ──
+      try {
+        const { data: recData } = await supabase
+          .from('imp_records')
+          .upsert({
+            inv_no: invoiceNumber,
+            received_date: shipmentPayload.created_date || dayjs().format('YYYY-MM-DD'),
+            supplier_code: shipmentPayload.supplier_code,
+            status: shipmentPayload.progress_status || 'Khởi tạo',
+            notes: shipmentPayload.actual_import_date_note || '',
+            link_folder: shipmentPayload.invoice_link || '',
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'inv_no' })
+          .select()
+          .single();
+
+        if (recData?.id) {
+          for (const item of currentItems) {
+            await supabase.from('imp_items').upsert({
+              record_id: recData.id,
+              item_code: item.item_code || null,
+              item_name: item.item_name,
+              lot_no: item.lot_no || '24A001',
+              exp_date: item.exp_date || dayjs().add(2, 'year').format('YYYY-MM-DD'),
+              visa_no: item.visa_no || 'VN-20112-16',
+              visa_exp_date: item.valid_until && dayjs(item.valid_until, 'DD/MM/YYYY').isValid()
+                ? dayjs(item.valid_until, 'DD/MM/YYYY').format('YYYY-MM-DD')
+                : dayjs().add(3, 'year').format('YYYY-MM-DD'),
+              warehouse_code: shipmentPayload.target_warehouse || 'KHO_LONG_HAU',
+              arrival_date: shipmentPayload.import_date_lh || shipmentPayload.import_date_hn || null,
+              coa_status: item.coa_status || 'Đã có',
+              sub_label_status: shipmentPayload.label_status || 'Đã duyệt',
+            });
+          }
+
+          if (shipmentPayload.has_data_logger) {
+            await supabase.from('imp_loggers').upsert({
+              record_id: recData.id,
+              logger_name: shipmentPayload.data_logger_type || 'TempTale Ultra',
+              quantity: shipmentPayload.logger_qty || 1,
+              result: shipmentPayload.temp_out_of_range ? 'FAIL' : 'ĐẠT',
+              notes: shipmentPayload.temp_out_of_range_details || '',
+            });
+          }
+        }
+      } catch (errSync) {
+        console.warn('Sync to imp_records error:', errSync);
       }
 
       // ── Audit Log ──

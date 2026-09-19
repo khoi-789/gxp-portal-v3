@@ -1,0 +1,154 @@
+[
+  {
+    "id": 1950,
+    "invoice_number": "9013544381",
+    "item_code": "RD1200021",
+    "item_name": "ZANTOLRED (HOP/112VIEN)",
+    "issue_notes": "HDSD khác AW",
+    "resolution_notes": null,
+    "created_at": "2026-06-29T06:27:21.453111+00:00",
+    "required_labels": [
+      {
+        "qty": 1,
+        "code": "TT1300023",
+        "name": "NHAN DNNK (SIZE 1x2.5)"
+      },
+      {
+        "qty": 1,
+        "code": "HDSD",
+        "name": "HDSD"
+      }
+    ],
+    "coa_status": "Đã cập nhật",
+    "visa_no": "471110193423",
+    "decision_no": "489/QĐ-QLD",
+    "valid_until": "14/07/2026"
+  },
+  {
+    "id": 1957,
+    "invoice_number": "9013545661",
+    "item_code": "RD4200002",
+    "item_name": "REDDITUX 100MG (H/1LO X 10ML)",
+    "issue_notes": null,
+    "resolution_notes": null,
+    "created_at": "2026-07-06T03:28:16.532218+00:00",
+    "required_labels": [
+      {
+        "qty": 1,
+        "code": "TT1300615",
+        "name": "NHAN DNNK KEM HAN DUNG TIENG ANH"
+      }
+    ],
+    "coa_status": "Đã cập nhật",
+    "visa_no": "QLSP-861-15",
+    "decision_no": "317/QĐ-QLD",
+    "valid_until": "17/06/2027"
+  },
+  {
+    "id": 1955,
+    "invoice_number": "9116019018-9116202111",
+    "item_code": "TR1100009",
+    "item_name": "TOROLAN 10 (HOP/ 30 VIEN)",
+    "issue_notes": null,
+    "resolution_notes": null,
+    "created_at": "2026-07-01T08:56:26.634176+00:00",
+    "required_labels": null,
+    "coa_status": "Đã cập nhật",
+    "visa_no": "890110192523",
+    "decision_no": "489/QĐ-QLD",
+    "valid_until": "14/07/2028"
+  },
+  {
+    "id": 1951,
+    "invoice_number": "9013544381",
+    "item_code": "RD1100011",
+    "item_name": "RIVAXORED 10MG (HOP/1VI X 10VIEN)",
+    "issue_notes": null,
+    "resolution_notes": null,
+    "created_at": "2026-07-01T04:51:48.545827+00:00",
+    "required_labels": null,
+    "coa_status": "Đã cập nhật",
+    "visa_no": null,
+    "decision_no": null,
+    "valid_until": "02/06/2027"
+  },
+  {
+    "id": 1958,
+    "invoice_number": "9133000144",
+    "item_code": "TR1100041",
+    "item_name": "TORMIPEX 0.25 (HOP/10 VI X 10 VIEN)",
+    "issue_notes": null,
+    "resolution_notes": null,
+    "created_at": "2026-07-06T06:58:20.558039+00:00",
+    "required_labels": [
+      {
+        "qty": 1,
+        "code": "TT1300023",
+        "name": "NHAN DNNK (SIZE 1x2.5)"
+      }
+    ],
+    "coa_status": "Đã cập nhật",
+    "visa_no": null,
+    "decision_no": null,
+    "valid_until": null
+  },
+  {
+    "id": 1952,
+    "invoice_number": "9013544381",
+    "item_code": null,
+    "item_name": "Vetreldyl",
+    "issue_notes": null,
+    "resolution_notes": null,
+    "created_at": "2026-07-01T06:20:52.811027+00:00",
+    "required_labels": [
+      {
+        "qty": 1,
+        "code": "TT1300023",
+        "name": "NHAN DNNK (SIZE 1x2.5)"
+      },
+      {
+        "qty": 1,
+        "code": "HD cuối tháng",
+        "name": "HD cuối tháng"
+      }
+    ],
+    "coa_status": "Đang sai sót",
+    "visa_no": null,
+    "decision_no": null,
+    "valid_until": null
+  },
+  {
+    "id": 1942,
+    "invoice_number": "GJ0600000207",
+    "item_code": "TR1100003",
+    "item_name": "RESPIDON-2 (HOP/3 VI X 10 VIEN)",
+    "issue_notes": null,
+    "resolution_notes": null,
+    "created_at": "2026-06-25T09:22:45.999503+00:00",
+    "required_labels": [
+      {
+        "qty": 1,
+        "code": "TT1300023",
+        "name": "NHAN DNNK (SIZE 1x2.5)"
+      }
+    ],
+    "coa_status": "Đã cập nhật",
+    "visa_no": "VN-22935-21",
+    "decision_no": "526/QÐ-QLD",
+    "valid_until": "10/09/2026"
+  },
+  {
+    "id": 1949,
+    "invoice_number": "SIVIC0060032;33;34",
+    "item_code": null,
+    "item_name": "TANAKAN , SMECTAGO, FORTRANS, DIOSMECTITE",
+    "issue_notes": "Diosmectite phải về với số ĐK 12 số \nSMECTAGO, DIOSMECTITE lần đầu NK về kho",
+    "resolution_notes": null,
+    "created_at": "2026-06-25T09:22:45.999503+00:00",
+    "required_labels": null,
+    "coa_status": "Đang sai sót",
+    "visa_no": null,
+    "decision_no": null,
+    "valid_until": null
+  }
+]

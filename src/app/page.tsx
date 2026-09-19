@@ -11,12 +11,13 @@ import UserGuide from '@/components/UserGuide';
 import RbacManager from '@/components/RbacManager';
 import { MOCK_CURRENT_USER, MOCK_STAFF_USER, MOCK_VIEWER_USER } from '@/lib/mockData';
 import { User } from '@/lib/types';
-import { LayoutGrid, Package, Link2, Truck, Database, HelpCircle, Key } from 'lucide-react';
+import ImportModule from '@/components/ImportModule';
+import MasterSystemManager from '@/components/admin/MasterSystemManager';
+import { LayoutGrid, Package, Link2, Truck, Database, HelpCircle, Shield, FileText } from 'lucide-react';
 
 /**
  * Trang chủ GxP Portal
- * - Tabs: Dashboard (AppDashboard) + Master Data (Consolidated admin managers)
- * - PILOT: user switcher để demo RBAC
+ * - Tabs: Dashboard + IMP (Nhập khẩu) + Master Data + Admin Suite (RBAC Matrix 2 Tầng) + Hướng dẫn
  */
 export default function HomePage() {
   const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'viewer'>('admin');
@@ -45,8 +46,8 @@ export default function HomePage() {
     selectedRole === 'admin'
       ? MOCK_CURRENT_USER
       : selectedRole === 'staff'
-      ? MOCK_STAFF_USER
-      : MOCK_VIEWER_USER;
+        ? MOCK_STAFF_USER
+        : MOCK_VIEWER_USER;
 
   const isAllowedMasterData = currentUser.system_role === 'admin' || currentUser.system_role === 'viewer';
 
@@ -81,42 +82,80 @@ export default function HomePage() {
       ),
       children: <ProductLabelManager userId={currentUser.id} userRole={currentUser.system_role} />,
     },
+    {
+      key: 'system-master',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+          <Database size={14} />
+          Master Data Hệ thống (Mới)
+        </span>
+      ),
+      children: <MasterSystemManager />,
+    },
   ];
 
   const tabItems = [
     {
       key: 'dashboard',
       label: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
           <LayoutGrid size={15} />
           Dashboard
         </span>
       ),
       children: <AppDashboard currentUser={currentUser} />,
     },
+    {
+      key: 'imp',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: '#0d9488' }}>
+          <FileText size={15} />
+          IMP (Nhập khẩu / Invoice)
+        </span>
+      ),
+      children: (
+        <div style={{ padding: '8px 0 16px' }}>
+          <ImportModule userId={currentUser.id} userRole={currentUser.system_role} />
+        </div>
+      ),
+    },
     // Master Data hiện với Admin & Viewer
     ...(isAllowedMasterData
       ? [
-          {
-            key: 'master-data',
-            label: (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-                <Database size={15} />
-                Master Data
-              </span>
-            ),
-            children: (
-              <div style={{ padding: '4px 0 12px' }}>
-                <Tabs
-                  defaultActiveKey="master-items"
-                  items={masterDataSubItems}
-                  type="card"
-                  size="middle"
-                />
-              </div>
-            ),
-          },
-        ]
+        {
+          key: 'master-data',
+          label: (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
+              <Database size={15} />
+              Master Data (Cũ & Mới)
+            </span>
+          ),
+          children: (
+            <div style={{ padding: '4px 0 12px' }}>
+              <Tabs
+                defaultActiveKey="master-items"
+                items={masterDataSubItems}
+                type="card"
+                size="middle"
+              />
+            </div>
+          ),
+        },
+      ]
+      : []),
+    ...(currentUser.system_role === 'admin'
+      ? [
+        {
+          key: 'rbac',
+          label: (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#0f766e' }}>
+              <Shield size={15} />
+              Quản trị Admin (Admin Suite)
+            </span>
+          ),
+          children: <RbacManager onDirtyChange={setIsRbacDirty} />,
+        },
+      ]
       : []),
     {
       key: 'user-guide',
@@ -128,20 +167,6 @@ export default function HomePage() {
       ),
       children: <UserGuide />,
     },
-    ...(currentUser.system_role === 'admin'
-      ? [
-          {
-            key: 'rbac',
-            label: (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-                <Key size={15} />
-                Phân quyền
-              </span>
-            ),
-            children: <RbacManager onDirtyChange={setIsRbacDirty} />,
-          },
-        ]
-      : []),
   ];
 
   const handleTabChange = (key: string) => {

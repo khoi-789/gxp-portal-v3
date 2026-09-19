@@ -1,0 +1,1073 @@
+[
+  {
+    "id": 1881,
+    "product_item_code": "AV1100002",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1882,
+    "product_item_code": "AV1100003",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1883,
+    "product_item_code": "AV1100005",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1884,
+    "product_item_code": "AV1100014",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1885,
+    "product_item_code": "AV1300004",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1886,
+    "product_item_code": "AV1300006",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1887,
+    "product_item_code": "AV1300007",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1888,
+    "product_item_code": "AV1300011",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1889,
+    "product_item_code": "AV1300012",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1890,
+    "product_item_code": "AV1300013",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1891,
+    "product_item_code": "AV1300018",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1892,
+    "product_item_code": "AV1300010",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1893,
+    "product_item_code": "AV1300026",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1894,
+    "product_item_code": "AV1300027",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1895,
+    "product_item_code": "AV1300005",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1896,
+    "product_item_code": "AV1100019",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1897,
+    "product_item_code": "AV1100015",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1898,
+    "product_item_code": "AV1100021",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1899,
+    "product_item_code": "AV1100022",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1900,
+    "product_item_code": "AV1100012",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1901,
+    "product_item_code": "RD1100004",
+    "label_item_code": "TT1300020",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1902,
+    "product_item_code": "RD1200005",
+    "label_item_code": "TT1300109",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1903,
+    "product_item_code": "RD1200009",
+    "label_item_code": "TT1300018",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1904,
+    "product_item_code": "RD1200010",
+    "label_item_code": "TT1300053",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1905,
+    "product_item_code": "RD1200013",
+    "label_item_code": "TT1300169",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1906,
+    "product_item_code": "RD1200015",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1907,
+    "product_item_code": "RD1200016",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1908,
+    "product_item_code": "RD1200014",
+    "label_item_code": "TT1300187",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1909,
+    "product_item_code": "RD1200012",
+    "label_item_code": "TT1300119",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1910,
+    "product_item_code": "RD1100010",
+    "label_item_code": "TT1300110",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1911,
+    "product_item_code": "RD1200021",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1912,
+    "product_item_code": "GZ7300001",
+    "label_item_code": "BA1300093",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1913,
+    "product_item_code": "GZ7300002",
+    "label_item_code": "BA1300094",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1914,
+    "product_item_code": "HT1100002",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1915,
+    "product_item_code": "HT1100008",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1916,
+    "product_item_code": "HT1100009",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1917,
+    "product_item_code": "HT1100012",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1918,
+    "product_item_code": "HT1100013",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1919,
+    "product_item_code": "HT1100003",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1920,
+    "product_item_code": "HT1100010",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1921,
+    "product_item_code": "HT1100019",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 6,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1922,
+    "product_item_code": "HT1100005",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1923,
+    "product_item_code": "HT1100027",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1924,
+    "product_item_code": "HT1100020",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1925,
+    "product_item_code": "HT1200001",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1926,
+    "product_item_code": "HT1100029",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1927,
+    "product_item_code": "HT1100018",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1928,
+    "product_item_code": "HT1100007",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1929,
+    "product_item_code": "HT1100023",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1930,
+    "product_item_code": "HT1100026",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1931,
+    "product_item_code": "HT1100028",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1932,
+    "product_item_code": "HT1100025",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1933,
+    "product_item_code": "HT1100024",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1934,
+    "product_item_code": "HT1200002",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1935,
+    "product_item_code": "HT1100031",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1936,
+    "product_item_code": "HT1100030",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1937,
+    "product_item_code": "HT1100033",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1938,
+    "product_item_code": "HT1100001",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1939,
+    "product_item_code": "HT1100004",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1940,
+    "product_item_code": "HT1100016",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1941,
+    "product_item_code": "HT1100017",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1942,
+    "product_item_code": "HT1100011",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1943,
+    "product_item_code": "HT1100038",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1944,
+    "product_item_code": "HT1100037",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1945,
+    "product_item_code": "HT1100021",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1946,
+    "product_item_code": "HT1100036",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1947,
+    "product_item_code": "HT1200004",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1948,
+    "product_item_code": "HT1100032",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1949,
+    "product_item_code": "HO1300027",
+    "label_item_code": "TT1300136",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1950,
+    "product_item_code": "HO1300041",
+    "label_item_code": "TT1300029",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1951,
+    "product_item_code": "HO1300010",
+    "label_item_code": "TT1300035",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1952,
+    "product_item_code": "HO1300016",
+    "label_item_code": "TT1300032",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1953,
+    "product_item_code": "HO1300042",
+    "label_item_code": "TT1300029",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1954,
+    "product_item_code": "HO1300047",
+    "label_item_code": "TT1300013",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1955,
+    "product_item_code": "HY1200001",
+    "label_item_code": "TT1300005",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1956,
+    "product_item_code": "HY1200002",
+    "label_item_code": "TT1300028",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1957,
+    "product_item_code": "HY1200006",
+    "label_item_code": "TT1300002",
+    "quantity_per_unit": 0.04,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1958,
+    "product_item_code": "HY1200007",
+    "label_item_code": "TT1300120",
+    "quantity_per_unit": 0.1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1959,
+    "product_item_code": "HY1200008",
+    "label_item_code": "TT1300003",
+    "quantity_per_unit": 0.1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1960,
+    "product_item_code": "HY1300030",
+    "label_item_code": "TT1300062",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1961,
+    "product_item_code": "HY1300066",
+    "label_item_code": "TT1300061",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1962,
+    "product_item_code": "HY1300067",
+    "label_item_code": "TT1300061",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1963,
+    "product_item_code": "HY7300004",
+    "label_item_code": "TT1300084",
+    "quantity_per_unit": 0.1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1964,
+    "product_item_code": "HY7300012",
+    "label_item_code": "TT1300040",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1965,
+    "product_item_code": "HY7300015",
+    "label_item_code": "TT1300192",
+    "quantity_per_unit": 0.1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1966,
+    "product_item_code": "HY7300028",
+    "label_item_code": "TT1300192",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1967,
+    "product_item_code": "HY7300041",
+    "label_item_code": "TT1300064",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1968,
+    "product_item_code": "HY7300045",
+    "label_item_code": "TT1300087",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1969,
+    "product_item_code": "HY7300047",
+    "label_item_code": "TT1300108",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1970,
+    "product_item_code": "HY7300049",
+    "label_item_code": "TT1300158",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1971,
+    "product_item_code": "HY7300008",
+    "label_item_code": "TT1300038",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1972,
+    "product_item_code": "HY7300010",
+    "label_item_code": "TT1300039",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1973,
+    "product_item_code": "HY7300021",
+    "label_item_code": "TT1300043",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1974,
+    "product_item_code": "HY7300048",
+    "label_item_code": "TT1300145",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1975,
+    "product_item_code": "HY1300022",
+    "label_item_code": "TT1300004",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1976,
+    "product_item_code": "HY7300059",
+    "label_item_code": "TT1300108",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1977,
+    "product_item_code": "HY7300044",
+    "label_item_code": "TT1300042",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1978,
+    "product_item_code": "HY7300013",
+    "label_item_code": "TT1300129",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1979,
+    "product_item_code": "HY1100002",
+    "label_item_code": "TT1300007",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1980,
+    "product_item_code": "HY1100008",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1981,
+    "product_item_code": "HY1200004",
+    "label_item_code": "TT1300001",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1982,
+    "product_item_code": "HY7300040",
+    "label_item_code": "TT1300064",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1983,
+    "product_item_code": "HY7300007",
+    "label_item_code": "TT1300085",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1984,
+    "product_item_code": "HY7300058",
+    "label_item_code": "TT1300060",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1985,
+    "product_item_code": "HY7300060",
+    "label_item_code": "TT1300060",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1986,
+    "product_item_code": "HY7300016",
+    "label_item_code": "TT1300086",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1987,
+    "product_item_code": "HY1100015",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1988,
+    "product_item_code": "LU1100003",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1989,
+    "product_item_code": "LU1100001",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1990,
+    "product_item_code": "LU1100002",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1991,
+    "product_item_code": "TR1100011",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1992,
+    "product_item_code": "TR1100013",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1993,
+    "product_item_code": "TR1100022",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1994,
+    "product_item_code": "TR1100032",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1995,
+    "product_item_code": "TR1100033",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1996,
+    "product_item_code": "TR1100036",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1997,
+    "product_item_code": "TR1100037",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1998,
+    "product_item_code": "TR1100029",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 1999,
+    "product_item_code": "TR1100021",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2000,
+    "product_item_code": "TR1100023",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2001,
+    "product_item_code": "TR1100018",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2002,
+    "product_item_code": "TR1100020",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2003,
+    "product_item_code": "TR1100025",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2004,
+    "product_item_code": "TR1100027",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2005,
+    "product_item_code": "TR1100028",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2006,
+    "product_item_code": "TR1100006",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2007,
+    "product_item_code": "TR1100019",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2008,
+    "product_item_code": "TR1100012",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2009,
+    "product_item_code": "TR1100031",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2010,
+    "product_item_code": "TR1100038",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2011,
+    "product_item_code": "HT1200006",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2012,
+    "product_item_code": "HY7300079",
+    "label_item_code": "TT1300062",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2013,
+    "product_item_code": "HY7300080",
+    "label_item_code": "TT1300062",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2014,
+    "product_item_code": "HT1100045",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2015,
+    "product_item_code": "HT1100044",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2016,
+    "product_item_code": "TR1100040",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2017,
+    "product_item_code": "RD1100029",
+    "label_item_code": "TT1300022",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2018,
+    "product_item_code": "TR1100041",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2019,
+    "product_item_code": "HT1100053",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2020,
+    "product_item_code": "HY4200001",
+    "label_item_code": "TT1300005",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2021,
+    "product_item_code": "HT1200005",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2022,
+    "product_item_code": "HT1100047",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2023,
+    "product_item_code": "HT1100046",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2024,
+    "product_item_code": "HT1100040",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2025,
+    "product_item_code": "RD5100001",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2026,
+    "product_item_code": "RD5100002",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2027,
+    "product_item_code": "RD5100003",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2028,
+    "product_item_code": "HT1100050",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2029,
+    "product_item_code": "TR1100003",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2030,
+    "product_item_code": "TR1100042",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2031,
+    "product_item_code": "TR1100043",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2032,
+    "product_item_code": "HT1200003",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  },
+  {
+    "id": 2033,
+    "product_item_code": "HT1100057",
+    "label_item_code": "TT1300023",
+    "quantity_per_unit": 1,
+    "created_at": "2026-06-29T10:03:09.977565+00:00"
+  }
+]

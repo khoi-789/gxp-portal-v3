@@ -31,3 +31,6 @@ yarn-error.log*
 # TypeScript cache
 *.tsbuildinfo
 next-env.d.ts
+
+# scratch scripts
+/scratch/
