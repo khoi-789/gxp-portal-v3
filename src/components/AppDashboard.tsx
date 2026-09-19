@@ -65,6 +65,10 @@ export default function AppDashboard({ currentUser }: AppDashboardProps) {
   // §4.2: RBAC Filtering
   // Admin thấy tất cả; staff chỉ thấy app có department_code trong allowed_depts
   const visibleApps = allApps.filter((app) => {
+    // Chỉ hiển thị duy nhất module IMP (Nhập khẩu) theo yêu cầu
+    const isImp = app.target_url === '/apps/import' || app.app_name.includes('IMP');
+    if (!isImp) return false;
+
     // Chỉ hiện root-level apps (parent_id === null)
     if (app.parent_id !== null) return false;
 

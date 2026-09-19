@@ -20,10 +20,12 @@ export default function ImportPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('pilot_selected_role');
-      if (stored === 'staff') {
-        setCurrentUser(MOCK_STAFF_USER);
-      } else if (stored === 'viewer') {
+      if (stored === 'Viewer' || stored === 'viewer') {
         setCurrentUser(MOCK_VIEWER_USER);
+      } else if (stored === 'PIC-1' || stored === 'staff') {
+        setCurrentUser({ ...MOCK_STAFF_USER, full_name: 'Trị (PIC-1)', system_role: 'staff' });
+      } else if (stored === 'PIC-2') {
+        setCurrentUser({ ...MOCK_STAFF_USER, id: 'user-pic2', full_name: 'Trị (PIC-2)', department_code: 'KHO', system_role: 'staff' });
       } else {
         setCurrentUser(MOCK_CURRENT_USER);
       }

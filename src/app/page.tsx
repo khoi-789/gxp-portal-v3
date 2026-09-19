@@ -212,7 +212,7 @@ export default function HomePage() {
           label: (
             <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#0f766e' }}>
               <Shield size={15} />
-              Quản trị Admin (Admin Suite)
+              Quản trị Admin
             </span>
           ),
           children: <RbacManager onDirtyChange={setIsRbacDirty} />,

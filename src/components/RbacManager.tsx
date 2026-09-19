@@ -131,23 +131,67 @@ export default function RbacManager({ onDirtyChange }: RbacManagerProps) {
       key: role,
       render: (_: any, r: any) => {
         const val = masterPerms[role]?.[r.key] || 'none';
+        const isNone = val === 'none';
+        const isView = val === 'view';
+        const isEdit = val === 'edit';
+
         return (
-          <Radio.Group
-            value={val}
-            size="small"
-            onChange={(e) => handleMasterPermChange(role, r.key, e.target.value)}
-            buttonStyle="solid"
-          >
-            <Radio.Button value="none">
-              <span style={{ color: '#94a3b8' }}>None</span>
-            </Radio.Button>
-            <Radio.Button value="view">
-              <span style={{ color: '#3b82f6', fontWeight: 600 }}>View</span>
-            </Radio.Button>
-            <Radio.Button value="edit">
-              <span style={{ color: '#0d9488', fontWeight: 700 }}>Edit</span>
-            </Radio.Button>
-          </Radio.Group>
+          <div style={{ display: 'inline-flex', background: '#f1f5f9', padding: 2, borderRadius: 8, border: '1px solid #e2e8f0', gap: 2 }}>
+            <button
+              type="button"
+              onClick={() => handleMasterPermChange(role, r.key, 'none')}
+              style={{
+                border: 'none',
+                cursor: 'pointer',
+                padding: '3px 9px',
+                borderRadius: 6,
+                fontSize: 11,
+                fontWeight: isNone ? 700 : 500,
+                background: isNone ? '#64748b' : 'transparent',
+                color: isNone ? '#ffffff' : '#94a3b8',
+                boxShadow: isNone ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              None
+            </button>
+            <button
+              type="button"
+              onClick={() => handleMasterPermChange(role, r.key, 'view')}
+              style={{
+                border: 'none',
+                cursor: 'pointer',
+                padding: '3px 9px',
+                borderRadius: 6,
+                fontSize: 11,
+                fontWeight: isView ? 700 : 600,
+                background: isView ? '#2563eb' : 'transparent',
+                color: isView ? '#ffffff' : '#2563eb',
+                boxShadow: isView ? '0 1px 3px rgba(37,99,235,0.25)' : 'none',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              View
+            </button>
+            <button
+              type="button"
+              onClick={() => handleMasterPermChange(role, r.key, 'edit')}
+              style={{
+                border: 'none',
+                cursor: 'pointer',
+                padding: '3px 9px',
+                borderRadius: 6,
+                fontSize: 11,
+                fontWeight: isEdit ? 700 : 600,
+                background: isEdit ? '#0d9488' : 'transparent',
+                color: isEdit ? '#ffffff' : '#0d9488',
+                boxShadow: isEdit ? '0 1px 3px rgba(13,148,136,0.25)' : 'none',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              Edit
+            </button>
+          </div>
         );
       },
     })),
@@ -157,9 +201,9 @@ export default function RbacManager({ onDirtyChange }: RbacManagerProps) {
     {
       key: 'matrix',
       label: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 600, fontSize: 14 }}>
-          <Sliders size={16} />
-          Ma trận Phân quyền 2 Tầng (2-Tier RBAC)
+        <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 600, fontSize: 13 }}>
+          <Sliders size={15} />
+          Phân quyền 2 Tầng
         </span>
       ),
       children: <RbacMatrixManager onDirtyChange={onDirtyChange} />,
@@ -167,9 +211,9 @@ export default function RbacManager({ onDirtyChange }: RbacManagerProps) {
     {
       key: 'users',
       label: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 600, fontSize: 14 }}>
-          <Users size={16} />
-          Nhân sự & Vai trò Module
+        <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 600, fontSize: 13 }}>
+          <Users size={15} />
+          Nhân sự & Vai trò
         </span>
       ),
       children: <UserRoleManager />,
@@ -177,9 +221,9 @@ export default function RbacManager({ onDirtyChange }: RbacManagerProps) {
     {
       key: 'master-perms',
       label: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 600, fontSize: 14 }}>
-          <ShieldAlert size={16} />
-          Phân quyền Master Data
+        <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 600, fontSize: 13 }}>
+          <ShieldAlert size={15} />
+          Quyền Master Data
         </span>
       ),
       children: (
@@ -231,9 +275,9 @@ export default function RbacManager({ onDirtyChange }: RbacManagerProps) {
     {
       key: 'system-master',
       label: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 600, fontSize: 14 }}>
-          <Database size={16} />
-          Master Data Hệ thống Mới
+        <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 600, fontSize: 13 }}>
+          <Database size={15} />
+          Master Data Hệ thống
         </span>
       ),
       children: <MasterSystemManager />,

@@ -86,29 +86,34 @@ const LABEL_STATUS_OPTIONS = [
 
 const PROGRESS_STATUS_OPTIONS = [
   { value: 'Khởi tạo', label: 'Khởi tạo' },
-  { value: 'Đang xử lý', label: 'Đang xử lý' },
+  { value: 'Chờ xử lý', label: 'Chờ xử lý' },
   { value: 'Hoàn tất', label: 'Hoàn tất' },
+  { value: 'Hủy', label: 'Hủy' },
 ];
 
 const PROGRESS_LABEL: Record<string, string> = {
   'Khởi tạo': 'Khởi tạo',
-  'Đang xử lý': 'Đang xử lý',
+  'Chờ xử lý': 'Chờ xử lý',
   'Hoàn tất': 'Hoàn tất',
+  'Hủy': 'Hủy',
   // legacy fallbacks
+  'Đang xử lý': 'Chờ xử lý',
   Created: 'Khởi tạo',
-  Checking: 'Đang xử lý',
-  'Pending Inbound': 'Đang xử lý',
-  Issue: 'Đang xử lý',
+  Checking: 'Chờ xử lý',
+  'Pending Inbound': 'Chờ xử lý',
+  Issue: 'Chờ xử lý',
   Closed: 'Hoàn tất',
 };
 
 const PROGRESS_COLOR: Record<string, string> = {
-  'Khởi tạo': 'default',
-  'Đang xử lý': 'processing',
+  'Khởi tạo': 'blue',
+  'Chờ xử lý': 'orange',
   'Hoàn tất': 'success',
+  'Hủy': 'default',
   // legacy fallbacks
-  Created: 'default',
-  Checking: 'processing',
+  'Đang xử lý': 'orange',
+  Created: 'blue',
+  Checking: 'orange',
   'Pending Inbound': 'warning',
   Issue: 'error',
   Closed: 'success',
@@ -511,10 +516,45 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
   const [filterMissingCOA, setFilterMissingCOA] = useState(false);
   const [filterTempWarnings, setFilterTempWarnings] = useState(false);
 
-  // Simulated Persona
-  const [simulatedRole, setSimulatedRole] = useState<'QA_NHAP_KHAU' | 'QA_KHO'>('QA_NHAP_KHAU');
-  const isViewer = userRole === 'viewer';
-  const effectiveRole = isViewer ? 'NONE' : simulatedRole;
+  // Pilot Role: 'Viewer' | 'PIC-1' | 'PIC-2' | 'Admin'
+  const [simulatedRole, setSimulatedRole] = useState<'Viewer' | 'PIC-1' | 'PIC-2' | 'Admin'>('PIC-1');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('pilot_selected_role');
+      if (stored === 'Viewer' || stored === 'PIC-1' || stored === 'PIC-2' || stored === 'Admin') {
+        setSimulatedRole(stored as any);
+      } else if (stored === 'staff') {
+        setSimulatedRole('PIC-1');
+      } else if (stored === 'admin') {
+        setSimulatedRole('Admin');
+      } else if (stored === 'viewer') {
+        setSimulatedRole('Viewer');
+      }
+    }
+  }, []);
+
+  const handleRoleChange = (newRole: 'Viewer' | 'PIC-1' | 'PIC-2' | 'Admin') => {
+    setSimulatedRole(newRole);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pilot_selected_role', newRole);
+    }
+  };
+
+  const isViewer = simulatedRole === 'Viewer' || userRole === 'viewer';
+  const isPic1 = simulatedRole === 'PIC-1';
+  const isPic2 = simulatedRole === 'PIC-2';
+  const isAdmin = simulatedRole === 'Admin';
+
+  // Quyền phân chia theo chuẩn URS:
+  // - canEditGeneral: PIC-1 và Admin có thể sửa thông tin chung, mã SP, visa, COA, thêm/xóa dòng hàng
+  // - canEditWarehouse: PIC-1, PIC-2 và Admin có thể sửa kho, ngày hàng về, kiểm tra logger và tình trạng nhãn
+  // - canDelete: Chỉ Admin mới có quyền xóa chuyến hàng
+  // - canCreate: PIC-1 và Admin có quyền tạo Invoice mới
+  const canEditGeneral = (isPic1 || isAdmin) && !isViewer;
+  const canEditWarehouse = (isPic1 || isPic2 || isAdmin) && !isViewer;
+  const canDelete = isAdmin && !isViewer;
+  const canCreate = (isPic1 || isAdmin) && !isViewer;
 
   // Master product data for select list (load all for dropdowns)
   const { data: masterItemsRaw = [] } = useMasterItems();
@@ -1233,7 +1273,7 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
 
       // ── Audit Log ──
       const changedBy = userId || 'unknown';
-      const userRole = simulatedRole === 'QA_NHAP_KHAU' ? 'QA Nhập khẩu' : 'QA Kho';
+      const userRole = simulatedRole;
 
       // 1. Log thay đổi của header shipment
       //    Chỉ so sánh các trường CÓ trong shipmentPayload để tránh log thừa
@@ -1580,7 +1620,7 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
               onClick={() => handleOpenDetail(r)}
             />
           </Tooltip>
-          {effectiveRole === 'QA_NHAP_KHAU' && (
+          {canDelete && (
             <Tooltip title="Xóa">
               <Popconfirm
                 title="Xóa Invoice"
@@ -1705,7 +1745,7 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          {/* Simulated Persona Selector */}
+          {/* Pilot Role Selector */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -1716,23 +1756,19 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
             border: '1px solid #e2e8f0'
           }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Info size={13} color="#0d9488" /> {isViewer ? "Vai trò hiện tại:" : "Vai trò giả lập:"}
+              <Info size={13} color="#0d9488" /> Vai trò:
             </span>
-            {isViewer ? (
-              <Tag color="purple" style={{ margin: 0, fontWeight: 600, padding: '2px 8px', borderRadius: 6 }}>
-                Viewer (Chỉ xem)
-              </Tag>
-            ) : (
-              <Segmented
-                options={[
-                  { label: 'QA Nhập khẩu', value: 'QA_NHAP_KHAU' },
-                  { label: 'QA Kho', value: 'QA_KHO' }
-                ]}
-                value={simulatedRole}
-                onChange={(val) => setSimulatedRole(val as any)}
-                style={{ background: '#e2e8f0', borderRadius: 8 }}
-              />
-            )}
+            <Segmented
+              options={[
+                { label: <span style={{ fontWeight: 600, fontSize: 12 }}>Viewer</span>, value: 'Viewer' },
+                { label: <span style={{ fontWeight: 700, fontSize: 12, color: simulatedRole === 'PIC-1' ? '#0d9488' : undefined }}>PIC-1</span>, value: 'PIC-1' },
+                { label: <span style={{ fontWeight: 700, fontSize: 12, color: simulatedRole === 'PIC-2' ? '#7c3aed' : undefined }}>PIC-2</span>, value: 'PIC-2' },
+                { label: <span style={{ fontWeight: 700, fontSize: 12, color: simulatedRole === 'Admin' ? '#e11d48' : undefined }}>Admin</span>, value: 'Admin' },
+              ]}
+              value={simulatedRole}
+              onChange={(val) => handleRoleChange(val as any)}
+              style={{ background: '#e2e8f0', borderRadius: 8 }}
+            />
           </div>
 
           {/* Actions */}
@@ -1745,12 +1781,12 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
             >
               Làm mới
             </Button>
-            {effectiveRole === 'QA_NHAP_KHAU' && (
+            {canCreate && (
               <Button
                 type="primary"
                 icon={<Plus size={14} />}
                 onClick={handleCreateNew}
-                style={{ background: '#0d9488', borderColor: '#0d9488', borderRadius: 8 }}
+                style={{ background: '#0d9488', borderColor: '#0d9488', borderRadius: 8, fontWeight: 600 }}
               >
                 Tạo Invoice
               </Button>
@@ -1986,10 +2022,10 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
             </span>
             <div>
               <div style={{ fontSize: 15, fontWeight: 800, color: '#0f766e', lineHeight: 1.2 }}>
-                {isNew ? 'Khởi tạo Lô hàng Nhập khẩu' : 'Chi tiết Lô hàng Nhập khẩu'}
+                {isNew ? 'Khởi tạo Lô hàng Nhập khẩu' : `Chi tiết Lô hàng: ${detailRow?.invoice_number || ''}`}
               </div>
               <div style={{ fontSize: 11, color: '#64748b', fontWeight: 500 }}>
-                Đang sửa với vai trò: <strong style={{ color: '#0d9488' }}>{simulatedRole === 'QA_NHAP_KHAU' ? 'QA Nhập khẩu' : 'QA Kho'}</strong>
+                Đang thao tác với vai trò: <strong style={{ color: simulatedRole === 'Admin' ? '#e11d48' : simulatedRole === 'PIC-1' ? '#0d9488' : simulatedRole === 'PIC-2' ? '#7c3aed' : '#64748b' }}>{simulatedRole}</strong>
               </div>
             </div>
           </div>
@@ -2006,7 +2042,7 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
               type="primary"
               onClick={handleSave}
               loading={saving}
-              disabled={isViewer || (effectiveClosed && effectiveRole !== 'QA_NHAP_KHAU')}
+              disabled={isViewer || (effectiveClosed && !canEditGeneral)}
               style={{ background: '#0d9488', borderColor: '#0d9488', borderRadius: 6 }}
             >
               Lưu thay đổi
@@ -2070,7 +2106,7 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
             }}>
               <AlertCircle size={14} color="#0d9488" style={{ flexShrink: 0 }} />
               <div>
-                <strong>Lưu ý:</strong> Để sửa các trường bị mờ, vui lòng chuyển đổi <strong>Vai trò giả lập</strong> ở thanh công cụ phía trên trang.
+                <strong>Lưu ý phân quyền:</strong> Bạn đang thao tác với vai trò <strong>{simulatedRole}</strong>. Để sửa các trường tương ứng theo URS, vui lòng chuyển đổi sang vai trò phù hợp (PIC-1 / PIC-2 / Admin) ở thanh công cụ phía trên trang.
               </div>
             </div>
 
@@ -2088,7 +2124,7 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                     placeholder="VD: INUK-240025"
                     value={detailRow.invoice_number}
                     onChange={(e) => updateField('invoice_number', e.target.value)}
-                    disabled={!isNew || effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
+                    disabled={!isNew || !canEditGeneral || effectiveClosed}
                     style={{ borderRadius: 6 }}
                   />
                 </Col>
@@ -2099,7 +2135,7 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                   <DatePicker
                     value={detailRow.created_date ? dayjs(detailRow.created_date) : null}
                     onChange={(date) => updateField('created_date', date ? date.format('YYYY-MM-DD') : '')}
-                    disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
+                    disabled={!canEditGeneral || effectiveClosed}
                     style={{ width: '100%', borderRadius: 6 }}
                     format="DD/MM/YYYY"
                     allowClear={false}
@@ -2115,7 +2151,7 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                     optionFilterProp="label"
                     value={detailRow.supplier_code || undefined}
                     onChange={(val) => updateField('supplier_code', val)}
-                    disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
+                    disabled={!canEditGeneral || effectiveClosed}
                     style={{ width: '100%' }}
                     options={suppliersList}
                     dropdownStyle={{ borderRadius: 8 }}
@@ -2196,7 +2232,7 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                     placeholder="Chọn Kho nhận hàng"
                     value={detailRow.target_warehouse || undefined}
                     onChange={(val) => updateField('target_warehouse', val)}
-                    disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
+                    disabled={!canEditWarehouse || effectiveClosed}
                     style={{ width: '100%' }}
                     options={[
                       { value: 'Kho Long Hậu', label: 'Kho Long Hậu' },
@@ -2213,7 +2249,7 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                     placeholder="Chọn hoặc nhập ngày (DD/MM/YYYY)"
                     value={parseImportDate(detailRow.actual_import_date_note)}
                     onChange={(date) => updateField('actual_import_date_note', date ? date.format('DD/MM/YYYY') : '')}
-                    disabled={effectiveClosed}
+                    disabled={!canEditWarehouse || effectiveClosed}
                     style={{ width: '100%', borderRadius: 6 }}
                     format="DD/MM/YYYY"
                     allowClear
@@ -2269,136 +2305,25 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                             messageApi.warning(`Vui lòng chọn COA cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
                             return;
                           }
-                          if (!item.visa_no?.trim()) {
-                            messageApi.warning(`Vui lòng nhập Số Visa cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
-                            return;
-                          }
-                          if (!item.decision_no?.trim()) {
-                            messageApi.warning(`Vui lòng nhập Số quyết định cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
-                            return;
-                          }
-                          if (!parseImportDate(item.valid_until)) {
-                            messageApi.warning(`Vui lòng nhập Hiệu lực đến cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
-                            return;
-                          }
-                          const isIssueVisible = showIssuesMap[i] ?? !!(item.issue_notes || item.resolution_notes);
-                          if (isIssueVisible) {
-                            if (!item.issue_notes?.trim()) {
-                              messageApi.warning(`Vui lòng nhập Vấn đề cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
-                              return;
-                            }
-                            if (!item.resolution_notes?.trim()) {
-                              messageApi.warning(`Vui lòng nhập Hướng xử lý cho ${itemIndexStr} trước khi chuyển sang Hoàn tất!`);
-                              return;
-                            }
-                          }
                         }
                       }
                       updateField('progress_status', val);
                     }}
-                    disabled={effectiveClosed ? effectiveRole !== 'QA_NHAP_KHAU' : false}
+                    disabled={isViewer || (!canEditGeneral && !canEditWarehouse)}
                     style={{ width: '100%' }}
                     options={PROGRESS_STATUS_OPTIONS}
                   />
                 </Col>
-
-                {/* Has Data Logger */}
-                <Col span={12}>
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 4,
-                    background: '#f8fafc',
-                    padding: '4px 10px',
-                    borderRadius: 8,
-                    border: '1px solid #f1f5f9',
-                    minHeight: 34,
-                    justifyContent: 'center'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Switch
-                        checked={detailRow.has_data_logger}
-                        onChange={(val) => updateField('has_data_logger', val)}
-                        disabled={effectiveClosed}
-                        size="small"
-                      />
-                      <span style={{ fontSize: 11, fontWeight: 600, color: '#334155' }}>Data Logger kèm hàng</span>
-                    </div>
-
-                    {detailRow.has_data_logger && (
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
-                        <Input
-                          placeholder="Loại logger"
-                          value={detailRow.data_logger_type || ''}
-                          onChange={(e) => updateField('data_logger_type', e.target.value)}
-                          disabled={effectiveClosed}
-                          size="small"
-                          style={{ flex: 1, borderRadius: 4, fontSize: 11 }}
-                        />
-                        <InputNumber
-                          min={0}
-                          placeholder="SL"
-                          value={detailRow.logger_qty}
-                          onChange={(val) => updateField('logger_qty', val || 0)}
-                          disabled={effectiveClosed}
-                          size="small"
-                          style={{ width: 60, borderRadius: 4, fontSize: 11 }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </Col>
-
-                {/* Temperature Out of Range */}
-                <Col span={12}>
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 4,
-                    background: detailRow.temp_out_of_range ? '#fef2f2' : '#f8fafc',
-                    padding: '4px 10px',
-                    borderRadius: 8,
-                    border: detailRow.temp_out_of_range ? '1px dashed #fca5a5' : '1px solid #f1f5f9',
-                    minHeight: 34,
-                    justifyContent: 'center',
-                    transition: 'all 200ms ease'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Switch
-                        checked={detailRow.temp_out_of_range}
-                        onChange={(val) => updateField('temp_out_of_range', val)}
-                        disabled={effectiveClosed}
-                        size="small"
-                      />
-                      <span style={{ fontSize: 11, fontWeight: 600, color: detailRow.temp_out_of_range ? '#991b1b' : '#334155' }}>
-                        🔴 Nhiệt độ vượt ngưỡng
-                      </span>
-                    </div>
-
-                    {detailRow.temp_out_of_range && (
-                      <div style={{ display: 'flex', alignItems: 'center', marginTop: 2 }}>
-                        <Input
-                          placeholder="Chi tiết lệch nhiệt (VD: max 30.5°C trong 4h)"
-                          value={detailRow.temp_out_of_range_details || ''}
-                          onChange={(e) => updateField('temp_out_of_range_details', e.target.value)}
-                          disabled={effectiveClosed}
-                          size="small"
-                          style={{ borderRadius: 4, fontSize: 11 }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </Col>
               </Row>
             </div>
 
-            {/* PART 4: DETAIL PRODUCTS SECTION */}
-            <div style={{ background: 'white', padding: '10px 14px', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#334155', borderLeft: '3px solid #14b8a6', paddingLeft: 8 }}>
-                  DANH SÁCH CHI TIẾT SẢN PHẨM (DETAIL)
+            {/* KHỐI 2: CHI TIẾT SẢN PHẨM & VISA (ITEMS) */}
+            <div style={{ background: 'white', padding: '12px 14px', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#334155', borderLeft: '3px solid #0d9488', paddingLeft: 8 }}>
+                  2. CHI TIẾT SẢN PHẨM & VISA (ITEMS)
                 </h3>
-                {effectiveRole === 'QA_NHAP_KHAU' && !effectiveClosed && (
+                {canEditGeneral && !effectiveClosed && (
                   <Button
                     type="dashed"
                     size="small"
@@ -2414,10 +2339,10 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
               {detailRow.imp_shipment_items.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '16px 8px', border: '1px dashed #cbd5e1', borderRadius: 8, color: '#94a3b8', fontSize: 11 }}>
                   Không có sản phẩm nào trong chuyến hàng này.
-                  {effectiveRole === 'QA_NHAP_KHAU' && ' Bấm "Thêm sản phẩm" ở trên để tạo mới.'}
+                  {canEditGeneral && ' Bấm "Thêm sản phẩm" ở trên để tạo mới.'}
                 </div>
               ) : (
-                <Space direction="vertical" style={{ width: '100%' }} size={6}>
+                <Space direction="vertical" style={{ width: '100%' }} size={8}>
                   {detailRow.imp_shipment_items.map((item, idx) => {
                     const isIssueVisible = showIssuesMap[idx] ?? !!(item.issue_notes || item.resolution_notes);
                     const isRed = isIssueVisible || item.coa_status === 'Chưa có' || item.coa_status === 'Đang sai sót';
@@ -2425,27 +2350,27 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                       <div
                         key={item.id || `new-item-${idx}`}
                         style={{
-                          padding: '6px 10px',
+                          padding: '8px 12px',
                           border: isRed ? '1px solid #fca5a5' : '1px solid #e2e8f0',
                           borderRadius: 8,
                           background: isRed ? '#fff5f5' : '#f8fafc',
                           position: 'relative'
                         }}
                       >
-                        {/* Delete button (SCM only) */}
-                        {effectiveRole === 'QA_NHAP_KHAU' && !effectiveClosed && (
+                        {/* Delete button (PIC-1 / Admin only) */}
+                        {canEditGeneral && !effectiveClosed && (
                           <Button
                             type="text"
                             danger
                             size="small"
                             icon={<Trash2 size={14} />}
-                            style={{ position: 'absolute', top: 4, right: 4, zIndex: 10 }}
+                            style={{ position: 'absolute', top: 6, right: 6, zIndex: 10 }}
                             onClick={() => handleRemoveItem(idx)}
                           />
                         )}
 
-                        <Row gutter={[10, 6]} align="top">
-                          {/* Left Section: Product Details, Visa/Decision & QA Issues (span 16) */}
+                        <Row gutter={[12, 8]} align="top">
+                          {/* Left Section: Product Details & Visa (span 16) */}
                           <Col span={16}>
                             {/* Row 1: Code, Name, COA */}
                             <Row gutter={[10, 6]} align="middle">
@@ -2467,7 +2392,7 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                                   }}
                                   value={item.item_code || undefined}
                                   onChange={(val) => updateItemField(idx, 'item_code', val)}
-                                  disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
+                                  disabled={!canEditGeneral || effectiveClosed}
                                   style={{ width: '100%' }}
                                   options={masterItems.map(m => ({ value: m.item_code, label: `[${m.item_code}] ${m.item_name}` }))}
                                   dropdownStyle={{ borderRadius: 8 }}
@@ -2476,7 +2401,7 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                                 />
                               </Col>
 
-                              {/* Item Name (Free text / Auto filled) */}
+                              {/* Item Name */}
                               <Col span={11}>
                                 <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
                                   Tên sản phẩm thực tế nhập *
@@ -2485,12 +2410,12 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                                   placeholder="Nhập tên chi tiết thuốc, hàm lượng..."
                                   value={item.item_name}
                                   onChange={(e) => updateItemField(idx, 'item_name', e.target.value)}
-                                  disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
-                                  style={{ borderRadius: 6, paddingRight: 24 }}
+                                  disabled={!canEditGeneral || effectiveClosed}
+                                  style={{ borderRadius: 6 }}
                                 />
                               </Col>
 
-                              {/* COA Status per Item */}
+                              {/* COA Status */}
                               <Col span={6}>
                                 <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
                                   COA
@@ -2498,17 +2423,49 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                                 <Select
                                   value={item.coa_status || 'Chưa có'}
                                   onChange={(val) => updateItemField(idx, 'coa_status', val)}
-                                  disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
+                                  disabled={!canEditGeneral || effectiveClosed}
                                   style={{ width: '100%' }}
                                   options={COA_STATUS_OPTIONS}
                                 />
                               </Col>
                             </Row>
 
-                            {/* Row 2: Visa, Decision, Validity */}
+                            {/* Row 2: Lot No, Exp Date, Visa No, Valid Until */}
                             <Row gutter={[10, 6]} style={{ marginTop: 6 }}>
+                              {/* Số Lô */}
+                              <Col span={6}>
+                                <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#0f766e' }}>
+                                  Số Lô sản xuất *
+                                </div>
+                                <Input
+                                  placeholder="VD: 24A001"
+                                  value={item.lot_no || ''}
+                                  onChange={(e) => updateItemField(idx, 'lot_no', e.target.value)}
+                                  disabled={!canEditGeneral || effectiveClosed}
+                                  size="small"
+                                  style={{ borderRadius: 6 }}
+                                />
+                              </Col>
+
+                              {/* Hạn dùng (EXP) */}
+                              <Col span={6}>
+                                <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#0f766e' }}>
+                                  Hạn dùng (EXP) *
+                                </div>
+                                <DatePicker
+                                  placeholder="DD/MM/YYYY"
+                                  value={parseImportDate(item.exp_date)}
+                                  onChange={(date) => updateItemField(idx, 'exp_date', date ? date.format('DD/MM/YYYY') : null)}
+                                  disabled={!canEditGeneral || effectiveClosed}
+                                  size="small"
+                                  style={{ width: '100%', borderRadius: 6 }}
+                                  format="DD/MM/YYYY"
+                                  allowClear
+                                />
+                              </Col>
+
                               {/* Số Visa */}
-                              <Col span={7}>
+                              <Col span={6}>
                                 <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
                                   Số Visa
                                 </div>
@@ -2516,28 +2473,13 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                                   placeholder="Số Visa..."
                                   value={item.visa_no || ''}
                                   onChange={(e) => updateItemField(idx, 'visa_no', e.target.value)}
-                                  disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
+                                  disabled={!canEditGeneral || effectiveClosed}
                                   size="small"
                                   style={{ borderRadius: 6 }}
                                 />
                               </Col>
 
-                              {/* Số quyết định */}
-                              <Col span={11}>
-                                <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
-                                  Số quyết định
-                                </div>
-                                <Input
-                                  placeholder="Số quyết định..."
-                                  value={item.decision_no || ''}
-                                  onChange={(e) => updateItemField(idx, 'decision_no', e.target.value)}
-                                  disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
-                                  size="small"
-                                  style={{ borderRadius: 6 }}
-                                />
-                              </Col>
-
-                              {/* Hiệu lực đến */}
+                              {/* Hiệu lực Visa */}
                               <Col span={6}>
                                 <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
                                   Hiệu lực đến
@@ -2546,7 +2488,7 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                                   placeholder="DD/MM/YYYY"
                                   value={parseImportDate(item.valid_until)}
                                   onChange={(date) => updateItemField(idx, 'valid_until', date ? date.format('DD/MM/YYYY') : null)}
-                                  disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
+                                  disabled={!canEditGeneral || effectiveClosed}
                                   size="small"
                                   style={{ width: '100%', borderRadius: 6 }}
                                   format="DD/MM/YYYY"
@@ -2555,34 +2497,81 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                               </Col>
                             </Row>
 
-                            {/* Row 3: QA Issues (Vấn đề & Hướng xử lý) */}
+                            {/* Row 3: Decision No, Warehouse, Arrival Date */}
+                            <Row gutter={[10, 6]} style={{ marginTop: 6 }}>
+                              {/* Số quyết định */}
+                              <Col span={10}>
+                                <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#64748b' }}>
+                                  Số quyết định
+                                </div>
+                                <Input
+                                  placeholder="Số quyết định..."
+                                  value={item.decision_no || ''}
+                                  onChange={(e) => updateItemField(idx, 'decision_no', e.target.value)}
+                                  disabled={!canEditGeneral || effectiveClosed}
+                                  size="small"
+                                  style={{ borderRadius: 6 }}
+                                />
+                              </Col>
+
+                              {/* Kho lưu trữ */}
+                              <Col span={7}>
+                                <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#7c3aed' }}>
+                                  Kho lưu trữ
+                                </div>
+                                <Input
+                                  placeholder="VD: Kho Long Hậu"
+                                  value={item.warehouse_code || detailRow.target_warehouse || ''}
+                                  onChange={(e) => updateItemField(idx, 'warehouse_code', e.target.value)}
+                                  disabled={!canEditWarehouse || effectiveClosed}
+                                  size="small"
+                                  style={{ borderRadius: 6 }}
+                                />
+                              </Col>
+
+                              {/* Ngày hàng về kho */}
+                              <Col span={7}>
+                                <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#7c3aed' }}>
+                                  Ngày hàng về kho
+                                </div>
+                                <DatePicker
+                                  placeholder="DD/MM/YYYY"
+                                  value={parseImportDate(item.arrival_date || detailRow.actual_import_date_note)}
+                                  onChange={(date) => updateItemField(idx, 'arrival_date', date ? date.format('DD/MM/YYYY') : null)}
+                                  disabled={!canEditWarehouse || effectiveClosed}
+                                  size="small"
+                                  style={{ width: '100%', borderRadius: 6 }}
+                                  format="DD/MM/YYYY"
+                                  allowClear
+                                />
+                              </Col>
+                            </Row>
+
+                            {/* Row 4: Item QA Issues (Vấn đề & Hướng xử lý) */}
                             {isIssueVisible && (
-                              <Row gutter={[10, 6]} style={{ marginTop: 6 }}>
-                                {/* Vấn đề */}
+                              <Row gutter={[10, 6]} style={{ marginTop: 8 }}>
                                 <Col span={12}>
                                   <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#b91c1c' }}>
-                                    Vấn đề (nếu có)
+                                    Vấn đề dòng hàng (nếu có)
                                   </div>
                                   <Input
                                     placeholder="Nhập chi tiết vấn đề phát sinh..."
                                     value={item.issue_notes || ''}
                                     onChange={(e) => updateItemField(idx, 'issue_notes', e.target.value)}
-                                    disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
+                                    disabled={(!canEditGeneral && !canEditWarehouse) || effectiveClosed}
                                     size="small"
                                     style={{ borderRadius: 6 }}
                                   />
                                 </Col>
-
-                                {/* Hướng xử lý */}
                                 <Col span={12}>
                                   <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 600, color: '#b91c1c' }}>
-                                    Hướng xử lý
+                                    Hướng xử lý dòng hàng
                                   </div>
                                   <Input
                                     placeholder="Nhập hướng xử lý..."
                                     value={item.resolution_notes || ''}
                                     onChange={(e) => updateItemField(idx, 'resolution_notes', e.target.value)}
-                                    disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
+                                    disabled={(!canEditGeneral && !canEditWarehouse) || effectiveClosed}
                                     size="small"
                                     style={{ borderRadius: 6 }}
                                   />
@@ -2605,27 +2594,27 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                                   <div style={{
                                     background: 'rgba(13,148,136,0.04)',
                                     border: '1px dashed rgba(13,148,136,0.3)',
-                                    padding: '4px 8px',
+                                    padding: '6px 10px',
                                     borderRadius: 8,
                                   }}>
-                                    <div style={{ fontSize: 10, fontWeight: 700, color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                                    <div style={{ fontSize: 10, fontWeight: 700, color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                         🏷️ Tem nhãn bắt buộc:
                                       </span>
                                       
                                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                         <span style={{
-                                          fontSize: 8,
+                                          fontSize: 9,
                                           fontWeight: 600,
                                           color: isCustomized ? '#d97706' : (item.item_code ? '#0d9488' : '#d97706'),
                                           background: isCustomized ? '#fef3c7' : (item.item_code ? '#ccfbf1' : '#fef3c7'),
-                                          padding: '1px 4px',
-                                          borderRadius: 3
+                                          padding: '1px 6px',
+                                          borderRadius: 4
                                         }}>
                                           {isCustomized ? 'Manual' : (item.item_code ? 'Realtime' : 'Manual')}
                                         </span>
                                         
-                                        {simulatedRole === 'QA_NHAP_KHAU' && !isClosed && (
+                                        {canEditGeneral && !effectiveClosed && (
                                           <Space size={2}>
                                             <Button
                                               type="link"
@@ -2651,7 +2640,7 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                                     </div>
                                     
                                     {hasLabels ? (
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                                         {reqLabels.map((lbl, lidx) => (
                                           <div key={lidx} style={{ fontSize: 10, color: '#334155', display: 'flex', justifyContent: 'space-between', gap: 8, lineHeight: 1.2 }}>
                                             <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
@@ -2672,7 +2661,7 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                                 );
                               })()}
 
-                              {/* Toggle switch for QA Issues */}
+                              {/* Toggle switch for Item Issues */}
                               <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -2684,14 +2673,14 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                                 transition: 'all 200ms ease'
                               }}>
                                 <span style={{ fontSize: 10, fontWeight: 600, color: isIssueVisible ? '#b91c1c' : '#64748b' }}>
-                                  ⚠️ Phát sinh vấn đề
+                                  ⚠️ Phát sinh vấn đề dòng hàng
                                 </span>
                                 <Switch
                                   checkedChildren="Có"
                                   unCheckedChildren="Không"
                                   checked={isIssueVisible}
                                   onChange={(val) => handleToggleIssueVisible(idx, val)}
-                                  disabled={effectiveRole !== 'QA_NHAP_KHAU' || effectiveClosed}
+                                  disabled={(!canEditGeneral && !canEditWarehouse) || effectiveClosed}
                                 />
                               </div>
                             </Space>
@@ -2700,6 +2689,184 @@ export default function ImportModule({ userId = 'default', userRole = 'admin' }:
                       </div>
                     );
                   })}
+                </Space>
+              )}
+            </div>
+
+            {/* KHỐI 3: THIẾT BỊ GHI NHIỆT (LOGGERS) */}
+            <div style={{ background: 'white', padding: '12px 14px', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+              <h3 style={{ margin: '0 0 10px 0', fontSize: 13, fontWeight: 700, color: '#334155', borderLeft: '3px solid #0284c7', paddingLeft: 8 }}>
+                3. THIẾT BỊ GHI NHIỆT (LOGGERS)
+              </h3>
+              <Row gutter={[12, 12]}>
+                {/* Logger Switch & Info */}
+                <Col span={12}>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 6,
+                    background: '#f8fafc',
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    border: '1px solid #e2e8f0',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Switch
+                        checked={detailRow.has_data_logger}
+                        onChange={(val) => updateField('has_data_logger', val)}
+                        disabled={!canEditWarehouse || effectiveClosed}
+                        size="small"
+                      />
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>Data Logger kèm hàng</span>
+                    </div>
+
+                    {detailRow.has_data_logger && (
+                      <Row gutter={8} style={{ marginTop: 4 }}>
+                        <Col span={16}>
+                          <div style={{ fontSize: 10, color: '#64748b', marginBottom: 2 }}>Loại Data Logger</div>
+                          <Input
+                            placeholder="VD: TempTale Ultra..."
+                            value={detailRow.data_logger_type || ''}
+                            onChange={(e) => updateField('data_logger_type', e.target.value)}
+                            disabled={!canEditWarehouse || effectiveClosed}
+                            size="small"
+                            style={{ borderRadius: 6 }}
+                          />
+                        </Col>
+                        <Col span={8}>
+                          <div style={{ fontSize: 10, color: '#64748b', marginBottom: 2 }}>Số lượng</div>
+                          <InputNumber
+                            min={1}
+                            value={detailRow.logger_qty || 1}
+                            onChange={(val) => updateField('logger_qty', val || 1)}
+                            disabled={!canEditWarehouse || effectiveClosed}
+                            size="small"
+                            style={{ width: '100%', borderRadius: 6 }}
+                          />
+                        </Col>
+                      </Row>
+                    )}
+                  </div>
+                </Col>
+
+                {/* Temp Out of Range */}
+                <Col span={12}>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 6,
+                    background: detailRow.temp_out_of_range ? '#fef2f2' : '#f8fafc',
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    border: detailRow.temp_out_of_range ? '1px dashed #fca5a5' : '1px solid #e2e8f0',
+                    transition: 'all 200ms ease'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Switch
+                        checked={detailRow.temp_out_of_range}
+                        onChange={(val) => updateField('temp_out_of_range', val)}
+                        disabled={!canEditWarehouse || effectiveClosed}
+                        size="small"
+                      />
+                      <span style={{ fontSize: 12, fontWeight: 600, color: detailRow.temp_out_of_range ? '#991b1b' : '#334155' }}>
+                        {detailRow.temp_out_of_range ? '🔴 Nhiệt độ vượt ngưỡng (FAIL)' : '🟢 Nhiệt độ đạt tiêu chuẩn (PASS)'}
+                      </span>
+                    </div>
+
+                    {detailRow.temp_out_of_range && (
+                      <div style={{ marginTop: 4 }}>
+                        <div style={{ fontSize: 10, color: '#b91c1c', marginBottom: 2 }}>Chi tiết lệch nhiệt & Đánh giá</div>
+                        <Input
+                          placeholder="VD: max 30.5°C trong 4h, đánh giá độ ổn định thuốc..."
+                          value={detailRow.temp_out_of_range_details || ''}
+                          onChange={(e) => updateField('temp_out_of_range_details', e.target.value)}
+                          disabled={!canEditWarehouse || effectiveClosed}
+                          size="small"
+                          style={{ borderRadius: 6 }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </Col>
+              </Row>
+            </div>
+
+            {/* KHỐI 4: VẤN ĐỀ & HÀNH ĐỘNG (ISSUES) */}
+            <div style={{ background: 'white', padding: '12px 14px', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#334155', borderLeft: '3px solid #f59e0b', paddingLeft: 8 }}>
+                  4. VẤN ĐỀ & HÀNH ĐỘNG (ISSUES)
+                </h3>
+                {(canEditGeneral || canEditWarehouse) && !effectiveClosed && (
+                  <Button
+                    type="dashed"
+                    size="small"
+                    icon={<PlusCircle size={14} />}
+                    onClick={handleAddIssue}
+                    style={{ borderRadius: 6, color: '#f59e0b', borderColor: '#f59e0b' }}
+                  >
+                    Thêm vấn đề
+                  </Button>
+                )}
+              </div>
+
+              {(!detailRow.issues || detailRow.issues.length === 0) ? (
+                <div style={{ textAlign: 'center', padding: '14px 8px', border: '1px dashed #e2e8f0', borderRadius: 8, color: '#94a3b8', fontSize: 11 }}>
+                  Chưa ghi nhận vấn đề phát sinh nào cho chuyến hàng này.
+                </div>
+              ) : (
+                <Space direction="vertical" style={{ width: '100%' }} size={8}>
+                  {detailRow.issues.map((iss, iIdx) => (
+                    <div
+                      key={iss.id || `issue-${iIdx}`}
+                      style={{
+                        padding: '10px 12px',
+                        border: '1px solid #fed7aa',
+                        borderRadius: 8,
+                        background: '#fffaf5',
+                        position: 'relative'
+                      }}
+                    >
+                      {(canEditGeneral || canEditWarehouse) && !effectiveClosed && (
+                        <Button
+                          type="text"
+                          danger
+                          size="small"
+                          icon={<Trash2 size={14} />}
+                          style={{ position: 'absolute', top: 6, right: 6, zIndex: 10 }}
+                          onClick={() => handleRemoveIssue(iIdx)}
+                        />
+                      )}
+                      <Row gutter={[12, 6]}>
+                        <Col span={12}>
+                          <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#c2410c' }}>
+                            Mô tả vấn đề #{iIdx + 1}
+                          </div>
+                          <Input.TextArea
+                            rows={2}
+                            placeholder="Nhập chi tiết vấn đề phát sinh..."
+                            value={iss.issue_text || ''}
+                            onChange={(e) => updateIssueField(iIdx, 'issue_text', e.target.value)}
+                            disabled={(!canEditGeneral && !canEditWarehouse) || effectiveClosed}
+                            style={{ borderRadius: 6 }}
+                          />
+                        </Col>
+                        <Col span={12}>
+                          <div style={{ marginBottom: 2, fontSize: 11, fontWeight: 600, color: '#047857' }}>
+                            Hành động khắc phục / Hướng xử lý
+                          </div>
+                          <Input.TextArea
+                            rows={2}
+                            placeholder="Biện pháp xử lý, người thực hiện..."
+                            value={iss.resolution_text || ''}
+                            onChange={(e) => updateIssueField(iIdx, 'resolution_text', e.target.value)}
+                            disabled={(!canEditGeneral && !canEditWarehouse) || effectiveClosed}
+                            style={{ borderRadius: 6 }}
+                          />
+                        </Col>
+                      </Row>
+                    </div>
+                  ))}
                 </Space>
               )}
             </div>

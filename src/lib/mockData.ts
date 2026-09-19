@@ -48,43 +48,15 @@ export const MOCK_VIEWER_USER: User = {
 export const MOCK_CURRENT_USER = MOCK_ADMIN_USER;
 export const MOCK_STAFF_USER = MOCK_PIC1_USER;
 
-// §5: 4 Portal Apps
+// §5: Portal Apps - Chỉ giữ lại module IMP (Nhập khẩu) theo yêu cầu
 export const MOCK_PORTAL_APPS: PortalApp[] = [
   {
     app_id: 'app-link-import',
-    app_name: 'IMP (Nhập khẩu / Invoice)',
+    app_name: 'IMP (Nhập khẩu)',
     type: 'link',
     target_url: '/apps/import',
     parent_id: null,
     allowed_depts: ['QA', 'KHO', 'SCM', 'DEV'],
-    is_testing: false,
-  },
-  {
-    app_id: 'app-folder-001',
-    app_name: 'Tiện ích Doanh nghiệp',
-    type: 'folder',
-    target_url: null,
-    parent_id: null,
-    allowed_depts: ['QA', 'KHO', 'SCM', 'DEV'],
-    is_testing: false,
-  },
-  // App con nằm trong folder
-  {
-    app_id: 'app-child-hr-001',
-    app_name: 'Chấm Công & Nghỉ Phép',
-    type: 'link',
-    target_url: '/apps/hr-attendance',
-    parent_id: 'app-folder-001',
-    allowed_depts: ['QA', 'KHO', 'SCM', 'DEV'],
-    is_testing: false,
-  },
-  {
-    app_id: 'app-child-training-002',
-    app_name: 'Đào Tạo & Quy trình GxP',
-    type: 'link',
-    target_url: '/apps/training',
-    parent_id: 'app-folder-001',
-    allowed_depts: ['QA', 'DEV'],
     is_testing: false,
   },
 ];
