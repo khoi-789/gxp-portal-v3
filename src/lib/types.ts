@@ -2,6 +2,8 @@
  * Type definitions khớp 100% với Supabase Schema trong URS §3
  */
 
+export type PilotRole = 'Viewer' | 'PIC-1' | 'PIC-2' | 'Admin';
+
 // §3.1 Bảng users
 export interface User {
   id: string;            // uuid - Primary Key (Supabase Auth)
@@ -9,6 +11,7 @@ export interface User {
   full_name: string;     // text - Not Null
   department_code: string; // text - Not Null (VD: QA, KHO, SCM, DEV)
   system_role: 'admin' | 'staff' | 'viewer'; // text - Not Null
+  pilot_role?: PilotRole;
 }
 
 // §3.2 Bảng portal_apps

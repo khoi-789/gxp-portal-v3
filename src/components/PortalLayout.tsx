@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useState, useEffect } from 'react';
-import { User } from '@/lib/types';
+import { User, PilotRole } from '@/lib/types';
 import {
   Settings,
   Search,
@@ -53,20 +53,26 @@ export default function PortalLayout({
 }: PortalLayoutProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'viewer'>('admin');
+  const [selectedRole, setSelectedRole] = useState<PilotRole>('Admin');
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('pilot_selected_role');
-      if (stored === 'staff' || stored === 'viewer' || stored === 'admin') {
+      if (stored === 'Viewer' || stored === 'PIC-1' || stored === 'PIC-2' || stored === 'Admin') {
         setSelectedRole(stored);
+      } else if (stored === 'staff') {
+        setSelectedRole('PIC-1');
+      } else if (stored === 'admin') {
+        setSelectedRole('Admin');
+      } else if (stored === 'viewer') {
+        setSelectedRole('Viewer');
       }
     }
   }, []);
 
-  const handleRoleChange = (role: 'admin' | 'staff' | 'viewer') => {
+  const handleRoleChange = (role: PilotRole) => {
     setSelectedRole(role);
     if (typeof window !== 'undefined') {
       localStorage.setItem('pilot_selected_role', role);
@@ -224,13 +230,14 @@ export default function PortalLayout({
                 <Segmented
                   size="small"
                   options={[
-                    { label: <span style={{ fontSize: 10, fontWeight: 600, color: selectedRole === 'staff' ? '#0f766e' : 'rgba(255,255,255,0.85)' }}>Staff</span>, value: 'staff' },
-                    { label: <span style={{ fontSize: 10, fontWeight: 600, color: selectedRole === 'viewer' ? '#0f766e' : 'rgba(255,255,255,0.85)' }}>Viewer</span>, value: 'viewer' },
-                    { label: <span style={{ fontSize: 10, fontWeight: 600, color: selectedRole === 'admin' ? '#0f766e' : 'rgba(255,255,255,0.85)' }}>Admin</span>, value: 'admin' },
+                    { label: <span style={{ fontSize: 10, fontWeight: 700, color: selectedRole === 'Viewer' ? '#0f766e' : 'rgba(255,255,255,0.9)' }}>Viewer</span>, value: 'Viewer' },
+                    { label: <span style={{ fontSize: 10, fontWeight: 700, color: selectedRole === 'PIC-1' ? '#0f766e' : 'rgba(255,255,255,0.9)' }}>PIC-1</span>, value: 'PIC-1' },
+                    { label: <span style={{ fontSize: 10, fontWeight: 700, color: selectedRole === 'PIC-2' ? '#0f766e' : 'rgba(255,255,255,0.9)' }}>PIC-2</span>, value: 'PIC-2' },
+                    { label: <span style={{ fontSize: 10, fontWeight: 700, color: selectedRole === 'Admin' ? '#0f766e' : 'rgba(255,255,255,0.9)' }}>Admin</span>, value: 'Admin' },
                   ]}
                   value={selectedRole}
-                  onChange={(val) => handleRoleChange(val as any)}
-                  style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 6, padding: 1 }}
+                  onChange={(val) => handleRoleChange(val as PilotRole)}
+                  style={{ background: 'rgba(0,0,0,0.25)', borderRadius: 6, padding: 1 }}
                 />
               </div>
             )}

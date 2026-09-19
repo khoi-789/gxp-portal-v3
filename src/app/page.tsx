@@ -9,18 +9,21 @@ import ProductLabelManager from '@/components/ProductLabelManager';
 import MasterSupplierManager from '@/components/MasterSupplierManager';
 import UserGuide from '@/components/UserGuide';
 import RbacManager from '@/components/RbacManager';
-import { MOCK_CURRENT_USER, MOCK_STAFF_USER, MOCK_VIEWER_USER } from '@/lib/mockData';
-import { User } from '@/lib/types';
+import { MOCK_ADMIN_USER, MOCK_PIC1_USER, MOCK_PIC2_USER, MOCK_VIEWER_USER } from '@/lib/mockData';
+import { User, PilotRole } from '@/lib/types';
 import ImportModule from '@/components/ImportModule';
 import MasterSystemManager from '@/components/admin/MasterSystemManager';
-import { LayoutGrid, Package, Link2, Truck, Database, HelpCircle, Shield, FileText } from 'lucide-react';
+import { 
+  LayoutGrid, Package, Link2, Truck, Database, HelpCircle, Shield, FileText,
+  Building, Warehouse, Thermometer, Tag as TagIcon, FileCode, FileSpreadsheet
+} from 'lucide-react';
 
 /**
  * Trang chủ GxP Portal
  * - Tabs: Dashboard + IMP (Nhập khẩu) + Master Data + Admin Suite (RBAC Matrix 2 Tầng) + Hướng dẫn
  */
 export default function HomePage() {
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'viewer'>('admin');
+  const [selectedRole, setSelectedRole] = useState<PilotRole>('Admin');
   const [isMounted, setIsMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isRbacDirty, setIsRbacDirty] = useState(false);
@@ -29,13 +32,19 @@ export default function HomePage() {
     setIsMounted(true);
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('pilot_selected_role');
-      if (stored === 'staff' || stored === 'viewer' || stored === 'admin') {
+      if (stored === 'Viewer' || stored === 'PIC-1' || stored === 'PIC-2' || stored === 'Admin') {
         setSelectedRole(stored);
+      } else if (stored === 'staff') {
+        setSelectedRole('PIC-1');
+      } else if (stored === 'viewer') {
+        setSelectedRole('Viewer');
+      } else if (stored === 'admin') {
+        setSelectedRole('Admin');
       }
     }
   }, []);
 
-  const handleRoleChange = (role: 'admin' | 'staff' | 'viewer') => {
+  const handleRoleChange = (role: PilotRole) => {
     setSelectedRole(role);
     if (typeof window !== 'undefined') {
       localStorage.setItem('pilot_selected_role', role);
@@ -43,13 +52,16 @@ export default function HomePage() {
   };
 
   const currentUser: User =
-    selectedRole === 'admin'
-      ? MOCK_CURRENT_USER
-      : selectedRole === 'staff'
-        ? MOCK_STAFF_USER
-        : MOCK_VIEWER_USER;
+    selectedRole === 'Admin'
+      ? MOCK_ADMIN_USER
+      : selectedRole === 'PIC-1'
+        ? MOCK_PIC1_USER
+        : selectedRole === 'PIC-2'
+          ? MOCK_PIC2_USER
+          : MOCK_VIEWER_USER;
 
-  const isAllowedMasterData = currentUser.system_role === 'admin' || currentUser.system_role === 'viewer';
+  // Cho phép tất cả các vai trò truy cập Master Data để nghiệm thu tính năng (Viewer sẽ ở chế độ chỉ đọc)
+  const isAllowedMasterData = true;
 
   const masterDataSubItems = [
     {
@@ -83,14 +95,64 @@ export default function HomePage() {
       children: <ProductLabelManager userId={currentUser.id} userRole={currentUser.system_role} />,
     },
     {
-      key: 'system-master',
+      key: 'departments',
       label: (
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-          <Database size={14} />
-          Master Data Hệ thống (Mới)
+          <Building size={14} />
+          Phòng ban
         </span>
       ),
-      children: <MasterSystemManager />,
+      children: <MasterSystemManager forcedTab="departments" hideTabBar={true} />,
+    },
+    {
+      key: 'warehouses',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+          <Warehouse size={14} />
+          Danh mục Kho
+        </span>
+      ),
+      children: <MasterSystemManager forcedTab="warehouses" hideTabBar={true} />,
+    },
+    {
+      key: 'loggers',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+          <Thermometer size={14} />
+          Thiết bị nhiệt
+        </span>
+      ),
+      children: <MasterSystemManager forcedTab="loggers" hideTabBar={true} />,
+    },
+    {
+      key: 'label_types',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+          <TagIcon size={14} />
+          Loại tem nhãn
+        </span>
+      ),
+      children: <MasterSystemManager forcedTab="label_types" hideTabBar={true} />,
+    },
+    {
+      key: 'numbering',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+          <FileCode size={14} />
+          Quy tắc sinh số
+        </span>
+      ),
+      children: <MasterSystemManager forcedTab="numbering" hideTabBar={true} />,
+    },
+    {
+      key: 'templates',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+          <FileSpreadsheet size={14} />
+          Biểu mẫu SOP
+        </span>
+      ),
+      children: <MasterSystemManager forcedTab="templates" hideTabBar={true} />,
     },
   ];
 
@@ -119,7 +181,7 @@ export default function HomePage() {
         </div>
       ),
     },
-    // Master Data hiện với Admin & Viewer
+    // Master Data hợp nhất 9 bảng trong 1 hàng tab duy nhất
     ...(isAllowedMasterData
       ? [
         {
@@ -127,7 +189,7 @@ export default function HomePage() {
           label: (
             <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
               <Database size={15} />
-              Master Data (Cũ & Mới)
+              Master Data
             </span>
           ),
           children: (

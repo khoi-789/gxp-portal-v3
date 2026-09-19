@@ -472,11 +472,11 @@ export default function UserRoleManager() {
               <Form.Item name="imp_role" label="Vai trò tại Module IMP" rules={[{ required: true }]}>
                 <Select
                   options={[
-                    { label: 'PIC-1 (QA Văn phòng / Kiểm hồ sơ)', value: 'PIC-1' },
-                    { label: 'PIC-2 (QA Kiểm hàng / Kho nhập)', value: 'PIC-2' },
-                    { label: 'Admin (Toàn quyền quản trị)', value: 'Admin' },
-                    { label: 'Draft (Chỉ soạn thảo ban đầu)', value: 'Draft' },
-                    { label: 'Viewer (Chỉ xem dữ liệu)', value: 'Viewer' },
+                    { label: 'PIC-1', value: 'PIC-1' },
+                    { label: 'PIC-2', value: 'PIC-2' },
+                    { label: 'Admin', value: 'Admin' },
+                    { label: 'Draft', value: 'Draft' },
+                    { label: 'Viewer', value: 'Viewer' },
                   ]}
                 />
               </Form.Item>

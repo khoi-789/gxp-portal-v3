@@ -5,32 +5,48 @@ import { User, PortalApp, MasterItem } from './types';
  * Phản ánh đúng cấu trúc schema từ URS §3
  */
 
-// §5: 1 User (Admin - QA)
-export const MOCK_CURRENT_USER: User = {
-  id: 'usr-x3n8m2k5d',
+// 1. Admin
+export const MOCK_ADMIN_USER: User = {
+  id: 'usr-admin-01',
   email: 'admin@gxpportal.com',
   full_name: 'Nguyễn Quản Trị',
   department_code: 'QA',
   system_role: 'admin',
+  pilot_role: 'Admin',
 };
 
-// §5: User thường để test RBAC
-export const MOCK_STAFF_USER: User = {
-  id: 'usr-w9b4v7z2p',
-  email: 'kho.nhanvien@company.com',
-  full_name: 'Trần Kho Hàng',
+// 2. PIC-1 (QA Văn phòng / Nhập khẩu)
+export const MOCK_PIC1_USER: User = {
+  id: 'usr-pic1-02',
+  email: 'lenk.pic1@company.com',
+  full_name: 'Lê Nhập Khẩu (PIC-1)',
+  department_code: 'QA',
+  system_role: 'staff',
+  pilot_role: 'PIC-1',
+};
+
+// 3. PIC-2 (QA Kiểm hàng / Kho)
+export const MOCK_PIC2_USER: User = {
+  id: 'usr-pic2-03',
+  email: 'trankho.pic2@company.com',
+  full_name: 'Trần Kho Hàng (PIC-2)',
   department_code: 'KHO',
   system_role: 'staff',
+  pilot_role: 'PIC-2',
 };
 
-// §5: User Viewer chỉ đọc
+// 4. Viewer (Chỉ xem)
 export const MOCK_VIEWER_USER: User = {
-  id: 'usr-q7r3s8t5u',
+  id: 'usr-viewer-04',
   email: 'viewer.doc@company.com',
-  full_name: 'Phạm Người Xem',
+  full_name: 'Phạm Người Xem (Viewer)',
   department_code: 'DEV',
   system_role: 'viewer',
+  pilot_role: 'Viewer',
 };
+
+export const MOCK_CURRENT_USER = MOCK_ADMIN_USER;
+export const MOCK_STAFF_USER = MOCK_PIC1_USER;
 
 // §5: 4 Portal Apps
 export const MOCK_PORTAL_APPS: PortalApp[] = [

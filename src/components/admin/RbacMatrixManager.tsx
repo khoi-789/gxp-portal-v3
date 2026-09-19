@@ -384,8 +384,8 @@ export default function RbacMatrixManager({ onDirtyChange }: { onDirtyChange?: (
               options={[
                 { label: <span style={{ fontWeight: 600 }}>Viewer</span>, value: 'Viewer' },
                 { label: <span style={{ fontWeight: 600 }}>Draft</span>, value: 'Draft' },
-                { label: <span style={{ fontWeight: 600, color: '#0d9488' }}>PIC-1 (QA Văn phòng)</span>, value: 'PIC-1' },
-                { label: <span style={{ fontWeight: 600, color: '#7c3aed' }}>PIC-2 (QA Kiểm hàng/Kho)</span>, value: 'PIC-2' },
+                { label: <span style={{ fontWeight: 600, color: '#0d9488' }}>PIC-1</span>, value: 'PIC-1' },
+                { label: <span style={{ fontWeight: 600, color: '#7c3aed' }}>PIC-2</span>, value: 'PIC-2' },
                 { label: <span style={{ fontWeight: 600, color: '#e11d48' }}>Admin</span>, value: 'Admin' },
               ]}
               size="middle"
