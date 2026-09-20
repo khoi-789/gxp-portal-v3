@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Card, Table, Tabs, Button, Tag, Space, Modal, Form, Input,
-  Select, Switch, message, Popconfirm, Tooltip, InputNumber, Row, Col
+  Select, Switch, message, Popconfirm, Tooltip, InputNumber, Row, Col, Alert
 } from 'antd';
 import {
   Building, Warehouse, Thermometer, Tag as TagIcon,
@@ -12,19 +12,77 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/lib/supabase';
+import { useMasterPerms } from '@/lib/useMasterPerms';
 
 export default function MasterSystemManager({
   defaultTab = 'departments',
   hideTabBar = false,
   forcedTab,
+  currentRole,
 }: {
   defaultTab?: string;
   hideTabBar?: boolean;
   forcedTab?: string;
+  currentRole?: string;
 }) {
   const [activeTab, setActiveTab] = useState(forcedTab || defaultTab);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
+
+  // Read current Pilot role from prop or localStorage (reactive)
+  const [simulatedRole, setSimulatedRole] = useState<string>(() =>
+    currentRole || (typeof window !== 'undefined' ? (localStorage.getItem('pilot_selected_role') || 'Viewer') : 'Viewer')
+  );
+
+  useEffect(() => {
+    if (currentRole) {
+      setSimulatedRole(currentRole);
+    }
+  }, [currentRole]);
+
+  useEffect(() => {
+    const onPilotRole = (e: any) => {
+      if (e.detail) setSimulatedRole(e.detail);
+    };
+    window.addEventListener('pilot_role_change', onPilotRole);
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'pilot_selected_role') setSimulatedRole(e.newValue || 'Viewer');
+    };
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener('pilot_role_change', onPilotRole);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
+
+  const effectiveRole = currentRole || simulatedRole;
+
+  // Permission hook — loads from Supabase master_roles, falls back to defaults
+  const { canEdit: _canEdit, canView: _canView } = useMasterPerms();
+
+  // Map active tab to the relevant master_* tableKey for permission lookup
+  const TAB_TO_TABLE_KEY: Record<string, string> = {
+    departments: 'master_departments',
+    warehouses: 'master_warehouses',
+    loggers: 'master_loggers',
+    label_types: 'master_label_types',
+    numbering: 'master_numbering_rules',
+    templates: 'master_form_templates',
+  };
+
+  // Helper: can the current role view rows in the given tab?
+  const canViewTab = (tabKey: string): boolean => {
+    const tableKey = TAB_TO_TABLE_KEY[tabKey];
+    if (!tableKey) return true;
+    return _canView(effectiveRole, tableKey);
+  };
+
+  // Helper: can the current role edit rows in the given tab?
+  const canEditTab = (tabKey: string): boolean => {
+    const tableKey = TAB_TO_TABLE_KEY[tabKey];
+    if (!tableKey) return false;
+    return _canEdit(effectiveRole, tableKey);
+  };
 
   // Modal form states
   const [modalOpen, setModalOpen] = useState(false);
@@ -449,7 +507,9 @@ export default function MasterSystemManager({
   };
 
   // Render Toolbar for a table
-  const renderToolbar = (type: string, count: number) => (
+  const renderToolbar = (type: string, count: number) => {
+    const canAdd = canEditTab(type);
+    return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
       <Space>
         <Input
@@ -463,17 +523,24 @@ export default function MasterSystemManager({
         <Tag color="teal" style={{ fontWeight: 600, borderRadius: 6 }}>
           Tổng cộng: {count} dòng
         </Tag>
+        {!canAdd && (
+          <Tag color="orange" style={{ fontWeight: 500, borderRadius: 6 }}>
+            {simulatedRole}: Chỉ xem
+          </Tag>
+        )}
       </Space>
 
       <Space wrap>
-        <Button
-          type="primary"
-          icon={<Plus size={14} />}
-          onClick={() => handleOpenAdd(type === 'departments' ? 'department' : type === 'warehouses' ? 'warehouse' : type === 'loggers' ? 'logger' : type === 'label_types' ? 'label_type' : type === 'numbering' ? 'numbering' : 'template')}
-          style={{ background: '#0d9488', borderColor: '#0d9488', fontWeight: 600, borderRadius: 8 }}
-        >
-          Thêm mới
-        </Button>
+        {canAdd && (
+          <Button
+            type="primary"
+            icon={<Plus size={14} />}
+            onClick={() => handleOpenAdd(type === 'departments' ? 'department' : type === 'warehouses' ? 'warehouse' : type === 'loggers' ? 'logger' : type === 'label_types' ? 'label_type' : type === 'numbering' ? 'numbering' : 'template')}
+            style={{ background: '#0d9488', borderColor: '#0d9488', fontWeight: 600, borderRadius: 8 }}
+          >
+            Thêm mới
+          </Button>
+        )}
 
         <Button
           icon={<FileSpreadsheet size={14} />}
@@ -483,13 +550,15 @@ export default function MasterSystemManager({
           Tải Template Mẫu
         </Button>
 
-        <Button
-          icon={<Upload size={14} />}
-          onClick={handleTriggerImport}
-          style={{ fontWeight: 500, borderRadius: 8 }}
-        >
-          Nhập Excel
-        </Button>
+        {canAdd && (
+          <Button
+            icon={<Upload size={14} />}
+            onClick={handleTriggerImport}
+            style={{ fontWeight: 500, borderRadius: 8 }}
+          >
+            Nhập Excel
+          </Button>
+        )}
 
         <Button
           icon={<Download size={14} />}
@@ -500,35 +569,44 @@ export default function MasterSystemManager({
         </Button>
       </Space>
     </div>
-  );
+    );
+  };
 
   const actionCol = (type: string) => ({
     title: 'Thao tác',
     key: 'actions',
     width: 110,
     align: 'center' as const,
-    render: (_: any, r: any) => (
-      <Space size="small">
-        <Tooltip title="Chỉnh sửa">
-          <Button
-            type="text"
-            size="small"
-            icon={<Edit size={14} color="#0d9488" />}
-            onClick={() => handleOpenEdit(type, r)}
-          />
-        </Tooltip>
-        <Popconfirm
-          title="Xác nhận xóa?"
-          description="Dòng này sẽ bị xóa khỏi danh mục Master Data."
-          onConfirm={() => handleDeleteItem(type, r)}
-          okText="Xóa"
-          cancelText="Hủy"
-          okButtonProps={{ danger: true }}
-        >
-          <Button type="text" size="small" icon={<Trash2 size={14} color="#ef4444" />} />
-        </Popconfirm>
-      </Space>
-    ),
+    render: (_: any, r: any) => {
+      const canAct = canEditTab(type);
+      if (!canAct) {
+        return (
+          <Tag color="default" style={{ fontSize: 11, borderRadius: 4 }}>Chỉ xem</Tag>
+        );
+      }
+      return (
+        <Space size="small">
+          <Tooltip title="Chỉnh sửa">
+            <Button
+              type="text"
+              size="small"
+              icon={<Edit size={14} color="#0d9488" />}
+              onClick={() => handleOpenEdit(type, r)}
+            />
+          </Tooltip>
+          <Popconfirm
+            title="Xác nhận xóa?"
+            description="Dòng này sẽ bị xóa khỏi danh mục Master Data."
+            onConfirm={() => handleDeleteItem(type, r)}
+            okText="Xóa"
+            cancelText="Hủy"
+            okButtonProps={{ danger: true }}
+          >
+            <Button type="text" size="small" icon={<Trash2 size={14} color="#ef4444" />} />
+          </Popconfirm>
+        </Space>
+      );
+    },
   });
 
   const tabItems = [
@@ -723,6 +801,20 @@ export default function MasterSystemManager({
   ];
 
   const currentTabItem = tabItems.find(t => t.key === activeTab);
+
+  if (!canViewTab(activeTab)) {
+    return (
+      <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+        <Alert
+          type="warning"
+          showIcon
+          message={`Không có quyền truy cập: ${effectiveRole}`}
+          description={`Vai trò "${effectiveRole}" hiện tại không có quyền xem mục Master Data này (${TAB_TO_TABLE_KEY[activeTab] || activeTab}). Vui lòng liên hệ Admin.`}
+          style={{ maxWidth: 640, margin: '0 auto', borderRadius: 12 }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

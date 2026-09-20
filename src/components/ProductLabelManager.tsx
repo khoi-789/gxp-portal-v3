@@ -5,8 +5,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import {
   Table, Button, Drawer, Input, Tag, Space,
-  Popconfirm, message, Tooltip, InputNumber, Row, Col, Select, Switch
+  Popconfirm, message, Tooltip, InputNumber, Row, Col, Select, Switch, Alert
 } from 'antd';
+import { useMasterPerms } from '@/lib/useMasterPerms';
 import type { ColumnsType } from 'antd/es/table';
 import {
   Plus, Search, Edit3, Trash2, RefreshCw, Link2, Info, Upload, Download
@@ -109,7 +110,38 @@ const DEFAULT_MAPPING_WIDTHS: Record<string, number> = {
   actions: 80,
 };
 
-export default function ProductLabelManager({ userId = 'default', userRole = 'admin' }: { userId?: string; userRole?: 'admin' | 'staff' | 'viewer' }) {
+export default function ProductLabelManager({
+  userId = 'default',
+  userRole = 'admin',
+  currentRole,
+}: {
+  userId?: string;
+  userRole?: 'admin' | 'staff' | 'viewer';
+  currentRole?: string;
+}) {
+  const { canView, canEdit } = useMasterPerms();
+  const [localRole, setLocalRole] = useState<string>(() =>
+    currentRole || (typeof window !== 'undefined' ? (localStorage.getItem('pilot_selected_role') || 'Viewer') : 'Viewer')
+  );
+
+  useEffect(() => {
+    if (currentRole) {
+      setLocalRole(currentRole);
+    }
+  }, [currentRole]);
+
+  useEffect(() => {
+    const handlePilotRole = (e: any) => {
+      if (e.detail) setLocalRole(e.detail);
+    };
+    window.addEventListener('pilot_role_change', handlePilotRole);
+    return () => window.removeEventListener('pilot_role_change', handlePilotRole);
+  }, []);
+
+  const effectiveRole = currentRole || localRole;
+  const hasViewPerm = canView(effectiveRole, 'product_label_mappings');
+  const hasEditPerm = canEdit(effectiveRole, 'product_label_mappings');
+
   const [messageApi, contextHolder] = message.useMessage();
   const queryClient = useQueryClient();
   const [globalSearch, setGlobalSearch] = useState('');
@@ -690,17 +722,17 @@ export default function ProductLabelManager({ userId = 'default', userRole = 'ad
       ...resizable('actions'),
       render: (_: any, r: any) => (
         <Space size="middle">
-          <Tooltip title={userRole === 'viewer' ? "Viewer không thể sửa" : "Sửa số lượng"}>
+          <Tooltip title={!hasEditPerm ? `${effectiveRole}: Chỉ xem, không thể sửa` : "Sửa số lượng"}>
             <Button
               type="text"
               size="small"
-              disabled={userRole === 'viewer'}
-              icon={<Edit3 size={14} color={userRole === 'viewer' ? "#cbd5e1" : "#0d9488"} />}
+              disabled={!hasEditPerm}
+              icon={<Edit3 size={14} color={!hasEditPerm ? "#cbd5e1" : "#0d9488"} />}
               onClick={() => handleEdit(r)}
             />
           </Tooltip>
-          {userRole === 'viewer' ? (
-            <Tooltip title="Viewer không thể xóa">
+          {!hasEditPerm ? (
+            <Tooltip title={`${effectiveRole}: Không có quyền xóa`}>
               <Button
                 type="text"
                 size="small"
@@ -748,6 +780,20 @@ export default function ProductLabelManager({ userId = 'default', userRole = 'ad
       })
       .filter(Boolean) as ColumnsType<any>;
   }, [prefs.columnConfigs, prefs.columnWidths, columns, viewMode]);
+
+  if (!hasViewPerm) {
+    return (
+      <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+        <Alert
+          type="warning"
+          showIcon
+          message={`Không có quyền truy cập: ${effectiveRole}`}
+          description={`Vai trò "${effectiveRole}" hiện tại chưa được cấp quyền xem Liên kết SP - Tem (product_label_mappings). Vui lòng liên hệ Admin.`}
+          style={{ maxWidth: 640, margin: '0 auto', borderRadius: 12 }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '8px 4px', overflow: 'hidden' }}>
@@ -800,7 +846,6 @@ export default function ProductLabelManager({ userId = 'default', userRole = 'ad
           <Button
             icon={<Download size={14} />}
             onClick={handleDownloadTemplate}
-            disabled={userRole === 'viewer'}
             style={{ borderRadius: 6 }}
           >
             Tải Template
@@ -809,7 +854,7 @@ export default function ProductLabelManager({ userId = 'default', userRole = 'ad
           <Button
             icon={<Upload size={14} />}
             onClick={() => fileInputRef.current?.click()}
-            disabled={userRole === 'viewer'}
+            disabled={!hasEditPerm}
             style={{ borderRadius: 6 }}
           >
             Nhập từ Excel
@@ -818,11 +863,16 @@ export default function ProductLabelManager({ userId = 'default', userRole = 'ad
           <Button
             icon={<Download size={14} />}
             onClick={handleExportExcel}
-            disabled={userRole === 'viewer'}
             style={{ borderRadius: 6 }}
           >
             Xuất Excel
           </Button>
+
+          {!hasEditPerm && (
+            <Tag color="orange" style={{ fontWeight: 600, borderRadius: 6, height: 32, display: 'inline-flex', alignItems: 'center' }}>
+              {effectiveRole}: Chỉ xem
+            </Tag>
+          )}
 
           <Button
             icon={<RefreshCw size={14} />}
@@ -836,8 +886,8 @@ export default function ProductLabelManager({ userId = 'default', userRole = 'ad
             type="primary"
             icon={<Plus size={14} />}
             onClick={handleCreateNew}
-            disabled={userRole === 'viewer'}
-            style={{ background: userRole === 'viewer' ? '#f5f5f5' : '#0d9488', borderColor: userRole === 'viewer' ? '#d9d9d9' : '#0d9488', borderRadius: 6 }}
+            disabled={!hasEditPerm}
+            style={{ background: !hasEditPerm ? '#f5f5f5' : '#0d9488', borderColor: !hasEditPerm ? '#d9d9d9' : '#0d9488', borderRadius: 6 }}
           >
             Thêm liên kết
           </Button>

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import dayjs from 'dayjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Table, Button, Drawer, Input, Form, Tag, Space,
-  Popconfirm, message, Tooltip, Badge, Select, Row, Col,
+  Popconfirm, message, Tooltip, Badge, Select, Row, Col, Alert
 } from 'antd';
+import { useMasterPerms } from '@/lib/useMasterPerms';
 import type { ColumnsType } from 'antd/es/table';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -184,7 +185,38 @@ const DEFAULT_WIDTHS: Record<string, number> = {
   actions: 110,
 };
 
-export default function MasterSupplierManager({ userId = 'default', userRole = 'admin' }: { userId?: string; userRole?: 'admin' | 'staff' | 'viewer' }) {
+export default function MasterSupplierManager({
+  userId = 'default',
+  userRole = 'admin',
+  currentRole,
+}: {
+  userId?: string;
+  userRole?: 'admin' | 'staff' | 'viewer';
+  currentRole?: string;
+}) {
+  const { canView, canEdit } = useMasterPerms();
+  const [localRole, setLocalRole] = useState<string>(() =>
+    currentRole || (typeof window !== 'undefined' ? (localStorage.getItem('pilot_selected_role') || 'Viewer') : 'Viewer')
+  );
+
+  useEffect(() => {
+    if (currentRole) {
+      setLocalRole(currentRole);
+    }
+  }, [currentRole]);
+
+  useEffect(() => {
+    const handlePilotRole = (e: any) => {
+      if (e.detail) setLocalRole(e.detail);
+    };
+    window.addEventListener('pilot_role_change', handlePilotRole);
+    return () => window.removeEventListener('pilot_role_change', handlePilotRole);
+  }, []);
+
+  const effectiveRole = currentRole || localRole;
+  const hasViewPerm = canView(effectiveRole, 'master_suppliers');
+  const hasEditPerm = canEdit(effectiveRole, 'master_suppliers');
+
   const queryClient = useQueryClient();
   const [messageApi, contextHolder] = message.useMessage();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -685,19 +717,19 @@ export default function MasterSupplierManager({ userId = 'default', userRole = '
     ...resizable('actions'),
     render: (_: unknown, record: MasterSupplier) => (
       <Space size={6}>
-        <Tooltip title={userRole === 'viewer' ? "Viewer không thể sửa" : "Sửa"}>
+        <Tooltip title={!hasEditPerm ? `${effectiveRole}: Chỉ xem, không thể sửa` : "Sửa"}>
           <Button
             type="text"
             size="small"
             id={`btn-supplier-edit-${record.supplier_code}`}
-            disabled={userRole === 'viewer'}
-            icon={<Edit3 size={15} color={userRole === 'viewer' ? "#cbd5e1" : "#0d9488"} />}
+            disabled={!hasEditPerm}
+            icon={<Edit3 size={15} color={!hasEditPerm ? "#cbd5e1" : "#0d9488"} />}
             onClick={() => openDrawerForEdit(record)}
             style={{ borderRadius: 8 }}
           />
         </Tooltip>
-        {userRole === 'viewer' ? (
-          <Tooltip title="Viewer không thể xóa">
+        {!hasEditPerm ? (
+          <Tooltip title={`${effectiveRole}: Không có quyền xóa`}>
             <Button
               type="text"
               size="small"
@@ -749,6 +781,20 @@ export default function MasterSupplierManager({ userId = 'default', userRole = '
         0
       );
   }, [columnConfigs, columnWidths, allColumnDefs]);
+
+  if (!hasViewPerm) {
+    return (
+      <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+        <Alert
+          type="warning"
+          showIcon
+          message={`Không có quyền truy cập: ${effectiveRole}`}
+          description={`Vai trò "${effectiveRole}" hiện tại chưa được cấp quyền xem Danh mục Nhà cung cấp (master_suppliers). Vui lòng liên hệ Admin.`}
+          style={{ maxWidth: 640, margin: '0 auto', borderRadius: 12 }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -802,7 +848,6 @@ export default function MasterSupplierManager({ userId = 'default', userRole = '
           <Button
             icon={<Download size={14} />}
             onClick={handleDownloadTemplate}
-            disabled={userRole === 'viewer'}
             style={{ borderRadius: 6 }}
           >
             Tải Template
@@ -811,7 +856,7 @@ export default function MasterSupplierManager({ userId = 'default', userRole = '
           <Button
             icon={<Upload size={14} />}
             onClick={() => fileInputRef.current?.click()}
-            disabled={userRole === 'viewer'}
+            disabled={!hasEditPerm}
             style={{ borderRadius: 6 }}
           >
             Nhập từ Excel
@@ -820,11 +865,16 @@ export default function MasterSupplierManager({ userId = 'default', userRole = '
           <Button
             icon={<Download size={14} />}
             onClick={handleExportExcel}
-            disabled={userRole === 'viewer'}
             style={{ borderRadius: 6 }}
           >
             Xuất Excel
           </Button>
+
+          {!hasEditPerm && (
+            <Tag color="orange" style={{ fontWeight: 600, borderRadius: 8, height: 38, display: 'inline-flex', alignItems: 'center' }}>
+              {effectiveRole}: Chỉ xem
+            </Tag>
+          )}
 
           <Tooltip title="Tải lại dữ liệu">
             <Button
@@ -840,17 +890,17 @@ export default function MasterSupplierManager({ userId = 'default', userRole = '
             icon={<Plus size={16} />}
             onClick={openDrawerForCreate}
             id="btn-create-supplier"
-            disabled={userRole === 'viewer'}
+            disabled={!hasEditPerm}
             style={{
-              background: userRole === 'viewer' ? '#f5f5f5' : 'linear-gradient(135deg, #0d9488, #0f766e)',
-              border: userRole === 'viewer' ? '1px solid #d9d9d9' : 'none',
+              background: !hasEditPerm ? '#f5f5f5' : 'linear-gradient(135deg, #0d9488, #0f766e)',
+              border: !hasEditPerm ? '1px solid #d9d9d9' : 'none',
               borderRadius: 10,
               fontWeight: 500,
               display: 'flex',
               alignItems: 'center',
               gap: 4,
               height: 38,
-              boxShadow: userRole === 'viewer' ? 'none' : '0 4px 10px rgba(13, 148, 136, 0.2)',
+              boxShadow: !hasEditPerm ? 'none' : '0 4px 10px rgba(13, 148, 136, 0.2)',
             }}
           >
             Thêm nhà cung cấp

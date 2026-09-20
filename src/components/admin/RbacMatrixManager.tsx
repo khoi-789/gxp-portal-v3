@@ -155,7 +155,14 @@ export default function RbacMatrixManager({ onDirtyChange }: { onDirtyChange?: (
             group_permission: d.group_permission as PermLevel,
             field_overrides: d.field_overrides || {},
           }));
-          setPermissions(loaded);
+
+          // Merge loaded from DB on top of defaults so no role/status combinations are lost
+          setPermissions((prev) => {
+            const map = new Map<string, FieldPermissionConfig>();
+            prev.forEach((p) => map.set(`${p.role_code}_${p.status_code}_${p.group_code}`, p));
+            loaded.forEach((p) => map.set(`${p.role_code}_${p.status_code}_${p.group_code}`, p));
+            return Array.from(map.values());
+          });
         }
       } catch (err) {
         console.warn('Cannot load master_field_permissions, using defaults:', err);

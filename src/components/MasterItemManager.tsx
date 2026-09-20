@@ -5,8 +5,9 @@ import dayjs from 'dayjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Table, Button, Drawer, Form, Switch, Tag, Space,
-  Popconfirm, message, Tooltip, Badge, Empty, InputNumber, Row, Col, Select, Input
+  Popconfirm, message, Tooltip, Badge, Empty, InputNumber, Row, Col, Select, Input, Alert
 } from 'antd';
+import { useMasterPerms } from '@/lib/useMasterPerms';
 import type { ColumnsType } from 'antd/es/table';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -218,7 +219,38 @@ const DEFAULT_WIDTHS: Record<string, number> = {
 // ──────────────────────────────────────────────────────────
 // Main Component
 // ──────────────────────────────────────────────────────────
-export default function MasterItemManager({ userId = 'default', userRole = 'admin' }: { userId?: string; userRole?: 'admin' | 'staff' | 'viewer' }) {
+export default function MasterItemManager({
+  userId = 'default',
+  userRole = 'admin',
+  currentRole,
+}: {
+  userId?: string;
+  userRole?: 'admin' | 'staff' | 'viewer';
+  currentRole?: string;
+}) {
+  const { canView, canEdit } = useMasterPerms();
+  const [localRole, setLocalRole] = useState<string>(() =>
+    currentRole || (typeof window !== 'undefined' ? (localStorage.getItem('pilot_selected_role') || 'Viewer') : 'Viewer')
+  );
+
+  useEffect(() => {
+    if (currentRole) {
+      setLocalRole(currentRole);
+    }
+  }, [currentRole]);
+
+  useEffect(() => {
+    const handlePilotRole = (e: any) => {
+      if (e.detail) setLocalRole(e.detail);
+    };
+    window.addEventListener('pilot_role_change', handlePilotRole);
+    return () => window.removeEventListener('pilot_role_change', handlePilotRole);
+  }, []);
+
+  const effectiveRole = currentRole || localRole;
+  const hasViewPerm = canView(effectiveRole, 'master_items');
+  const hasEditPerm = canEdit(effectiveRole, 'master_items');
+
   const queryClient = useQueryClient();
   const [messageApi, contextHolder] = message.useMessage();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -749,11 +781,19 @@ export default function MasterItemManager({ userId = 'default', userRole = 'admi
     ...resizable('actions'),
     render: (_: unknown, record: MasterItem) => (
       <Space size={6}>
-        <Tooltip title={userRole === 'viewer' ? "Viewer không thể sửa" : "Sửa"}>
-          <Button disabled={userRole === 'viewer'} type="text" size="small" id={`btn-edit-${record.item_code}`} icon={<Edit3 size={15} color={userRole === 'viewer' ? "#cbd5e1" : "#0d9488"} />} onClick={() => openDrawerForEdit(record)} style={{ borderRadius: 8 }} />
+        <Tooltip title={!hasEditPerm ? `${effectiveRole}: Chỉ xem, không thể sửa` : "Sửa"}>
+          <Button
+            disabled={!hasEditPerm}
+            type="text"
+            size="small"
+            id={`btn-edit-${record.item_code}`}
+            icon={<Edit3 size={15} color={!hasEditPerm ? "#cbd5e1" : "#0d9488"} />}
+            onClick={() => openDrawerForEdit(record)}
+            style={{ borderRadius: 8 }}
+          />
         </Tooltip>
-        {userRole === 'viewer' ? (
-          <Tooltip title="Viewer không thể xóa">
+        {!hasEditPerm ? (
+          <Tooltip title={`${effectiveRole}: Không có quyền xóa`}>
             <Button disabled type="text" size="small" id={`btn-delete-${record.item_code}`} icon={<Trash2 size={15} color="#cbd5e1" />} style={{ borderRadius: 8 }} />
           </Tooltip>
         ) : (
@@ -792,6 +832,20 @@ export default function MasterItemManager({ userId = 'default', userRole = 'admi
       return allColumnDefs[cfg.key] as ColumnsType<MasterItem>[number];
     })
     .filter(Boolean) as ColumnsType<MasterItem>;
+
+  if (!hasViewPerm) {
+    return (
+      <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+        <Alert
+          type="warning"
+          showIcon
+          message={`Không có quyền truy cập: ${effectiveRole}`}
+          description={`Vai trò "${effectiveRole}" hiện tại chưa được cấp quyền xem Danh mục Sản phẩm (master_items). Vui lòng liên hệ Admin.`}
+          style={{ maxWidth: 640, margin: '0 auto', borderRadius: 12 }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -859,7 +913,6 @@ export default function MasterItemManager({ userId = 'default', userRole = 'admi
           <Button
             icon={<Download size={14} />}
             onClick={handleDownloadTemplate}
-            disabled={userRole === 'viewer'}
             style={{ borderRadius: 10, height: 38 }}
           >
             Tải Template
@@ -868,7 +921,7 @@ export default function MasterItemManager({ userId = 'default', userRole = 'admi
           <Button
             icon={<Upload size={14} />}
             onClick={() => fileInputRef.current?.click()}
-            disabled={userRole === 'viewer'}
+            disabled={!hasEditPerm}
             style={{ borderRadius: 10, height: 38 }}
           >
             Nhập từ Excel
@@ -877,11 +930,16 @@ export default function MasterItemManager({ userId = 'default', userRole = 'admi
           <Button
             icon={<Download size={14} />}
             onClick={handleExportExcel}
-            disabled={userRole === 'viewer'}
             style={{ borderRadius: 10, height: 38 }}
           >
             Xuất Excel
           </Button>
+
+          {!hasEditPerm && (
+            <Tag color="orange" style={{ fontWeight: 600, borderRadius: 8, height: 38, display: 'inline-flex', alignItems: 'center' }}>
+              {effectiveRole}: Chỉ xem
+            </Tag>
+          )}
 
           <Tooltip title="Làm mới dữ liệu">
             <Button
@@ -900,8 +958,8 @@ export default function MasterItemManager({ userId = 'default', userRole = 'admi
             type="primary"
             icon={<Plus size={15} />}
             onClick={openDrawerForCreate}
-            disabled={userRole === 'viewer'}
-            style={{ borderRadius: 10, background: userRole === 'viewer' ? '#f5f5f5' : '#0d9488', borderColor: userRole === 'viewer' ? '#d9d9d9' : '#0d9488', fontWeight: 600, height: 38 }}
+            disabled={!hasEditPerm}
+            style={{ borderRadius: 10, background: !hasEditPerm ? '#f5f5f5' : '#0d9488', borderColor: !hasEditPerm ? '#d9d9d9' : '#0d9488', fontWeight: 600, height: 38 }}
           >
             Thêm sản phẩm
           </Button>

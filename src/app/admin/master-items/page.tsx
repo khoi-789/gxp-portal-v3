@@ -1,40 +1,41 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import PortalLayout from '@/components/PortalLayout';
 import MasterItemManager from '@/components/MasterItemManager';
 import { MOCK_CURRENT_USER } from '@/lib/mockData';
-import { ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useMasterPerms } from '@/lib/useMasterPerms';
 
 /**
  * Route: /admin/master-items
- * Admin-only page for managing INFOR/SAP product master data
+ * Passes the correct permission-based userRole to MasterItemManager
+ * based on the Admin-configured master_data_permissions.
  */
 export default function MasterItemsPage() {
   const router = useRouter();
+  const { canEdit } = useMasterPerms();
 
-  // Guard: chỉ admin mới vào được
-  if (MOCK_CURRENT_USER.system_role !== 'admin') {
-    return (
-      <PortalLayout currentUser={MOCK_CURRENT_USER}>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: 400,
-            gap: 16,
-            color: '#64748b',
-          }}
-        >
-          <ShieldCheck size={60} strokeWidth={1} color="#e2e8f0" />
-          <h2 style={{ margin: 0, color: '#374151' }}>Không có quyền truy cập</h2>
-          <p>Trang này chỉ dành cho Admin.</p>
-        </div>
-      </PortalLayout>
-    );
-  }
+  // Read pilot role from localStorage (set by PilotMode selector)
+  const [simulatedRole, setSimulatedRole] = useState<string>('Viewer');
+  useEffect(() => {
+    const role = localStorage.getItem('pilot_selected_role') || 'Viewer';
+    setSimulatedRole(role);
+
+    // Watch for role switches across tabs
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'pilot_selected_role') {
+        setSimulatedRole(e.newValue || 'Viewer');
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  // Map pilot role + master_items permission → userRole prop
+  const userRole: 'admin' | 'staff' | 'viewer' = canEdit(simulatedRole, 'master_items')
+    ? 'admin'
+    : 'viewer';
 
   return (
     <PortalLayout
@@ -66,7 +67,7 @@ export default function MasterItemsPage() {
         <span style={{ fontSize: 13, color: '#64748b' }}>Danh mục sản phẩm</span>
       </div>
 
-      <MasterItemManager />
+      <MasterItemManager userId={MOCK_CURRENT_USER.id} userRole={userRole} currentRole={simulatedRole} />
     </PortalLayout>
   );
 }

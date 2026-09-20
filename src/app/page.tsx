@@ -13,9 +13,10 @@ import { MOCK_ADMIN_USER, MOCK_PIC1_USER, MOCK_PIC2_USER, MOCK_VIEWER_USER } fro
 import { User, PilotRole } from '@/lib/types';
 import ImportModule from '@/components/ImportModule';
 import MasterSystemManager from '@/components/admin/MasterSystemManager';
+import { useMasterPerms } from '@/lib/useMasterPerms';
 import { 
   LayoutGrid, Package, Link2, Truck, Database, HelpCircle, Shield, FileText,
-  Building, Warehouse, Thermometer, Tag as TagIcon, FileCode, FileSpreadsheet
+  Building, Warehouse, Thermometer, Tag as TagIcon, FileCode, FileSpreadsheet, Lock
 } from 'lucide-react';
 
 /**
@@ -44,10 +45,13 @@ export default function HomePage() {
     }
   }, []);
 
+  const { canView, canEdit } = useMasterPerms();
+
   const handleRoleChange = (role: PilotRole) => {
     setSelectedRole(role);
     if (typeof window !== 'undefined') {
       localStorage.setItem('pilot_selected_role', role);
+      window.dispatchEvent(new CustomEvent('pilot_role_change', { detail: role }));
     }
   };
 
@@ -70,9 +74,10 @@ export default function HomePage() {
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <Package size={14} />
           Danh mục SP
+          {!canView(selectedRole, 'master_items') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
-      children: <MasterItemManager userId={currentUser.id} userRole={currentUser.system_role} />,
+      children: <MasterItemManager userId={currentUser.id} userRole={currentUser.system_role} currentRole={selectedRole} />,
     },
     {
       key: 'master-suppliers',
@@ -80,9 +85,10 @@ export default function HomePage() {
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <Truck size={14} />
           Danh mục NCC
+          {!canView(selectedRole, 'master_suppliers') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
-      children: <MasterSupplierManager userId={currentUser.id} userRole={currentUser.system_role} />,
+      children: <MasterSupplierManager userId={currentUser.id} userRole={currentUser.system_role} currentRole={selectedRole} />,
     },
     {
       key: 'label-mappings',
@@ -90,9 +96,10 @@ export default function HomePage() {
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <Link2 size={14} />
           Liên kết SP - Tem
+          {!canView(selectedRole, 'product_label_mappings') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
-      children: <ProductLabelManager userId={currentUser.id} userRole={currentUser.system_role} />,
+      children: <ProductLabelManager userId={currentUser.id} userRole={currentUser.system_role} currentRole={selectedRole} />,
     },
     {
       key: 'departments',
@@ -100,9 +107,10 @@ export default function HomePage() {
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <Building size={14} />
           Phòng ban
+          {!canView(selectedRole, 'master_departments') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
-      children: <MasterSystemManager forcedTab="departments" hideTabBar={true} />,
+      children: <MasterSystemManager forcedTab="departments" hideTabBar={true} currentRole={selectedRole} />,
     },
     {
       key: 'warehouses',
@@ -110,9 +118,10 @@ export default function HomePage() {
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <Warehouse size={14} />
           Danh mục Kho
+          {!canView(selectedRole, 'master_warehouses') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
-      children: <MasterSystemManager forcedTab="warehouses" hideTabBar={true} />,
+      children: <MasterSystemManager forcedTab="warehouses" hideTabBar={true} currentRole={selectedRole} />,
     },
     {
       key: 'loggers',
@@ -120,9 +129,10 @@ export default function HomePage() {
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <Thermometer size={14} />
           Thiết bị nhiệt
+          {!canView(selectedRole, 'master_loggers') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
-      children: <MasterSystemManager forcedTab="loggers" hideTabBar={true} />,
+      children: <MasterSystemManager forcedTab="loggers" hideTabBar={true} currentRole={selectedRole} />,
     },
     {
       key: 'label_types',
@@ -130,9 +140,10 @@ export default function HomePage() {
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <TagIcon size={14} />
           Loại tem nhãn
+          {!canView(selectedRole, 'master_label_types') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
-      children: <MasterSystemManager forcedTab="label_types" hideTabBar={true} />,
+      children: <MasterSystemManager forcedTab="label_types" hideTabBar={true} currentRole={selectedRole} />,
     },
     {
       key: 'numbering',
@@ -140,9 +151,10 @@ export default function HomePage() {
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <FileCode size={14} />
           Quy tắc sinh số
+          {!canView(selectedRole, 'master_numbering_rules') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
-      children: <MasterSystemManager forcedTab="numbering" hideTabBar={true} />,
+      children: <MasterSystemManager forcedTab="numbering" hideTabBar={true} currentRole={selectedRole} />,
     },
     {
       key: 'templates',
@@ -150,9 +162,10 @@ export default function HomePage() {
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <FileSpreadsheet size={14} />
           Biểu mẫu SOP
+          {!canView(selectedRole, 'master_form_templates') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
-      children: <MasterSystemManager forcedTab="templates" hideTabBar={true} />,
+      children: <MasterSystemManager forcedTab="templates" hideTabBar={true} currentRole={selectedRole} />,
     },
   ];
 
@@ -215,7 +228,7 @@ export default function HomePage() {
               Quản trị Admin
             </span>
           ),
-          children: <RbacManager onDirtyChange={setIsRbacDirty} />,
+          children: <RbacManager onDirtyChange={setIsRbacDirty} currentRole={selectedRole} />,
         },
       ]
       : []),

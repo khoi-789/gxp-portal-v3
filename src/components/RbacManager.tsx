@@ -1,82 +1,38 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Tabs, Card, Tag, Alert, Radio, Table, Button, Space, message } from 'antd';
+import { Tabs, Card, Tag, Alert, Radio, Table, Button, Space, message, Spin, Tooltip } from 'antd';
 import {
   ShieldCheck, Users, Database, Sliders, Lock, CheckCircle2,
-  Key, Layers, ShieldAlert, Sparkles, Save
+  Key, Layers, ShieldAlert, Sparkles, Save, RefreshCw
 } from 'lucide-react';
 import RbacMatrixManager from './admin/RbacMatrixManager';
 import UserRoleManager from './admin/UserRoleManager';
 import MasterSystemManager from './admin/MasterSystemManager';
+import { useMasterPerms, MasterPermsMap, DEFAULT_MASTER_PERMS } from '@/lib/useMasterPerms';
 
 interface RbacManagerProps {
   onDirtyChange?: (isDirty: boolean) => void;
+  currentRole?: string;
 }
 
-export default function RbacManager({ onDirtyChange }: RbacManagerProps) {
+export default function RbacManager({ onDirtyChange, currentRole }: RbacManagerProps) {
   const [activeTab, setActiveTab] = useState<string>('matrix');
 
-  // Master Data Permission Matrix (None / View / Edit) for 5 Roles
-  const [masterPerms, setMasterPerms] = useState<Record<string, Record<string, 'none' | 'view' | 'edit'>>>({
-    'Viewer': {
-      'master_items': 'view',
-      'master_suppliers': 'view',
-      'product_label_mappings': 'view',
-      'master_departments': 'view',
-      'master_warehouses': 'view',
-      'master_loggers': 'view',
-      'master_label_types': 'view',
-      'master_numbering_rules': 'none',
-      'master_form_templates': 'view',
-    },
-    'Draft': {
-      'master_items': 'view',
-      'master_suppliers': 'view',
-      'product_label_mappings': 'view',
-      'master_departments': 'view',
-      'master_warehouses': 'view',
-      'master_loggers': 'view',
-      'master_label_types': 'view',
-      'master_numbering_rules': 'none',
-      'master_form_templates': 'view',
-    },
-    'PIC-1': {
-      'master_items': 'edit',
-      'master_suppliers': 'edit',
-      'product_label_mappings': 'edit',
-      'master_departments': 'view',
-      'master_warehouses': 'view',
-      'master_loggers': 'edit',
-      'master_label_types': 'edit',
-      'master_numbering_rules': 'view',
-      'master_form_templates': 'view',
-    },
-    'PIC-2': {
-      'master_items': 'view',
-      'master_suppliers': 'view',
-      'product_label_mappings': 'view',
-      'master_departments': 'view',
-      'master_warehouses': 'edit',
-      'master_loggers': 'edit',
-      'master_label_types': 'view',
-      'master_numbering_rules': 'view',
-      'master_form_templates': 'view',
-    },
-    'Admin': {
-      'master_items': 'edit',
-      'master_suppliers': 'edit',
-      'product_label_mappings': 'edit',
-      'master_departments': 'edit',
-      'master_warehouses': 'edit',
-      'master_loggers': 'edit',
-      'master_label_types': 'edit',
-      'master_numbering_rules': 'edit',
-      'master_form_templates': 'edit',
-    },
-  });
-
+  // Master Data Permission Matrix — backed by Supabase master_roles.master_data_permissions
+  const { perms: dbPerms, loading: loadingPerms, saveToDB, forceRefresh } = useMasterPerms();
+  const [masterPerms, setMasterPerms] = useState<MasterPermsMap | null>(null);
+  const [isDirtyPerms, setIsDirtyPerms] = useState(false);
   const [savingMasterPerms, setSavingMasterPerms] = useState(false);
+
+  // Sync local edit state when DB data loads
+  React.useEffect(() => {
+    if (!masterPerms) {
+      setMasterPerms(dbPerms);
+    }
+  }, [dbPerms]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const effectivePerms = masterPerms || dbPerms;
 
   const MASTER_TABLES = [
     { key: 'master_items', name: 'Danh mục Sản phẩm (master_items)', group: 'Nghiệp vụ' },
@@ -92,20 +48,38 @@ export default function RbacManager({ onDirtyChange }: RbacManagerProps) {
 
   const handleMasterPermChange = (role: string, tableKey: string, val: 'none' | 'view' | 'edit') => {
     setMasterPerms((prev) => ({
+      ...effectivePerms,
       ...prev,
       [role]: {
-        ...prev[role],
+        ...(prev ? prev[role] : effectivePerms[role]),
         [tableKey]: val,
       },
     }));
+    setIsDirtyPerms(true);
+    onDirtyChange?.(true);
   };
 
-  const handleSaveMasterPerms = () => {
+  const handleSaveMasterPerms = async () => {
     setSavingMasterPerms(true);
-    setTimeout(() => {
+    try {
+      const result = await saveToDB(effectivePerms);
+      if (result.success) {
+        message.success('✅ Đã lưu phân quyền Master Data vào Supabase thành công và áp dụng tức thì!');
+        setIsDirtyPerms(false);
+        onDirtyChange?.(false);
+      } else {
+        message.error('❌ Lỗi lưu Database: ' + (result.error || 'Không xác định'));
+      }
+    } finally {
       setSavingMasterPerms(false);
-      message.success('Đã lưu cấu hình phân quyền Master Data theo Role thành công!');
-    }, 400);
+    }
+  };
+
+  const handleResetDefaults = () => {
+    setMasterPerms(DEFAULT_MASTER_PERMS);
+    setIsDirtyPerms(true);
+    onDirtyChange?.(true);
+    message.info('Đã nạp ma trận chuẩn GxP. Hãy bấm "Lưu quyền Master Data" để cập nhật vào Database.');
   };
 
   const masterPermColumns = [
@@ -130,7 +104,7 @@ export default function RbacManager({ onDirtyChange }: RbacManagerProps) {
       ),
       key: role,
       render: (_: any, r: any) => {
-        const val = masterPerms[role]?.[r.key] || 'none';
+        const val = effectivePerms[role]?.[r.key] || 'none';
         const isNone = val === 'none';
         const isView = val === 'view';
         const isEdit = val === 'edit';
@@ -242,21 +216,56 @@ export default function RbacManager({ onDirtyChange }: RbacManagerProps) {
                   <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0f766e' }}>
                     Phân quyền Truy cập Master Data (None / View / Edit)
                   </h2>
+                  {loadingPerms && <Spin size="small" style={{ marginLeft: 8 }} />}
                 </div>
                 <p style={{ margin: 0, fontSize: 13, color: '#64748b' }}>
                   Thiết lập quyền Xem và Chỉnh sửa cho từng vai trò trên 9 bảng Master Data nghiệp vụ và hệ thống.
+                  {isDirtyPerms && <span style={{ color: '#f59e0b', fontWeight: 600, marginLeft: 8 }}>⚠ Chưa lưu</span>}
                 </p>
               </div>
 
-              <Button
-                type="primary"
-                icon={<Save size={15} />}
-                loading={savingMasterPerms}
-                onClick={handleSaveMasterPerms}
-                style={{ background: '#0d9488', borderColor: '#0d9488', fontWeight: 600, borderRadius: 10, height: 36 }}
-              >
-                Lưu quyền Master Data
-              </Button>
+              <Space wrap>
+                <Tooltip title="Tải lại phân quyền mới nhất từ Supabase Database">
+                  <Button
+                    icon={<RefreshCw size={14} />}
+                    onClick={async () => {
+                      await forceRefresh();
+                      setMasterPerms(null);
+                      setIsDirtyPerms(false);
+                      onDirtyChange?.(false);
+                      message.success('Đã làm mới phân quyền từ Database!');
+                    }}
+                    style={{ borderRadius: 10, height: 36, fontWeight: 500 }}
+                  >
+                    Tải lại DB
+                  </Button>
+                </Tooltip>
+
+                <Button
+                  onClick={handleResetDefaults}
+                  style={{ borderRadius: 10, height: 36, fontWeight: 500 }}
+                >
+                  Khôi phục chuẩn GxP
+                </Button>
+
+                <Button
+                  type="primary"
+                  icon={<Save size={15} />}
+                  loading={savingMasterPerms}
+                  onClick={handleSaveMasterPerms}
+                  disabled={!isDirtyPerms}
+                  style={{
+                    background: isDirtyPerms ? '#0d9488' : '#94a3b8',
+                    borderColor: isDirtyPerms ? '#0d9488' : '#94a3b8',
+                    fontWeight: 600,
+                    borderRadius: 10,
+                    height: 36,
+                    opacity: isDirtyPerms ? 1 : 0.7,
+                  }}
+                >
+                  {isDirtyPerms ? 'Lưu quyền Master Data' : 'Đã lưu (Không có thay đổi)'}
+                </Button>
+              </Space>
             </div>
           </Card>
 
