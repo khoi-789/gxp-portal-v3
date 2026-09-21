@@ -800,20 +800,12 @@ export default function MasterSystemManager({
     },
   ];
 
-  const currentTabItem = tabItems.find(t => t.key === activeTab);
+  const visibleTabItems = tabItems.filter((t) => canViewTab(t.key));
+  const currentTabItem = visibleTabItems.find((t) => t.key === activeTab) || visibleTabItems[0];
 
   if (!canViewTab(activeTab)) {
-    return (
-      <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-        <Alert
-          type="warning"
-          showIcon
-          message={`Không có quyền truy cập: ${effectiveRole}`}
-          description={`Vai trò "${effectiveRole}" hiện tại không có quyền xem mục Master Data này (${TAB_TO_TABLE_KEY[activeTab] || activeTab}). Vui lòng liên hệ Admin.`}
-          style={{ maxWidth: 640, margin: '0 auto', borderRadius: 12 }}
-        />
-      </div>
-    );
+    // Ẩn hoàn toàn giao diện nếu vai trò không có quyền truy cập tab này
+    return null;
   }
 
   return (
@@ -830,7 +822,7 @@ export default function MasterSystemManager({
       {hideTabBar ? (
         currentTabItem?.children
       ) : (
-        <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} type="line" size="middle" />
+        <Tabs activeKey={activeTab} onChange={setActiveTab} items={visibleTabItems} type="line" size="middle" />
       )}
 
       {/* Dynamic Modal Add/Edit */}

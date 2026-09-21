@@ -16,7 +16,7 @@ import MasterSystemManager from '@/components/admin/MasterSystemManager';
 import { useMasterPerms } from '@/lib/useMasterPerms';
 import { 
   LayoutGrid, Package, Link2, Truck, Database, HelpCircle, Shield, FileText,
-  Building, Warehouse, Thermometer, Tag as TagIcon, FileCode, FileSpreadsheet, Lock
+  Building, Warehouse, Thermometer, Tag as TagIcon, FileCode, FileSpreadsheet
 } from 'lucide-react';
 
 /**
@@ -64,110 +64,125 @@ export default function HomePage() {
           ? MOCK_PIC2_USER
           : MOCK_VIEWER_USER;
 
-  // Cho phép tất cả các vai trò truy cập Master Data để nghiệm thu tính năng (Viewer sẽ ở chế độ chỉ đọc)
-  const isAllowedMasterData = true;
+  const [activeMasterTab, setActiveMasterTab] = useState<string>('master-items');
 
-  const masterDataSubItems = [
+  const allMasterDataSubItems = [
     {
       key: 'master-items',
+      tableKey: 'master_items',
       label: (
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <Package size={14} />
           Danh mục SP
-          {!canView(selectedRole, 'master_items') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
       children: <MasterItemManager userId={currentUser.id} userRole={currentUser.system_role} currentRole={selectedRole} />,
     },
     {
       key: 'master-suppliers',
+      tableKey: 'master_suppliers',
       label: (
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <Truck size={14} />
           Danh mục NCC
-          {!canView(selectedRole, 'master_suppliers') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
       children: <MasterSupplierManager userId={currentUser.id} userRole={currentUser.system_role} currentRole={selectedRole} />,
     },
     {
       key: 'label-mappings',
+      tableKey: 'product_label_mappings',
       label: (
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <Link2 size={14} />
           Liên kết SP - Tem
-          {!canView(selectedRole, 'product_label_mappings') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
       children: <ProductLabelManager userId={currentUser.id} userRole={currentUser.system_role} currentRole={selectedRole} />,
     },
     {
       key: 'departments',
+      tableKey: 'master_departments',
       label: (
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <Building size={14} />
           Phòng ban
-          {!canView(selectedRole, 'master_departments') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
       children: <MasterSystemManager forcedTab="departments" hideTabBar={true} currentRole={selectedRole} />,
     },
     {
       key: 'warehouses',
+      tableKey: 'master_warehouses',
       label: (
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <Warehouse size={14} />
           Danh mục Kho
-          {!canView(selectedRole, 'master_warehouses') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
       children: <MasterSystemManager forcedTab="warehouses" hideTabBar={true} currentRole={selectedRole} />,
     },
     {
       key: 'loggers',
+      tableKey: 'master_loggers',
       label: (
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <Thermometer size={14} />
           Thiết bị nhiệt
-          {!canView(selectedRole, 'master_loggers') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
       children: <MasterSystemManager forcedTab="loggers" hideTabBar={true} currentRole={selectedRole} />,
     },
     {
       key: 'label_types',
+      tableKey: 'master_label_types',
       label: (
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <TagIcon size={14} />
           Loại tem nhãn
-          {!canView(selectedRole, 'master_label_types') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
       children: <MasterSystemManager forcedTab="label_types" hideTabBar={true} currentRole={selectedRole} />,
     },
     {
       key: 'numbering',
+      tableKey: 'master_numbering_rules',
       label: (
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <FileCode size={14} />
           Quy tắc sinh số
-          {!canView(selectedRole, 'master_numbering_rules') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
       children: <MasterSystemManager forcedTab="numbering" hideTabBar={true} currentRole={selectedRole} />,
     },
     {
       key: 'templates',
+      tableKey: 'master_form_templates',
       label: (
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
           <FileSpreadsheet size={14} />
           Biểu mẫu SOP
-          {!canView(selectedRole, 'master_form_templates') && <Lock size={12} color="#ef4444" />}
         </span>
       ),
       children: <MasterSystemManager forcedTab="templates" hideTabBar={true} currentRole={selectedRole} />,
     },
   ];
+
+  // Chỉ hiển thị các tab Master Data mà vai trò hiện tại có quyền xem (view hoặc edit)
+  // Các tab có quyền 'none' sẽ bị ẩn hoàn toàn khỏi thanh tab
+  const masterDataSubItems = allMasterDataSubItems.filter((item) => canView(selectedRole, item.tableKey));
+
+  // Tự động chuyển activeMasterTab nếu tab đang chọn bị ẩn khi đổi vai trò
+  useEffect(() => {
+    if (masterDataSubItems.length > 0) {
+      const exists = masterDataSubItems.some((item) => item.key === activeMasterTab);
+      if (!exists) {
+        setActiveMasterTab(masterDataSubItems[0].key);
+      }
+    }
+  }, [selectedRole, masterDataSubItems, activeMasterTab]);
+
+  const isAllowedMasterData = masterDataSubItems.length > 0;
 
   const tabItems = [
     {
@@ -194,7 +209,7 @@ export default function HomePage() {
         </div>
       ),
     },
-    // Master Data hợp nhất 9 bảng trong 1 hàng tab duy nhất
+    // Master Data hợp nhất 9 bảng trong 1 hàng tab duy nhất (ẩn nếu role không có quyền bảng nào)
     ...(isAllowedMasterData
       ? [
         {
@@ -208,7 +223,8 @@ export default function HomePage() {
           children: (
             <div style={{ padding: '4px 0 12px' }}>
               <Tabs
-                defaultActiveKey="master-items"
+                activeKey={activeMasterTab}
+                onChange={setActiveMasterTab}
                 items={masterDataSubItems}
                 type="card"
                 size="middle"

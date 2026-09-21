@@ -783,17 +783,7 @@ export default function MasterSupplierManager({
   }, [columnConfigs, columnWidths, allColumnDefs]);
 
   if (!hasViewPerm) {
-    return (
-      <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-        <Alert
-          type="warning"
-          showIcon
-          message={`Không có quyền truy cập: ${effectiveRole}`}
-          description={`Vai trò "${effectiveRole}" hiện tại chưa được cấp quyền xem Danh mục Nhà cung cấp (master_suppliers). Vui lòng liên hệ Admin.`}
-          style={{ maxWidth: 640, margin: '0 auto', borderRadius: 12 }}
-        />
-      </div>
-    );
+    return null;
   }
 
   return (

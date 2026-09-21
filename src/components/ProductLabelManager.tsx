@@ -782,17 +782,7 @@ export default function ProductLabelManager({
   }, [prefs.columnConfigs, prefs.columnWidths, columns, viewMode]);
 
   if (!hasViewPerm) {
-    return (
-      <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-        <Alert
-          type="warning"
-          showIcon
-          message={`Không có quyền truy cập: ${effectiveRole}`}
-          description={`Vai trò "${effectiveRole}" hiện tại chưa được cấp quyền xem Liên kết SP - Tem (product_label_mappings). Vui lòng liên hệ Admin.`}
-          style={{ maxWidth: 640, margin: '0 auto', borderRadius: 12 }}
-        />
-      </div>
-    );
+    return null;
   }
 
   return (

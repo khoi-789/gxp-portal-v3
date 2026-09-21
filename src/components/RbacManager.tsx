@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import RbacMatrixManager from './admin/RbacMatrixManager';
 import UserRoleManager from './admin/UserRoleManager';
-import MasterSystemManager from './admin/MasterSystemManager';
 import { useMasterPerms, MasterPermsMap, DEFAULT_MASTER_PERMS } from '@/lib/useMasterPerms';
 
 interface RbacManagerProps {
@@ -280,16 +279,6 @@ export default function RbacManager({ onDirtyChange, currentRole }: RbacManagerP
           </Card>
         </div>
       ),
-    },
-    {
-      key: 'system-master',
-      label: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 600, fontSize: 13 }}>
-          <Database size={15} />
-          Master Data Hệ thống
-        </span>
-      ),
-      children: <MasterSystemManager />,
     },
   ];
 

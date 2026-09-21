@@ -607,8 +607,8 @@ export default function RbacMatrixManager({ onDirtyChange }: { onDirtyChange?: (
               <Tag color="default" style={{ borderRadius: 6, fontWeight: 600 }}>
                 Xám = Chỉ xem (READ)
               </Tag>
-              <Tag color="error" style={{ borderRadius: 6, fontWeight: 600 }}>
-                Gạch đỏ = Bị ẩn (HIDDEN)
+              <Tag color="default" style={{ borderRadius: 6, fontWeight: 600, color: '#94a3b8' }}>
+                Ẩn (HIDDEN) = Ẩn hoàn toàn khỏi giao diện
               </Tag>
             </Space>
           }
@@ -618,6 +618,17 @@ export default function RbacMatrixManager({ onDirtyChange }: { onDirtyChange?: (
               const groupCfg = getConfig(group.groupCode);
               const isGroupHidden = groupCfg.group_permission === 'HIDDEN';
 
+              // Nếu cả khối dữ liệu bị ẨN (HIDDEN) thì ẩn hoàn toàn
+              if (isGroupHidden) return null;
+
+              // Lọc các trường dữ liệu con: trường bị HIDDEN sẽ ẩn hoàn toàn
+              const visibleFields = group.fields.filter(
+                (f) => resolveFieldPerm(group.groupCode, f.code) !== 'HIDDEN'
+              );
+
+              // Nếu không còn trường nào hiển thị thì không hiện khối
+              if (visibleFields.length === 0) return null;
+
               return (
                 <div
                   key={group.groupCode}
@@ -625,80 +636,30 @@ export default function RbacMatrixManager({ onDirtyChange }: { onDirtyChange?: (
                     border: '1px solid #cbd5e1',
                     borderRadius: 12,
                     padding: 16,
-                    background: isGroupHidden ? '#fef2f2' : '#ffffff',
-                    opacity: isGroupHidden ? 0.6 : 1,
+                    background: '#ffffff',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <div style={{ fontWeight: 700, color: isGroupHidden ? '#ef4444' : '#0f766e', fontSize: 14 }}>
+                    <div style={{ fontWeight: 700, color: '#0f766e', fontSize: 14 }}>
                       {group.groupName}
                     </div>
                     <div>
-                      {isGroupHidden ? (
-                        <Tag color="error">CẢ KHỐI ĐANG BỊ ẨN</Tag>
-                      ) : (
-                        <Tag color="cyan">Khối đang mở ({groupCfg.group_permission})</Tag>
-                      )}
+                      <Tag color="cyan">Khối đang mở ({groupCfg.group_permission})</Tag>
                     </div>
                   </div>
 
-                  {!isGroupHidden && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-                      {group.fields.map((f) => {
-                        const perm = resolveFieldPerm(group.groupCode, f.code);
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+                    {visibleFields.map((f) => {
+                      const perm = resolveFieldPerm(group.groupCode, f.code);
 
-                        if (perm === 'HIDDEN') {
-                          return (
-                            <div
-                              key={f.code}
-                              style={{
-                                padding: 10,
-                                background: '#fef2f2',
-                                border: '1px dashed #f87171',
-                                borderRadius: 8,
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                              }}
-                            >
-                              <span style={{ textDecoration: 'line-through', color: '#991b1b', fontSize: 13 }}>
-                                {f.label}
-                              </span>
-                              <Tag color="error" style={{ margin: 0, fontSize: 10 }}>BỊ ẨN</Tag>
-                            </div>
-                          );
-                        }
-
-                        if (perm === 'READ') {
-                          return (
-                            <div
-                              key={f.code}
-                              style={{
-                                padding: 10,
-                                background: '#f1f5f9',
-                                border: '1px solid #cbd5e1',
-                                borderRadius: 8,
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                              }}
-                            >
-                              <div>
-                                <div style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>{f.label}</div>
-                                <div style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>[Chỉ xem - Khóa sửa]</div>
-                              </div>
-                              <Lock size={14} color="#64748b" />
-                            </div>
-                          );
-                        }
-
+                      if (perm === 'READ') {
                         return (
                           <div
                             key={f.code}
                             style={{
                               padding: 10,
-                              background: '#f0fdfa',
-                              border: '1.5px solid #0d9488',
+                              background: '#f1f5f9',
+                              border: '1px solid #cbd5e1',
                               borderRadius: 8,
                               display: 'flex',
                               justifyContent: 'space-between',
@@ -706,15 +667,36 @@ export default function RbacMatrixManager({ onDirtyChange }: { onDirtyChange?: (
                             }}
                           >
                             <div>
-                              <div style={{ fontSize: 12, color: '#0f766e', fontWeight: 700 }}>{f.label}</div>
-                              <div style={{ fontSize: 12, color: '#0d9488' }}>[Được chỉnh sửa]</div>
+                              <div style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>{f.label}</div>
+                              <div style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>[Chỉ xem - Khóa sửa]</div>
                             </div>
-                            <Unlock size={14} color="#0d9488" />
+                            <Lock size={14} color="#64748b" />
                           </div>
                         );
-                      })}
-                    </div>
-                  )}
+                      }
+
+                      return (
+                        <div
+                          key={f.code}
+                          style={{
+                            padding: 10,
+                            background: '#f0fdfa',
+                            border: '1.5px solid #0d9488',
+                            borderRadius: 8,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontSize: 12, color: '#0f766e', fontWeight: 700 }}>{f.label}</div>
+                            <div style={{ fontSize: 12, color: '#0d9488' }}>[Được chỉnh sửa]</div>
+                          </div>
+                          <Unlock size={14} color="#0d9488" />
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}

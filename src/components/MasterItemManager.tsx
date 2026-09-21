@@ -834,17 +834,7 @@ export default function MasterItemManager({
     .filter(Boolean) as ColumnsType<MasterItem>;
 
   if (!hasViewPerm) {
-    return (
-      <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-        <Alert
-          type="warning"
-          showIcon
-          message={`Không có quyền truy cập: ${effectiveRole}`}
-          description={`Vai trò "${effectiveRole}" hiện tại chưa được cấp quyền xem Danh mục Sản phẩm (master_items). Vui lòng liên hệ Admin.`}
-          style={{ maxWidth: 640, margin: '0 auto', borderRadius: 12 }}
-        />
-      </div>
-    );
+    return null;
   }
 
   return (
