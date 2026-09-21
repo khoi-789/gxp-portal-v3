@@ -107,7 +107,7 @@ const DEFAULT_MAPPING_WIDTHS: Record<string, number> = {
   label_item_code: 120,
   label_name: 220,
   quantity_per_unit: 120,
-  actions: 80,
+  actions: 120,
 };
 
 export default function ProductLabelManager({
@@ -544,6 +544,7 @@ export default function ProductLabelManager({
       localStorage.removeItem('gxp_product_label_mappings_cache');
       queryClient.invalidateQueries({ queryKey: ['product_label_mappings'] });
       queryClient.invalidateQueries({ queryKey: ['label-mappings'] });
+      loadData();
     } catch (e: any) {
       messageApi.error('Lỗi khi xóa liên kết: ' + e.message);
     }
@@ -563,8 +564,20 @@ export default function ProductLabelManager({
     setSaving(true);
     try {
       if (editingId) {
-        // Edit existing mapping (update qty)
+        // Edit existing mapping (update qty and label if changed)
+        if (selectedLabel !== editingRecord?.label_item_code) {
+          const duplicate = mappings.some(
+            m => m.id !== editingId && m.product_item_code === selectedProduct && m.label_item_code === selectedLabel
+          );
+          if (duplicate) {
+            messageApi.warning('Liên kết giữa sản phẩm và tem nhãn này đã tồn tại!');
+            setSaving(false);
+            return;
+          }
+        }
+
         const dbPayload = {
+          label_item_code: selectedLabel,
           quantity_per_unit: quantity,
         };
         const { error } = await supabase
@@ -585,7 +598,7 @@ export default function ProductLabelManager({
           newValues: { ...editingRecord, ...dbPayload },
           diff, changedFields,
         });
-        messageApi.success('Đã cập nhật số lượng dán nhãn thành công!');
+        messageApi.success('Đã cập nhật liên kết SP - Tem thành công!');
       } else {
         // Check duplicate
         const duplicate = mappings.some(
@@ -621,6 +634,7 @@ export default function ProductLabelManager({
       localStorage.removeItem('gxp_product_label_mappings_cache');
       queryClient.invalidateQueries({ queryKey: ['product_label_mappings'] });
       queryClient.invalidateQueries({ queryKey: ['label-mappings'] });
+      loadData();
     } catch (e: any) {
       messageApi.error('Lỗi khi lưu dữ liệu: ' + e.message);
     } finally {
@@ -721,15 +735,18 @@ export default function ProductLabelManager({
       align: 'center',
       ...resizable('actions'),
       render: (_: any, r: any) => (
-        <Space size="middle">
-          <Tooltip title={!hasEditPerm ? `${effectiveRole}: Chỉ xem, không thể sửa` : "Sửa số lượng"}>
+        <Space size="small">
+          <Tooltip title={!hasEditPerm ? `${effectiveRole}: Chỉ xem, không thể sửa` : "Chỉnh sửa liên kết"}>
             <Button
               type="text"
               size="small"
               disabled={!hasEditPerm}
               icon={<Edit3 size={14} color={!hasEditPerm ? "#cbd5e1" : "#0d9488"} />}
               onClick={() => handleEdit(r)}
-            />
+              style={{ color: !hasEditPerm ? "#cbd5e1" : "#0d9488", fontWeight: 600 }}
+            >
+              Sửa
+            </Button>
           </Tooltip>
           {!hasEditPerm ? (
             <Tooltip title={`${effectiveRole}: Không có quyền xóa`}>
@@ -766,11 +783,8 @@ export default function ProductLabelManager({
 
   const tableColumns = useMemo(() => {
     const visibleConfigs = prefs.columnConfigs.filter(c => c.visible);
-    return visibleConfigs
+    const cols = visibleConfigs
       .map(c => {
-        if (viewMode === 'compact' && (c.key === 'quantity_per_unit' || c.key === 'actions')) {
-          return null;
-        }
         const def = columns[c.key];
         if (!def) return null;
         return {
@@ -779,7 +793,17 @@ export default function ProductLabelManager({
         };
       })
       .filter(Boolean) as ColumnsType<any>;
-  }, [prefs.columnConfigs, prefs.columnWidths, columns, viewMode]);
+
+    // Đảm bảo cột Thao tác (actions) luôn luôn hiển thị ở cuối bảng
+    if (!cols.some(c => c.key === 'actions')) {
+      cols.push({
+        ...columns.actions,
+        width: prefs.columnWidths.actions ?? DEFAULT_MAPPING_WIDTHS.actions ?? 120,
+      });
+    }
+
+    return cols;
+  }, [prefs.columnConfigs, prefs.columnWidths, columns]);
 
   if (!hasViewPerm) {
     return null;
@@ -1047,7 +1071,6 @@ export default function ProductLabelManager({
                   optionFilterProp="label"
                   value={selectedLabel || undefined}
                   onChange={(val) => setSelectedLabel(val)}
-                  disabled={!!editingId}
                   style={{ width: '100%' }}
                   options={labelOptions.map(l => ({ value: l.item_code, label: `[${l.item_code}] ${l.item_name}` }))}
                   dropdownStyle={{ borderRadius: 8 }}

@@ -60,14 +60,19 @@ export default function MasterSystemManager({
   // Permission hook — loads from Supabase master_roles, falls back to defaults
   const { canEdit: _canEdit, canView: _canView } = useMasterPerms();
 
-  // Map active tab to the relevant master_* tableKey for permission lookup
+  // Map active tab or action type to the relevant master_* tableKey for permission lookup
   const TAB_TO_TABLE_KEY: Record<string, string> = {
     departments: 'master_departments',
+    department: 'master_departments',
     warehouses: 'master_warehouses',
+    warehouse: 'master_warehouses',
     loggers: 'master_loggers',
+    logger: 'master_loggers',
     label_types: 'master_label_types',
+    label_type: 'master_label_types',
     numbering: 'master_numbering_rules',
     templates: 'master_form_templates',
+    template: 'master_form_templates',
   };
 
   // Helper: can the current role view rows in the given tab?
@@ -575,13 +580,15 @@ export default function MasterSystemManager({
   const actionCol = (type: string) => ({
     title: 'Thao tác',
     key: 'actions',
-    width: 110,
+    width: 120,
     align: 'center' as const,
     render: (_: any, r: any) => {
       const canAct = canEditTab(type);
       if (!canAct) {
         return (
-          <Tag color="default" style={{ fontSize: 11, borderRadius: 4 }}>Chỉ xem</Tag>
+          <Tooltip title="Vai trò hiện tại chỉ có quyền xem">
+            <Tag color="default" style={{ fontSize: 11, borderRadius: 4, padding: '2px 8px' }}>Chỉ xem</Tag>
+          </Tooltip>
         );
       }
       return (
@@ -592,7 +599,10 @@ export default function MasterSystemManager({
               size="small"
               icon={<Edit size={14} color="#0d9488" />}
               onClick={() => handleOpenEdit(type, r)}
-            />
+              style={{ color: '#0d9488', fontWeight: 600 }}
+            >
+              Sửa
+            </Button>
           </Tooltip>
           <Popconfirm
             title="Xác nhận xóa?"
